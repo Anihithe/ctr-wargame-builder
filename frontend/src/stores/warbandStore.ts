@@ -180,35 +180,70 @@ export const useWarbandStore = defineStore('warband', () => {
         maxSlots = 0;
       }
 
-      const totalEquippedSlots = f.equippedItems.length;
-      if (totalEquippedSlots > maxSlots) {
-        errors.push({
-          fighterId: f.id,
-          fighterName: f.name,
-          code: 'SLOTS_EXCEEDED',
-          message: `${f.name} possède ${totalEquippedSlots} objets pour un maximum de ${maxSlots} emplacements.`,
-          severity: 'Error',
-        });
+      if (f.officerRole !== 'None' && wb.selectedOriginIds?.includes('mutants')) {
+        maxSlots += 1;
       }
 
-      // Hands check & equipment rank check
+      let totalEquippedSlots = 0;
       let handsUsed = 0;
+      const isMage = f.specializations.some((s) => s.specializationId === 'mage');
+      const isExcellence = wb.factionId === 'excellence';
+      const hasGuerrier = f.specializations.some((s) => s.specializationId === 'guerrier');
+      const hasNoblesse = wb.selectedOriginIds?.includes('noblesse');
+      const hasGardesRoyaux = wb.selectedOriginIds?.includes('gardes_royaux');
+
       for (const eq of f.equippedItems) {
         if (!eq.isMagicItem) {
           const item = rulesetStore.getEquipment(eq.equipmentId);
           if (item) {
+            totalEquippedSlots += item.slots ?? 1;
             handsUsed += item.hands || 0;
-            if (item.level > f.rank) {
+
+            // Effective rank calculation
+            let effectiveRank = f.rank;
+            if (item.category === 'Armor' && hasNoblesse) effectiveRank += 1;
+            if (item.subCategory === 'Arme intermédiaire' && hasGardesRoyaux) effectiveRank += 1;
+            if (hasGuerrier && (item.category === 'Shield' || item.category === 'Armor' || item.subCategory?.includes('intermédiaire') || item.subCategory?.includes('lourde'))) {
+              effectiveRank += 1;
+            }
+
+            if (item.level > effectiveRank) {
               errors.push({
                 fighterId: f.id,
                 fighterName: f.name,
                 code: 'ITEM_RANK_TOO_HIGH',
-                message: `${item.name} est de niveau ${item.level}, mais ${f.name} est rang ${f.rank}.`,
+                message: `${item.name} est de niveau ${item.level}, mais ${f.name} a un rang effectif de ${effectiveRank}.`,
+                severity: 'Error',
+              });
+            }
+
+            // Mage restrictions: pas d'armure ni de bouclier
+            if (isMage && (item.category === 'Armor' || item.category === 'Shield')) {
+              errors.push({
+                fighterId: f.id,
+                fighterName: f.name,
+                code: 'MAGE_CANNOT_WEAR_ARMOR',
+                message: `La voie du Mage interdit le port d'armure et de bouclier (${item.name} sur ${f.name}).`,
+                severity: 'Error',
+              });
+            }
+
+            // Excellence restrictions: pas d'armure ni bouclier (sauf Gardes royaux)
+            if (isExcellence && (item.category === 'Armor' || item.category === 'Shield') && !hasGardesRoyaux) {
+              errors.push({
+                fighterId: f.id,
+                fighterName: f.name,
+                code: 'EXCELLENCE_CANNOT_WEAR_ARMOR',
+                message: `L'Excellence interdit le port d'armure et de bouclier (${item.name} sur ${f.name}).`,
                 severity: 'Error',
               });
             }
           }
         } else {
+          const mItem = rulesetStore.getMagicItem(eq.equipmentId);
+          if (mItem) {
+            totalEquippedSlots += mItem.slots || 0;
+          }
           if (!wb.allowMagicItemsAtCreation) {
             errors.push({
               fighterId: f.id,
@@ -219,6 +254,16 @@ export const useWarbandStore = defineStore('warband', () => {
             });
           }
         }
+      }
+
+      if (totalEquippedSlots > maxSlots) {
+        errors.push({
+          fighterId: f.id,
+          fighterName: f.name,
+          code: 'SLOTS_EXCEEDED',
+          message: `${f.name} utilise ${totalEquippedSlots} emplacements sur un maximum de ${maxSlots}.`,
+          severity: 'Error',
+        });
       }
 
       if (handsUsed > 2) {

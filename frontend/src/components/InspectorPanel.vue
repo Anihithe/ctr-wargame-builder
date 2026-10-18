@@ -54,11 +54,9 @@ const originsToDisplay = computed(() => {
 });
 
 function selectAllegiance(allegianceId: string) {
-  const allg = rulesetStore.getAllegiance(allegianceId);
-  const defaultRule = allg?.rules?.[0]?.name;
   warbandStore.updateWarband({
     allegianceId,
-    selectedAllegianceRuleName: defaultRule,
+    selectedAllegianceRuleName: undefined,
   });
   showAllegiancePicker.value = false;
 }
@@ -69,12 +67,6 @@ function removeAllegiance() {
     selectedAllegianceRuleName: undefined,
   });
   showAllegiancePicker.value = false;
-}
-
-function selectAllegianceRule(ruleName: string) {
-  warbandStore.updateWarband({
-    selectedAllegianceRuleName: ruleName,
-  });
 }
 
 // Calculate base stats of selected fighter
@@ -122,17 +114,70 @@ const fighterStats = computed<StatProfile>(() => {
     }
   }
 
+  // Apply Specialization modifiers: Mage (-1 Combat)
+  const isMage = fighter.value.specializations.some((s) => s.specializationId === 'mage');
+  if (isMage) {
+    stats.combat = Math.max(0, stats.combat - 1);
+  }
+
+  // Apply Equipment statModifiers (e.g. Armure: -1 Esquive)
+  for (const eq of fighter.value.equippedItems) {
+    if (!eq.isMagicItem) {
+      const item = rulesetStore.getEquipment(eq.equipmentId);
+      if (item?.statModifiers) {
+        stats.mouvement += item.statModifiers.mouvement || 0;
+        stats.esquive += item.statModifiers.esquive || 0;
+      }
+    }
+  }
+
   return stats;
 });
 
 // Max equipment slots for fighter
 const maxSlots = computed(() => {
   if (!fighter.value) return 2;
+  let slots = 2;
   if (fighter.value.type === 'Guerrier') {
-    return rulesetStore.config.slotsByRank?.[fighter.value.rank.toString()] ?? (fighter.value.rank >= 3 ? 3 : 2);
+    slots = rulesetStore.config.slotsByRank?.[fighter.value.rank.toString()] ?? (fighter.value.rank >= 3 ? 3 : 2);
+  } else if (fighter.value.type === 'Monstre') {
+    slots = 4;
+  } else if (fighter.value.type === 'Animal') {
+    return 0; // Animal has 0 equipment slots
   }
-  if (fighter.value.type === 'Monstre') return 4;
-  return 0; // Animal has 0 equipment slots
+  if (fighter.value.officerRole !== 'None' && warband.value?.selectedOriginIds?.includes('mutants')) {
+    slots += 1;
+  }
+  return slots;
+});
+
+// Current slots used (accounting for 2-slot weapons, pavois, etc.)
+const currentSlotsUsed = computed(() => {
+  if (!fighter.value) return 0;
+  let used = 0;
+  for (const eq of fighter.value.equippedItems) {
+    if (!eq.isMagicItem) {
+      const item = rulesetStore.getEquipment(eq.equipmentId);
+      used += item?.slots ?? 1;
+    } else {
+      const mItem = rulesetStore.getMagicItem(eq.equipmentId);
+      used += mItem?.slots || 0;
+    }
+  }
+  return used;
+});
+
+// Current hands used (max 2)
+const currentHandsUsed = computed(() => {
+  if (!fighter.value) return 0;
+  let hands = 0;
+  for (const eq of fighter.value.equippedItems) {
+    if (!eq.isMagicItem) {
+      const item = rulesetStore.getEquipment(eq.equipmentId);
+      hands += item?.hands || 0;
+    }
+  }
+  return hands;
 });
 
 // Total armor bonus from equipped items
@@ -362,36 +407,23 @@ function onSetXp(val: number) {
               </div>
             </div>
 
-            <!-- Rules display or radio variant selection -->
+            <!-- Rules display: all active rules apply -->
             <div class="space-y-2 pt-2 border-t border-amber-900/40">
-              <div v-if="allegiance.rules.length > 1" class="text-[11px] font-semibold text-amber-400 uppercase tracking-wider">
-                Doctrines / Règles applicables :
+              <div class="text-[11px] font-semibold text-amber-400 uppercase tracking-wider">
+                Doctrines / Règles actives :
               </div>
               <div class="space-y-2">
-                <label
+                <div
                   v-for="(rule, i) in allegiance.rules"
                   :key="i"
-                  class="flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition select-none"
-                  :class="
-                    allegiance.rules.length > 1 && (warband.selectedAllegianceRuleName === rule.name || (!warband.selectedAllegianceRuleName && i === 0))
-                      ? 'border-amber-500 bg-amber-950/40 ring-1 ring-amber-500/40'
-                      : 'bg-grim-850/80 border-grim-800 hover:border-grim-700'
-                  "
+                  class="p-2.5 rounded-lg border bg-grim-850/80 border-amber-500/30 space-y-0.5"
                 >
-                  <input
-                    v-if="allegiance.rules.length > 1"
-                    type="radio"
-                    name="allegianceRule"
-                    :value="rule.name"
-                    :checked="warband.selectedAllegianceRuleName === rule.name || (!warband.selectedAllegianceRuleName && i === 0)"
-                    @change="selectAllegianceRule(rule.name)"
-                    class="mt-0.5 accent-amber-500"
-                  />
-                  <div class="space-y-0.5 flex-1">
-                    <div class="font-bold text-xs text-amber-300">{{ rule.name }}</div>
-                    <div class="text-grim-300 text-[11px] leading-relaxed">{{ rule.description }}</div>
+                  <div class="font-bold text-xs text-amber-300 flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                    <span>{{ rule.name }}</span>
                   </div>
-                </label>
+                  <div class="text-grim-300 text-[11px] leading-relaxed pl-3">{{ rule.description }}</div>
+                </div>
               </div>
             </div>
           </div>
@@ -416,9 +448,18 @@ function onSetXp(val: number) {
               "
             >
               <div class="flex items-center justify-between">
-                <span class="font-bold text-sm" :class="warband.allegianceId === allg.id ? 'text-amber-300' : 'text-grim-200'">
-                  {{ allg.name }}
-                </span>
+                <div class="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="allegianceSelection"
+                    :value="allg.id"
+                    :checked="warband.allegianceId === allg.id"
+                    class="accent-amber-500 pointer-events-none"
+                  />
+                  <span class="font-bold text-sm" :class="warband.allegianceId === allg.id ? 'text-amber-300' : 'text-grim-200'">
+                    {{ allg.name }}
+                  </span>
+                </div>
                 <span v-if="warband.allegianceId === allg.id" class="text-[10px] px-2 py-0.5 rounded bg-amber-500 text-grim-950 font-bold uppercase">
                   Actuelle
                 </span>
@@ -632,12 +673,12 @@ function onSetXp(val: number) {
           <div class="flex items-center gap-2">
             <Sword class="w-4 h-4 text-gold-400" />
             <h3 class="text-sm font-bold text-white uppercase tracking-wider font-display">
-              Équipement ({{ fighter.equippedItems.length }} / {{ maxSlots }} emplacements)
+              Équipement ({{ currentSlotsUsed }} / {{ maxSlots }} emplacements • {{ currentHandsUsed }} / 2 mains)
             </h3>
           </div>
 
           <button
-            v-if="fighter.equippedItems.length < maxSlots"
+            v-if="currentSlotsUsed < maxSlots"
             @click="emit('open-equipment', fighter.id)"
             class="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-gold-600 hover:bg-gold-500 text-grim-950 rounded transition"
           >
@@ -662,7 +703,13 @@ function onSetXp(val: number) {
                   {{ eq.isMagicItem ? rulesetStore.getMagicItem(eq.equipmentId)?.name : rulesetStore.getEquipment(eq.equipmentId)?.name }}
                 </span>
                 <span
-                  v-if="!eq.isMagicItem"
+                  v-if="!eq.isMagicItem && (rulesetStore.getEquipment(eq.equipmentId)?.slots || 1) > 1"
+                  class="text-[10px] px-1.5 py-0.2 rounded font-mono font-bold bg-amber-950 text-amber-300 border border-amber-800"
+                >
+                  {{ rulesetStore.getEquipment(eq.equipmentId)?.slots }} emplacements
+                </span>
+                <span
+                  v-if="!eq.isMagicItem && (rulesetStore.getEquipment(eq.equipmentId)?.hands || 0) > 0"
                   class="text-[10px] px-1.5 py-0.2 rounded font-mono font-bold bg-grim-950 text-grim-400 border border-grim-800"
                 >
                   {{ rulesetStore.getEquipment(eq.equipmentId)?.hands === 2 ? '2 Mains' : '1 Main' }}

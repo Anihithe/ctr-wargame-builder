@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import { useWarbandStore } from '@/stores/warbandStore';
 import { useRulesetStore } from '@/stores/rulesetStore';
 import type { Specialization } from '@/types/ruleset';
-import { Flame, X, Check, AlertCircle } from 'lucide-vue-next';
+import { Flame, X, Check, AlertCircle, Trash2 } from 'lucide-vue-next';
 
 const props = defineProps<{
   fighterId: string;
@@ -49,6 +49,16 @@ function chooseSpecialization(specId: string) {
 
   warbandStore.toggleTalent(fighter.value.id, specId, '');
   emit('close');
+}
+
+function unchooseSpecialization(specId: string) {
+  if (!fighter.value) return;
+  const fSpec = fighter.value.specializations.find((s) => s.specializationId === specId);
+  if (fSpec && fSpec.acquiredTalentIds.length > 0) {
+    const ok = confirm(`Cette voie contient ${fSpec.acquiredTalentIds.length} talent(s) acquis.\n\nVoulez-vous la retirer ? Tous les talents associés seront retirés et les XP remboursés.`);
+    if (!ok) return;
+  }
+  warbandStore.removeSpecialization(fighter.value.id, specId);
 }
 </script>
 
@@ -150,6 +160,15 @@ function chooseSpecialization(specId: string) {
               >
                 <Flame class="w-3.5 h-3.5" />
                 <span>Adopter la voie</span>
+              </button>
+
+              <button
+                v-else
+                @click="unchooseSpecialization(spec.id)"
+                class="px-3 py-1.5 text-xs font-semibold rounded shadow transition flex items-center gap-1.5 bg-crimson-900/80 hover:bg-crimson-800 text-crimson-200 border border-crimson-700 active:scale-95 cursor-pointer"
+              >
+                <Trash2 class="w-3.5 h-3.5" />
+                <span>Retirer la voie</span>
               </button>
             </div>
           </div>

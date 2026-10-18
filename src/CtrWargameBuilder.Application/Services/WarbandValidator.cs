@@ -182,6 +182,7 @@ public class WarbandValidator : IWarbandValidator
         if (fighter.Role != OfficerRole.None && hasMutantsOrigin) baseSlots += 1;
 
         var slotsUsed = 0;
+        var handsUsed = 0;
         var hasArmor = false;
         var hasShield = false;
 
@@ -194,6 +195,7 @@ public class WarbandValidator : IWarbandValidator
             }
 
             slotsUsed += eq.Slots;
+            handsUsed += eq.Hands;
 
             if (eq.Category == "Armor") hasArmor = true;
             if (eq.Category == "Shield") hasShield = true;
@@ -227,6 +229,18 @@ public class WarbandValidator : IWarbandValidator
         if (slotsUsed > baseSlots)
         {
             result.AddError("SLOTS_OVERFLOW", $"'{name}' dépasse sa capacité d'emplacements ({slotsUsed}/{baseSlots} slots occupés).", fighter.Id);
+        }
+
+        if (handsUsed > 2)
+        {
+            result.AddError("HANDS_EXCEEDED", $"'{name}' utilise {handsUsed} mains (maximum 2 mains autorisées).", fighter.Id);
+        }
+
+        // Restrictions d'armure pour la Spécialisation Mage
+        var isMage = fighter.Specializations.Any(sp => string.Equals(sp.SpecializationId, "mage", StringComparison.OrdinalIgnoreCase));
+        if (isMage && (hasArmor || hasShield))
+        {
+            result.AddError("MAGE_CANNOT_WEAR_ARMOR", $"La spécialisation Mage interdit le port d'armure et de bouclier sur '{name}'.", fighter.Id);
         }
 
         // Restrictions d'armure de faction (Ex: L'Excellence)

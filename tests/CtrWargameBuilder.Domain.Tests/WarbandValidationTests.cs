@@ -455,4 +455,96 @@ public class WarbandValidationTests
         Assert.False(result.IsValid);
         Assert.Contains(result.Messages, m => m.Code == "XP_LIMIT_EXCEEDED");
     }
+
+    [Fact]
+    public void Warrior_Rank2_Can_Equip_Level3_Heavy_Weapon()
+    {
+        // Arrange : Rang 2 avec Spécialisation Guerrier a un rang effectif de 3 pour les armes lourdes
+        var warband = new Warband
+        {
+            FactionId = "alliance",
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter
+                {
+                    CustomName = "Leader",
+                    Rank = 2,
+                    Role = OfficerRole.Leader,
+                    Specializations = [new FighterSpecialization { SpecializationId = "guerrier" }],
+                    Equipments = [new EquippedItem { EquipmentId = "cac_1m_lourde_3", SlotsOccupied = 1 }]
+                },
+                new Fighter { CustomName = "Bras droit", Rank = 2, Role = OfficerRole.BrasDroit }
+            ]
+        };
+
+        // Act
+        var result = _validator.Validate(warband, _ruleset);
+
+        // Assert
+        Assert.DoesNotContain(result.Messages, m => m.Code == "ITEM_LEVEL_TOO_HIGH");
+    }
+
+    [Fact]
+    public void Mage_With_Armor_ShouldFail_Validation()
+    {
+        // Arrange : Combattant avec voie Mage équipe une armure
+        var warband = new Warband
+        {
+            FactionId = "alliance",
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter
+                {
+                    CustomName = "Mage Leader",
+                    Rank = 2,
+                    Role = OfficerRole.Leader,
+                    Specializations = [new FighterSpecialization { SpecializationId = "mage" }],
+                    Equipments = [new EquippedItem { EquipmentId = "prot_armure_2", SlotsOccupied = 1 }]
+                },
+                new Fighter { CustomName = "Bras droit", Rank = 2, Role = OfficerRole.BrasDroit }
+            ]
+        };
+
+        // Act
+        var result = _validator.Validate(warband, _ruleset);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Messages, m => m.Code == "MAGE_CANNOT_WEAR_ARMOR");
+    }
+
+    [Fact]
+    public void Hands_Exceeded_ShouldFail_Validation()
+    {
+        // Arrange : Combattant équipe une arme 2 mains + un bouclier (1 main) = 3 mains
+        var warband = new Warband
+        {
+            FactionId = "alliance",
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter
+                {
+                    CustomName = "Leader",
+                    Rank = 2,
+                    Role = OfficerRole.Leader,
+                    Equipments =
+                    [
+                        new EquippedItem { EquipmentId = "cac_2m_legere_2", SlotsOccupied = 2 },
+                        new EquippedItem { EquipmentId = "prot_bouclier_1", SlotsOccupied = 1 }
+                    ]
+                },
+                new Fighter { CustomName = "Bras droit", Rank = 2, Role = OfficerRole.BrasDroit }
+            ]
+        };
+
+        // Act
+        var result = _validator.Validate(warband, _ruleset);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Messages, m => m.Code == "HANDS_EXCEEDED");
+    }
 }
