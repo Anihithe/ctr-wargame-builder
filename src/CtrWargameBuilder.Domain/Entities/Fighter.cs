@@ -10,6 +10,7 @@ public class Fighter
     public int Rank { get; set; } = 1;
     public FighterType Type { get; set; } = FighterType.Infantry;
     public OfficerRole Role { get; set; } = OfficerRole.None;
+    public FighterStatus Status { get; set; } = FighterStatus.Active;
     public int AllocatedXp { get; set; }
     public string? AnimalSpeciesBonusId { get; set; }
     public string? MonsterProfileId { get; set; }
