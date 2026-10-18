@@ -14,6 +14,7 @@ public class Fighter
     public int AllocatedXp { get; set; }
     public string? AnimalSpeciesBonusId { get; set; }
     public string? MonsterProfileId { get; set; }
+    public string? GodGiftStat { get; set; }
 
     public List<EquippedItem> Equipments { get; set; } = [];
     public List<FighterSpecialization> Specializations { get; set; } = [];

@@ -696,4 +696,37 @@ public class WarbandValidationTests
         // Assert
         Assert.DoesNotContain(result.Messages, m => m.Code == "XP_LIMIT_EXCEEDED");
     }
+
+    [Fact]
+    public void Ordre_Du_Temple_God_Gift_Is_Accepted_And_Valid()
+    {
+        // Arrange : Combattant de l'Ordre du Temple avec Don des Dieux
+        var warband = new Warband
+        {
+            FactionId = "alliance",
+            AllegianceId = "ordre_du_temple",
+            SelectedAllegianceRuleName = "Don des Dieux",
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter
+                {
+                    CustomName = "Chevalier Sacré",
+                    Rank = 2,
+                    Role = OfficerRole.Leader,
+                    AllocatedXp = 6,
+                    GodGiftStat = "combat",
+                    Specializations = [new FighterSpecialization { SpecializationId = "guerrier" }]
+                },
+                new Fighter { CustomName = "Bras droit", Rank = 2, Role = OfficerRole.BrasDroit }
+            ]
+        };
+
+        // Act
+        var result = _validator.Validate(warband, _ruleset);
+
+        // Assert
+        Assert.True(result.IsValid);
+        Assert.Empty(result.Messages.Where(m => m.Severity == ValidationSeverity.Error));
+    }
 }

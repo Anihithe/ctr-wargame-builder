@@ -641,6 +641,10 @@ export const useWarbandStore = defineStore('warband', () => {
     }
   }
 
+  function setFighterGodGift(fighterId: string, stat: Fighter['godGiftStat']) {
+    updateFighter(fighterId, { godGiftStat: stat });
+  }
+
   // Equipment actions
   function equipItem(fighterId: string, itemId: string, isMagicItem = false) {
     if (!currentWarband.value) return;
@@ -832,6 +836,7 @@ export const useWarbandStore = defineStore('warband', () => {
     removeFighter,
     duplicateFighter,
     updateFighter,
+    setFighterGodGift,
     equipItem,
     unequipItem,
     toggleTalent,
