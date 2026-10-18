@@ -66,17 +66,34 @@ function recruitTroop(type: FighterType, rank: number, subTypeId?: string) {
 
 function recruitOfficer(role: OfficerRole, rank: number, type: FighterType = 'Guerrier', subTypeId?: string) {
   const roleLabel = role === 'Leader' ? 'Leader' : 'Bras droit';
-  const name = `${roleLabel} (${type === 'Guerrier' ? `Guerrier R${rank}` : type})`;
-  warbandStore.addFighter(type, rank, subTypeId, role, name);
+  warbandStore.addFighter(type, rank, subTypeId, role, roleLabel);
   showLeaderPicker.value = false;
   showBrasDroitPicker.value = false;
 }
 
-function getFighterCost(fighter: Fighter): number {
-  if (fighter.status === 'Reserve' || fighter.status === 'Graveyard') return 0;
-  if (fighter.type === 'Guerrier') return fighter.rank;
-  if (fighter.type === 'Monstre') return 4;
-  return fighter.rank;
+function getFighterSubline(f: Fighter): string {
+  if (f.specializations && f.specializations.length > 0) {
+    return f.specializations
+      .map((s) => rulesetStore.getSpecialization(s.specializationId)?.name || s.specializationId)
+      .join(', ');
+  }
+  if (f.type === 'Guerrier') {
+    return 'Guerrier';
+  }
+  if (f.type === 'Monstre') {
+    const m = rulesetStore.getMonster(f.subTypeId || '');
+    return m ? `Monstre • ${m.name}` : 'Monstre';
+  }
+  if (f.type === 'Animal') {
+    return `Animal Rang ${f.rank}`;
+  }
+  return f.type;
+}
+
+function getTalentName(specId: string, talentId: string): string {
+  const spec = rulesetStore.getSpecialization(specId);
+  const talent = spec?.talents?.find((t) => t.id === talentId);
+  return talent?.name || talentId;
 }
 
 function getRankBadgeClass(fighter: Fighter): string {
@@ -201,26 +218,19 @@ function getRankBadgeClass(fighter: Fighter): string {
 
               <div>
                 <div class="flex items-center gap-1.5">
+                  <Crown class="w-4 h-4 text-amber-400 shrink-0" />
                   <span class="text-sm font-semibold text-grim-100 group-hover:text-gold-300 transition">
                     {{ leaderFighter.name }}
                   </span>
-                  <span class="flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-700/80">
-                    <Crown class="w-3 h-3 text-amber-400" />
-                    Leader (12 XP)
-                  </span>
                 </div>
                 <p class="text-[11px] text-grim-400 capitalize">
-                  {{ leaderFighter.type }} {{ leaderFighter.subTypeId ? `• ${leaderFighter.subTypeId}` : '' }}
+                  {{ getFighterSubline(leaderFighter) }}
                 </p>
               </div>
             </div>
 
-            <!-- Cost & Quick actions -->
+            <!-- Quick actions -->
             <div class="flex items-center gap-2" @click.stop>
-              <span class="text-xs font-mono font-bold text-gold-400 bg-gold-950/40 border border-gold-800/60 px-2 py-0.5 rounded">
-                {{ getFighterCost(leaderFighter) }} PO
-              </span>
-
               <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
                 <button
                   @click.stop="warbandStore.duplicateFighter(leaderFighter.id)"
@@ -255,13 +265,21 @@ function getRankBadgeClass(fighter: Fighter): string {
               <component :is="eq.isMagicItem ? Sparkles : Shield" class="w-2.5 h-2.5 text-gold-400" />
               {{ eq.isMagicItem ? rulesetStore.getMagicItem(eq.equipmentId)?.name || eq.equipmentId : rulesetStore.getEquipment(eq.equipmentId)?.name || eq.equipmentId }}
             </span>
-            <span
-              v-for="sp in leaderFighter.specializations"
-              :key="sp.id"
-              class="text-[10px] px-1.5 py-0.5 rounded bg-blue-950/60 border border-blue-800/60 text-blue-300"
-            >
-              {{ rulesetStore.getSpecialization(sp.specializationId)?.name || sp.specializationId }} ({{ sp.acquiredTalentIds.length }})
-            </span>
+            <template v-for="sp in leaderFighter.specializations" :key="sp.id">
+              <span
+                v-if="sp.acquiredTalentIds.length === 0"
+                class="text-[10px] px-1.5 py-0.5 rounded bg-blue-950/40 border border-blue-800/40 text-blue-400 italic"
+              >
+                {{ rulesetStore.getSpecialization(sp.specializationId)?.name || sp.specializationId }}
+              </span>
+              <span
+                v-for="talentId in sp.acquiredTalentIds"
+                :key="talentId"
+                class="text-[10px] px-1.5 py-0.5 rounded bg-blue-950/60 border border-blue-800/60 text-blue-300"
+              >
+                {{ getTalentName(sp.specializationId, talentId) }}
+              </span>
+            </template>
           </div>
         </div>
 
@@ -276,7 +294,6 @@ function getRankBadgeClass(fighter: Fighter): string {
             </div>
             <div>
               <div class="text-xs font-bold text-grim-200">Emplacement Leader (12 XP)</div>
-              <div class="text-[11px] text-grim-400">Meneur suprême de la bande (1 obligatoire sur table)</div>
             </div>
           </div>
 
@@ -359,26 +376,19 @@ function getRankBadgeClass(fighter: Fighter): string {
 
               <div>
                 <div class="flex items-center gap-1.5">
+                  <Shield class="w-4 h-4 text-amber-400 shrink-0" />
                   <span class="text-sm font-semibold text-grim-100 group-hover:text-gold-300 transition">
                     {{ brasDroitFighter.name }}
                   </span>
-                  <span class="flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-950/80 text-amber-300 border border-amber-800/70">
-                    <Shield class="w-3 h-3 text-amber-400" />
-                    Bras droit (6 XP)
-                  </span>
                 </div>
                 <p class="text-[11px] text-grim-400 capitalize">
-                  {{ brasDroitFighter.type }} {{ brasDroitFighter.subTypeId ? `• ${brasDroitFighter.subTypeId}` : '' }}
+                  {{ getFighterSubline(brasDroitFighter) }}
                 </p>
               </div>
             </div>
 
-            <!-- Cost & Quick actions -->
+            <!-- Quick actions -->
             <div class="flex items-center gap-2" @click.stop>
-              <span class="text-xs font-mono font-bold text-gold-400 bg-gold-950/40 border border-gold-800/60 px-2 py-0.5 rounded">
-                {{ getFighterCost(brasDroitFighter) }} PO
-              </span>
-
               <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
                 <button
                   @click.stop="warbandStore.duplicateFighter(brasDroitFighter.id)"
@@ -413,13 +423,21 @@ function getRankBadgeClass(fighter: Fighter): string {
               <component :is="eq.isMagicItem ? Sparkles : Shield" class="w-2.5 h-2.5 text-gold-400" />
               {{ eq.isMagicItem ? rulesetStore.getMagicItem(eq.equipmentId)?.name || eq.equipmentId : rulesetStore.getEquipment(eq.equipmentId)?.name || eq.equipmentId }}
             </span>
-            <span
-              v-for="sp in brasDroitFighter.specializations"
-              :key="sp.id"
-              class="text-[10px] px-1.5 py-0.5 rounded bg-blue-950/60 border border-blue-800/60 text-blue-300"
-            >
-              {{ rulesetStore.getSpecialization(sp.specializationId)?.name || sp.specializationId }} ({{ sp.acquiredTalentIds.length }})
-            </span>
+            <template v-for="sp in brasDroitFighter.specializations" :key="sp.id">
+              <span
+                v-if="sp.acquiredTalentIds.length === 0"
+                class="text-[10px] px-1.5 py-0.5 rounded bg-blue-950/40 border border-blue-800/40 text-blue-400 italic"
+              >
+                {{ rulesetStore.getSpecialization(sp.specializationId)?.name || sp.specializationId }}
+              </span>
+              <span
+                v-for="talentId in sp.acquiredTalentIds"
+                :key="talentId"
+                class="text-[10px] px-1.5 py-0.5 rounded bg-blue-950/60 border border-blue-800/60 text-blue-300"
+              >
+                {{ getTalentName(sp.specializationId, talentId) }}
+              </span>
+            </template>
           </div>
         </div>
 
@@ -434,7 +452,6 @@ function getRankBadgeClass(fighter: Fighter): string {
             </div>
             <div>
               <div class="text-xs font-bold text-grim-300">Emplacement Bras droit (6 XP)</div>
-              <div class="text-[11px] text-grim-400">Second officier (optionnel mais recommandé)</div>
             </div>
           </div>
 
@@ -615,17 +632,13 @@ function getRankBadgeClass(fighter: Fighter): string {
                   </span>
                 </div>
                 <p class="text-[11px] text-grim-400 capitalize">
-                  {{ f.type }} {{ f.subTypeId ? `• ${f.subTypeId}` : '' }}
+                  {{ getFighterSubline(f) }}
                 </p>
               </div>
             </div>
 
-            <!-- Cost & Quick actions -->
+            <!-- Quick actions -->
             <div class="flex items-center gap-2" @click.stop>
-              <span class="text-xs font-mono font-bold text-gold-400 bg-gold-950/40 border border-gold-800/60 px-2 py-0.5 rounded">
-                {{ getFighterCost(f) }} PO
-              </span>
-
               <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
                 <button
                   @click.stop="warbandStore.duplicateFighter(f.id)"
@@ -660,13 +673,21 @@ function getRankBadgeClass(fighter: Fighter): string {
               <component :is="eq.isMagicItem ? Sparkles : Shield" class="w-2.5 h-2.5 text-gold-400" />
               {{ eq.isMagicItem ? rulesetStore.getMagicItem(eq.equipmentId)?.name || eq.equipmentId : rulesetStore.getEquipment(eq.equipmentId)?.name || eq.equipmentId }}
             </span>
-            <span
-              v-for="sp in f.specializations"
-              :key="sp.id"
-              class="text-[10px] px-1.5 py-0.5 rounded bg-blue-950/60 border border-blue-800/60 text-blue-300"
-            >
-              {{ rulesetStore.getSpecialization(sp.specializationId)?.name || sp.specializationId }} ({{ sp.acquiredTalentIds.length }})
-            </span>
+            <template v-for="sp in f.specializations" :key="sp.id">
+              <span
+                v-if="sp.acquiredTalentIds.length === 0"
+                class="text-[10px] px-1.5 py-0.5 rounded bg-blue-950/40 border border-blue-800/40 text-blue-400 italic"
+              >
+                {{ rulesetStore.getSpecialization(sp.specializationId)?.name || sp.specializationId }}
+              </span>
+              <span
+                v-for="talentId in sp.acquiredTalentIds"
+                :key="talentId"
+                class="text-[10px] px-1.5 py-0.5 rounded bg-blue-950/60 border border-blue-800/60 text-blue-300"
+              >
+                {{ getTalentName(sp.specializationId, talentId) }}
+              </span>
+            </template>
           </div>
         </div>
       </div>

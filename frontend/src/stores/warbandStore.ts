@@ -409,16 +409,16 @@ export const useWarbandStore = defineStore('warband', () => {
     let name = defaultName;
     if (!name) {
       if (role === 'Leader') {
-        name = `Leader (${type === 'Guerrier' ? `Rang ${rank}` : type})`;
+        name = 'Leader';
       } else if (role === 'BrasDroit') {
-        name = `Bras droit (${type === 'Guerrier' ? `Rang ${rank}` : type})`;
+        name = 'Bras droit';
       } else if (type === 'Monstre') {
         const m = rulesetStore.getMonster(subTypeId || '');
         name = m?.name || 'Monstre';
       } else if (type === 'Animal') {
         name = `Animal Rang ${rank}`;
       } else {
-        name = `Combattant Rang ${rank}`;
+        name = 'Combattant';
       }
     }
 
