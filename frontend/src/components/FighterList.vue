@@ -66,11 +66,6 @@ function recruitOfficer(role: OfficerRole, rank: number, type: FighterType = 'Gu
   showBrasDroitPicker.value = false;
 }
 
-function onStatusChange(fighterId: string, event: Event) {
-  const target = event.target as HTMLSelectElement;
-  warbandStore.setFighterStatus(fighterId, target.value as FighterStatus);
-}
-
 function getFighterCost(fighter: Fighter): number {
   if (fighter.status === 'Reserve' || fighter.status === 'Graveyard') return 0;
   if (fighter.type === 'Guerrier') return fighter.rank;
@@ -244,18 +239,8 @@ function getRankBadgeClass(fighter: Fighter): string {
               </div>
             </div>
 
-            <!-- Cost & Status selector & Quick actions -->
+            <!-- Cost & Quick actions -->
             <div class="flex items-center gap-2" @click.stop>
-              <select
-                :value="leaderFighter.status"
-                @change="onStatusChange(leaderFighter.id, $event)"
-                class="text-[11px] bg-grim-850 border border-grim-700 text-grim-300 rounded px-1.5 py-0.5 focus:outline-none"
-              >
-                <option value="Active">Sur table</option>
-                <option value="Reserve">Réserve</option>
-                <option value="Graveyard">Cimetière</option>
-              </select>
-
               <span class="text-xs font-mono font-bold text-gold-400 bg-gold-950/40 border border-gold-800/60 px-2 py-0.5 rounded">
                 {{ getFighterCost(leaderFighter) }} PO
               </span>
@@ -412,18 +397,8 @@ function getRankBadgeClass(fighter: Fighter): string {
               </div>
             </div>
 
-            <!-- Cost & Status selector & Quick actions -->
+            <!-- Cost & Quick actions -->
             <div class="flex items-center gap-2" @click.stop>
-              <select
-                :value="brasDroitFighter.status"
-                @change="onStatusChange(brasDroitFighter.id, $event)"
-                class="text-[11px] bg-grim-850 border border-grim-700 text-grim-300 rounded px-1.5 py-0.5 focus:outline-none"
-              >
-                <option value="Active">Sur table</option>
-                <option value="Reserve">Réserve</option>
-                <option value="Graveyard">Cimetière</option>
-              </select>
-
               <span class="text-xs font-mono font-bold text-gold-400 bg-gold-950/40 border border-gold-800/60 px-2 py-0.5 rounded">
                 {{ getFighterCost(brasDroitFighter) }} PO
               </span>
@@ -586,18 +561,8 @@ function getRankBadgeClass(fighter: Fighter): string {
               </div>
             </div>
 
-            <!-- Cost, Status switcher & Actions -->
+            <!-- Cost & Quick actions -->
             <div class="flex items-center gap-2" @click.stop>
-              <select
-                :value="f.status"
-                @change="onStatusChange(f.id, $event)"
-                class="text-[11px] bg-grim-850 border border-grim-700 text-grim-300 rounded px-1.5 py-0.5 focus:outline-none"
-              >
-                <option value="Active">Sur table</option>
-                <option value="Reserve">Réserve</option>
-                <option value="Graveyard">Cimetière</option>
-              </select>
-
               <span class="text-xs font-mono font-bold text-gold-400 bg-gold-950/40 border border-gold-800/60 px-2 py-0.5 rounded">
                 {{ getFighterCost(f) }} PO
               </span>
@@ -700,15 +665,6 @@ function getRankBadgeClass(fighter: Fighter): string {
               </div>
 
               <div class="flex items-center gap-2" @click.stop>
-                <select
-                  :value="f.status"
-                  @change="onStatusChange(f.id, $event)"
-                  class="text-[10px] bg-grim-850 border border-grim-700 text-grim-300 rounded px-1.5 py-0.5 focus:outline-none"
-                >
-                  <option value="Active">Remettre sur table</option>
-                  <option value="Reserve">En réserve</option>
-                  <option value="Graveyard">Cimetière</option>
-                </select>
                 <button
                   @click.stop="warbandStore.removeFighter(f.id)"
                   class="p-1 hover:bg-crimson-900/60 rounded text-grim-500 hover:text-crimson-400 transition"
@@ -770,15 +726,6 @@ function getRankBadgeClass(fighter: Fighter): string {
               </div>
 
               <div class="flex items-center gap-2" @click.stop>
-                <select
-                  :value="f.status"
-                  @change="onStatusChange(f.id, $event)"
-                  class="text-[10px] bg-grim-850 border border-grim-700 text-grim-300 rounded px-1.5 py-0.5 focus:outline-none"
-                >
-                  <option value="Graveyard">Cimetière</option>
-                  <option value="Active">Ressusciter (Sur table)</option>
-                  <option value="Reserve">Transférer en réserve</option>
-                </select>
                 <button
                   @click.stop="warbandStore.removeFighter(f.id)"
                   class="p-1 hover:bg-crimson-900/60 rounded text-grim-500 hover:text-crimson-400 transition"
