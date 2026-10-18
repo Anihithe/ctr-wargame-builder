@@ -203,19 +203,6 @@ const currentSlotsUsed = computed(() => {
   return used;
 });
 
-// Current hands used (max 2)
-const currentHandsUsed = computed(() => {
-  if (!fighter.value) return 0;
-  let hands = 0;
-  for (const eq of fighter.value.equippedItems) {
-    if (!eq.isMagicItem) {
-      const item = rulesetStore.getEquipment(eq.equipmentId);
-      hands += item?.hands || 0;
-    }
-  }
-  return hands;
-});
-
 // Total armor bonus from equipped items
 const totalArmorBonus = computed(() => {
   if (!fighter.value) return 0;
@@ -754,14 +741,14 @@ function onSetXp(val: number) {
           <div class="flex items-center gap-2">
             <Sword class="w-4 h-4 text-gold-400" />
             <h3 class="text-sm font-bold text-white uppercase tracking-wider font-display">
-              Équipement ({{ currentSlotsUsed }} / {{ maxSlots }} emplacements • {{ currentHandsUsed }} / 2 mains)
+              Équipement ({{ currentSlotsUsed }} / {{ maxSlots }} emplacements)
             </h3>
           </div>
 
           <button
-            v-if="currentSlotsUsed < maxSlots"
+            v-if="fighter.type !== 'Animal'"
             @click="emit('open-equipment', fighter.id)"
-            class="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-gold-600 hover:bg-gold-500 text-grim-950 rounded transition"
+            class="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-gold-600 hover:bg-gold-500 text-grim-950 rounded transition shadow cursor-pointer active:scale-95"
           >
             <Plus class="w-3.5 h-3.5" />
             <span>Équiper</span>
@@ -784,16 +771,17 @@ function onSetXp(val: number) {
                   {{ eq.isMagicItem ? rulesetStore.getMagicItem(eq.equipmentId)?.name : rulesetStore.getEquipment(eq.equipmentId)?.name }}
                 </span>
                 <span
-                  v-if="!eq.isMagicItem && (rulesetStore.getEquipment(eq.equipmentId)?.slots || 1) > 1"
-                  class="text-[10px] px-1.5 py-0.2 rounded font-mono font-bold bg-amber-950 text-amber-300 border border-amber-800"
+                  v-if="!eq.isMagicItem && rulesetStore.getEquipment(eq.equipmentId)?.category === 'Armor'"
+                  class="text-[10px] px-1.5 py-0.2 rounded font-mono font-bold bg-blue-950 text-blue-300 border border-blue-800"
                 >
-                  {{ rulesetStore.getEquipment(eq.equipmentId)?.slots }} emplacements
+                  Armure (0 slot)
                 </span>
                 <span
-                  v-if="!eq.isMagicItem && (rulesetStore.getEquipment(eq.equipmentId)?.hands || 0) > 0"
-                  class="text-[10px] px-1.5 py-0.2 rounded font-mono font-bold bg-grim-950 text-grim-400 border border-grim-800"
+                  v-else-if="!eq.isMagicItem && (rulesetStore.getEquipment(eq.equipmentId)?.slots || 0) > 0"
+                  class="text-[10px] px-1.5 py-0.2 rounded font-mono font-bold"
+                  :class="(rulesetStore.getEquipment(eq.equipmentId)?.slots || 0) > 1 ? 'bg-amber-950 text-amber-300 border border-amber-800' : 'bg-grim-950 text-grim-400 border border-grim-800'"
                 >
-                  {{ rulesetStore.getEquipment(eq.equipmentId)?.hands === 2 ? '2 Mains' : '1 Main' }}
+                  {{ rulesetStore.getEquipment(eq.equipmentId)?.slots }} slot{{ (rulesetStore.getEquipment(eq.equipmentId)?.slots || 0) > 1 ? 's' : '' }}
                 </span>
                 <span
                   v-if="!eq.isMagicItem && rulesetStore.getEquipment(eq.equipmentId)?.protection"
@@ -804,10 +792,11 @@ function onSetXp(val: number) {
               </div>
 
               <p v-if="!eq.isMagicItem && rulesetStore.getEquipment(eq.equipmentId)" class="text-[11px] text-grim-400">
-                Puissance: {{ rulesetStore.getEquipment(eq.equipmentId)?.puissance || 0 }} |
-                Précision: {{ rulesetStore.getEquipment(eq.equipmentId)?.precision || 0 }}
-                <span v-if="rulesetStore.getEquipment(eq.equipmentId)?.specialRuleIds.length">
-                  | Règles: {{ rulesetStore.getEquipment(eq.equipmentId)?.specialRuleIds.join(', ') }}
+                <span v-if="rulesetStore.getEquipment(eq.equipmentId)?.puissance">Puissance: {{ rulesetStore.getEquipment(eq.equipmentId)?.puissance }} | </span>
+                <span v-if="rulesetStore.getEquipment(eq.equipmentId)?.precision">Précision: {{ rulesetStore.getEquipment(eq.equipmentId)?.precision }} | </span>
+                <span v-if="rulesetStore.getEquipment(eq.equipmentId)?.rangeInInches">Portée: {{ rulesetStore.getEquipment(eq.equipmentId)?.rangeInInches }}'' | </span>
+                <span v-if="rulesetStore.getEquipment(eq.equipmentId)?.specialRuleIds?.length">
+                  Règles: {{ rulesetStore.getEquipment(eq.equipmentId)?.specialRuleIds?.join(', ') }}
                 </span>
               </p>
             </div>
