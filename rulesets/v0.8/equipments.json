@@ -549,18 +549,6 @@
     "costInGold": 0
   },
   {
-    "id": "prot_armure_1",
-    "name": "Armure (Cuir/Gambison) - Niv 1",
-    "category": "Armor",
-    "subCategory": "Armure",
-    "level": 1,
-    "hands": 0,
-    "slots": 1,
-    "protection": 1,
-    "specialRuleIds": [],
-    "costInGold": 0
-  },
-  {
     "id": "prot_armure_2",
     "name": "Armure (Cotte de mailles) - Niv 2",
     "category": "Armor",
@@ -585,8 +573,7 @@
     "slots": 1,
     "protection": 3,
     "statModifiers": {
-      "esquive": -1,
-      "mouvement": -1
+      "esquive": -1
     },
     "specialRuleIds": [
       "encombrant"
