@@ -215,7 +215,22 @@ export const useWarbandStore = defineStore('warband', () => {
         (s) => s.specializationId === 'moine' && s.acquiredTalentIds.includes('ecole_de_l_eau'),
       );
       const hasNoblesse = wb.selectedOriginIds?.includes('noblesse');
+      const hasChevaliersNoirs = wb.selectedOriginIds?.includes('chevaliers_noirs');
+      const hasCompagnieDeFer = wb.selectedOriginIds?.includes('compagnie_de_fer');
       const hasGardesRoyaux = wb.selectedOriginIds?.includes('gardes_royaux');
+      const hasDestructeurs = wb.selectedOriginIds?.includes('destructeurs');
+      const hasGoules = wb.selectedOriginIds?.includes('goules');
+      const hasEsclavagistes = wb.selectedOriginIds?.includes('esclavagistes');
+
+      if (f.type === 'Guerrier' && f.rank === 1 && wb.factionId === 'monstruosite' && !hasEsclavagistes) {
+        errors.push({
+          fighterId: f.id,
+          fighterName: f.name,
+          code: 'MONSTRUOSITE_RANK_1_REQUIRES_ESCLAVAGISTES',
+          message: `La faction Monstruosité ne peut pas recruter de Combattant de Rang 1 sans l'origine Esclavagistes (${f.name}).`,
+          severity: 'Error',
+        });
+      }
 
       for (const eq of f.equippedItems) {
         if (!eq.isMagicItem) {
@@ -228,8 +243,18 @@ export const useWarbandStore = defineStore('warband', () => {
 
             // Effective rank calculation
             let effectiveRank = f.rank;
-            if (item.category === 'Armor' && hasNoblesse) effectiveRank += 1;
+            if (item.category === 'Armor' && (hasNoblesse || hasChevaliersNoirs || hasCompagnieDeFer)) {
+              effectiveRank += 1;
+            }
             if (item.subCategory === 'Arme intermédiaire' && hasGardesRoyaux) effectiveRank += 1;
+            if (
+              hasDestructeurs &&
+              (item.subCategory?.includes('lourde') ||
+                item.subCategory?.includes('Pugilat') ||
+                item.id.includes('pugilat'))
+            ) {
+              effectiveRank += 1;
+            }
             if (
               hasGuerrier &&
               (item.category === 'Shield' ||
@@ -410,6 +435,17 @@ export const useWarbandStore = defineStore('warband', () => {
                 fighterName: f.name,
                 code: 'EXCELLENCE_CANNOT_WEAR_ARMOR',
                 message: `L'Excellence interdit le port d'armure et de bouclier (${item.name} sur ${f.name}).`,
+                severity: 'Error',
+              });
+            }
+
+            // Goules restrictions: Combattants de Rang 1 ne peuvent pas porter de Protection
+            if (hasGoules && f.rank === 1 && (item.category === 'Armor' || item.category === 'Shield')) {
+              errors.push({
+                fighterId: f.id,
+                fighterName: f.name,
+                code: 'GOULES_CANNOT_WEAR_ARMOR',
+                message: `L'origine Goules interdit le port d'armure et de bouclier aux combattants de Rang 1 (${item.name} sur ${f.name}).`,
                 severity: 'Error',
               });
             }

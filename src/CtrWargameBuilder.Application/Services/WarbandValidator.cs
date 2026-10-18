@@ -104,11 +104,18 @@ public class WarbandValidator : IWarbandValidator
 
         var hasMutantsOrigin = warband.SelectedOriginIds.Any(o => string.Equals(o, "mutants", StringComparison.OrdinalIgnoreCase));
         var hasNoblesseOrigin = warband.SelectedOriginIds.Any(o => string.Equals(o, "noblesse", StringComparison.OrdinalIgnoreCase));
+        var hasChevaliersNoirsOrigin = warband.SelectedOriginIds.Any(o => string.Equals(o, "chevaliers_noirs", StringComparison.OrdinalIgnoreCase));
+        var hasCompagnieDeFerOrigin = warband.SelectedOriginIds.Any(o => string.Equals(o, "compagnie_de_fer", StringComparison.OrdinalIgnoreCase));
         var hasGardesRoyauxOrigin = warband.SelectedOriginIds.Any(o => string.Equals(o, "gardes_royaux", StringComparison.OrdinalIgnoreCase));
+        var hasDestructeursOrigin = warband.SelectedOriginIds.Any(o => string.Equals(o, "destructeurs", StringComparison.OrdinalIgnoreCase));
+        var hasGoulesOrigin = warband.SelectedOriginIds.Any(o => string.Equals(o, "goules", StringComparison.OrdinalIgnoreCase));
+        var hasEsclavagistesOrigin = warband.SelectedOriginIds.Any(o => string.Equals(o, "esclavagistes", StringComparison.OrdinalIgnoreCase));
 
         foreach (var fighter in warband.Fighters)
         {
-            ValidateFighter(fighter, warband, faction, ruleset, equipmentDict, specDict, specializationFighterCounts, hasMutantsOrigin, hasNoblesseOrigin, hasGardesRoyauxOrigin, result);
+            ValidateFighter(fighter, warband, faction, ruleset, equipmentDict, specDict, specializationFighterCounts,
+                hasMutantsOrigin, hasNoblesseOrigin, hasChevaliersNoirsOrigin, hasCompagnieDeFerOrigin,
+                hasGardesRoyauxOrigin, hasDestructeursOrigin, hasGoulesOrigin, hasEsclavagistesOrigin, result);
         }
 
         return result;
@@ -158,10 +165,21 @@ public class WarbandValidator : IWarbandValidator
         Dictionary<string, int> specializationFighterCounts,
         bool hasMutantsOrigin,
         bool hasNoblesseOrigin,
+        bool hasChevaliersNoirsOrigin,
+        bool hasCompagnieDeFerOrigin,
         bool hasGardesRoyauxOrigin,
+        bool hasDestructeursOrigin,
+        bool hasGoulesOrigin,
+        bool hasEsclavagistesOrigin,
         ValidationResult result)
     {
         var name = string.IsNullOrWhiteSpace(fighter.CustomName) ? $"Combattant ({fighter.Type} Rang {fighter.Rank})" : fighter.CustomName;
+
+        // Restriction Monstruosité Rang 1 sans Esclavagistes
+        if (string.Equals(faction.Id, "monstruosite", StringComparison.OrdinalIgnoreCase) && fighter.Type == FighterType.Infantry && fighter.Rank == 1 && !hasEsclavagistesOrigin)
+        {
+            result.AddError("MONSTRUOSITE_RANK_1_REQUIRES_ESCLAVAGISTES", $"La faction Monstruosité ne peut pas recruter de Combattant de Rang 1 sans l'origine Esclavagistes ('{name}').", fighter.Id);
+        }
 
         // Restriction Officier
         if (fighter.Role != OfficerRole.None)
@@ -205,8 +223,9 @@ public class WarbandValidator : IWarbandValidator
 
             // Niveau équipement <= Rang effectif
             var effectiveRank = fighter.Rank;
-            if (eq.Category == "Armor" && hasNoblesseOrigin) effectiveRank += 1;
+            if (eq.Category == "Armor" && (hasNoblesseOrigin || hasChevaliersNoirsOrigin || hasCompagnieDeFerOrigin)) effectiveRank += 1;
             if (eq.SubCategory == "Arme intermédiaire" && hasGardesRoyauxOrigin) effectiveRank += 1;
+            if (hasDestructeursOrigin && (eq.SubCategory.Contains("lourde") || eq.SubCategory.Contains("Pugilat") || eq.Id.Contains("pugilat"))) effectiveRank += 1;
 
             // Bonus de rang des Spécialisations
             foreach (var sp in fighter.Specializations)
@@ -315,6 +334,12 @@ public class WarbandValidator : IWarbandValidator
         if ((hasArmor || hasShield) && string.Equals(faction.Id, "excellence", StringComparison.OrdinalIgnoreCase) && !hasGardesRoyauxOrigin)
         {
             result.AddError("ARMOR_FORBIDDEN_FACTION", $"Les combattants de {faction.Name} ne peuvent pas porter d'armure ni de bouclier (sauf Origine Gardes royaux).", fighter.Id);
+        }
+
+        // Restrictions Goules (Rang 1 ne peut pas porter de protection)
+        if ((hasArmor || hasShield) && hasGoulesOrigin && fighter.Rank == 1)
+        {
+            result.AddError("GOULES_CANNOT_WEAR_ARMOR", $"L'origine Goules interdit le port d'armure et de bouclier aux combattants de Rang 1 ('{name}').", fighter.Id);
         }
 
         // Validation XP & Spécialisations

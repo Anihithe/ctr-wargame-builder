@@ -810,4 +810,122 @@ public class WarbandValidationTests
         Assert.True(result.IsValid);
         Assert.DoesNotContain(result.Messages, m => m.Code == "SLOTS_OVERFLOW");
     }
+
+    [Fact]
+    public void Monstruosite_Without_Esclavagistes_Cannot_Recruit_Rank_1()
+    {
+        var warband = new Warband
+        {
+            FactionId = "monstruosite",
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter { CustomName = "Leader", Rank = 2, Role = OfficerRole.Leader },
+                new Fighter { CustomName = "Bras droit", Rank = 2, Role = OfficerRole.BrasDroit },
+                new Fighter { CustomName = "Guerrier R1", Type = FighterType.Infantry, Rank = 1, Role = OfficerRole.None }
+            ]
+        };
+
+        var result = _validator.Validate(warband, _ruleset);
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Messages, m => m.Code == "MONSTRUOSITE_RANK_1_REQUIRES_ESCLAVAGISTES");
+    }
+
+    [Fact]
+    public void Monstruosite_With_Esclavagistes_Can_Recruit_Rank_1()
+    {
+        var warband = new Warband
+        {
+            FactionId = "monstruosite",
+            StartingGold = 10,
+            SelectedOriginIds = ["esclavagistes"],
+            Fighters =
+            [
+                new Fighter { CustomName = "Leader", Rank = 2, Role = OfficerRole.Leader },
+                new Fighter { CustomName = "Bras droit", Rank = 2, Role = OfficerRole.BrasDroit },
+                new Fighter { CustomName = "Esclave R1", Type = FighterType.Infantry, Rank = 1, Role = OfficerRole.None }
+            ]
+        };
+
+        var result = _validator.Validate(warband, _ruleset);
+        Assert.True(result.IsValid);
+        Assert.DoesNotContain(result.Messages, m => m.Code == "MONSTRUOSITE_RANK_1_REQUIRES_ESCLAVAGISTES");
+    }
+
+    [Fact]
+    public void Goules_Rank_1_Cannot_Equip_Armor_Or_Shield()
+    {
+        var warband = new Warband
+        {
+            FactionId = "eternite",
+            StartingGold = 10,
+            SelectedOriginIds = ["goules"],
+            Fighters =
+            [
+                new Fighter { CustomName = "Leader", Rank = 2, Role = OfficerRole.Leader },
+                new Fighter { CustomName = "Bras droit", Rank = 2, Role = OfficerRole.BrasDroit },
+                new Fighter
+                {
+                    CustomName = "Goule R1",
+                    Type = FighterType.Infantry,
+                    Rank = 1,
+                    Role = OfficerRole.None,
+                    Equipments = [new EquippedItem { EquipmentId = "prot_bouclier_1", SlotsOccupied = 1 }]
+                }
+            ]
+        };
+
+        var result = _validator.Validate(warband, _ruleset);
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Messages, m => m.Code == "GOULES_CANNOT_WEAR_ARMOR");
+    }
+
+    [Fact]
+    public void Destructeurs_And_ChevaliersNoirs_Grant_Equipment_Rank_Bonus()
+    {
+        var warbandDestructeurs = new Warband
+        {
+            FactionId = "brutalite",
+            StartingGold = 10,
+            SelectedOriginIds = ["destructeurs"],
+            Fighters =
+            [
+                new Fighter
+                {
+                    CustomName = "Leader",
+                    Rank = 1,
+                    Role = OfficerRole.Leader,
+                    Equipments = [new EquippedItem { EquipmentId = "cac_2m_lourde_2", SlotsOccupied = 2 }]
+                },
+                new Fighter { CustomName = "Bras droit", Rank = 2, Role = OfficerRole.BrasDroit }
+            ]
+        };
+
+        var resultDestructeurs = _validator.Validate(warbandDestructeurs, _ruleset);
+        Assert.True(resultDestructeurs.IsValid);
+        Assert.DoesNotContain(resultDestructeurs.Messages, m => m.Code == "ITEM_LEVEL_TOO_HIGH");
+
+        var warbandChevaliersNoirs = new Warband
+        {
+            FactionId = "eternite",
+            StartingGold = 10,
+            SelectedOriginIds = ["chevaliers_noirs"],
+            Fighters =
+            [
+                new Fighter
+                {
+                    CustomName = "Leader",
+                    Rank = 1,
+                    Role = OfficerRole.Leader,
+                    Equipments = [new EquippedItem { EquipmentId = "prot_armure_2", SlotsOccupied = 0 }]
+                },
+                new Fighter { CustomName = "Bras droit", Rank = 2, Role = OfficerRole.BrasDroit }
+            ]
+        };
+
+        var resultChevaliersNoirs = _validator.Validate(warbandChevaliersNoirs, _ruleset);
+        Assert.True(resultChevaliersNoirs.IsValid);
+        Assert.DoesNotContain(resultChevaliersNoirs.Messages, m => m.Code == "ITEM_LEVEL_TOO_HIGH");
+    }
 }
+

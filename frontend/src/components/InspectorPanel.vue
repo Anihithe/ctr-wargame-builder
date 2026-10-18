@@ -151,6 +151,24 @@ const fighterStats = computed<StatProfile>(() => {
     }
   }
 
+  // Dynamic origin rules
+  if (warband.value?.selectedOriginIds?.includes('goules') && fighter.value.rank === 1) {
+    stats.mouvement += 1;
+  }
+  if (warband.value?.selectedOriginIds?.includes('tueurs')) {
+    const hasArmorOrShield = fighter.value.equippedItems.some((eq) => {
+      if (eq.isMagicItem) return false;
+      const item = rulesetStore.getEquipment(eq.equipmentId);
+      return item?.category === 'Armor' || item?.category === 'Shield';
+    });
+    if (!hasArmorOrShield) {
+      stats.mouvement += 1;
+    }
+  }
+  if (warband.value?.selectedOriginIds?.includes('betes_feroces') && fighter.value.type === 'Animal') {
+    stats.pv += 1;
+  }
+
   // Apply Specialization & Talent modifiers
   const isMage = fighter.value.specializations.some((s) => s.specializationId === 'mage');
   const hasMageDeBataille = fighter.value.specializations.some(
@@ -266,6 +284,93 @@ const currentSlotsUsed = computed(() => {
     }
   }
   return used;
+});
+
+const fighterHasMaitrise = computed(() => {
+  if (!fighter.value || fighter.value.type === 'Animal') return false;
+  // 1. Emplacement libre
+  if (maxSlots.value - currentSlotsUsed.value > 0) return true;
+
+  // 2. Arme niv <= 3 avec accès effectif > 3
+  for (const eq of fighter.value.equippedItems) {
+    if (eq.isMagicItem) continue;
+    const item = rulesetStore.getEquipment(eq.equipmentId);
+    if (!item) continue;
+    if (item.category === 'Melee' || item.category === 'Ranged') {
+      if (item.level <= 3) {
+        let eff = fighter.value.rank;
+        const hasGuerrier = fighter.value.specializations.some((s) => s.specializationId === 'guerrier');
+        const hasBarbare = fighter.value.specializations.some((s) => s.specializationId === 'barbare');
+        const hasGarde = fighter.value.specializations.some((s) => s.specializationId === 'garde');
+        const hasRoublard = fighter.value.specializations.some((s) => s.specializationId === 'roublard');
+        const hasRanger = fighter.value.specializations.some((s) => s.specializationId === 'ranger');
+        const hasIngenieur = fighter.value.specializations.some((s) => s.specializationId === 'ingenieur');
+        const hasMaitreArcher = fighter.value.specializations.some((s) => s.specializationId === 'maitre_archer');
+        const hasTireurElite = fighter.value.specializations.some((s) => s.specializationId === 'tireur_d_elite');
+        const hasGardesRoyaux = warband.value?.selectedOriginIds?.includes('gardes_royaux');
+        const hasDestructeurs = warband.value?.selectedOriginIds?.includes('destructeurs');
+
+        if (item.subCategory === 'Arme intermédiaire' && hasGardesRoyaux) eff += 1;
+        if (
+          hasDestructeurs &&
+          (item.subCategory?.includes('lourde') ||
+            item.subCategory?.includes('Pugilat') ||
+            item.id.includes('pugilat'))
+        ) {
+          eff += 1;
+        }
+        if (
+          hasGuerrier &&
+          (item.subCategory?.includes('intermédiaire') || item.subCategory?.includes('lourde'))
+        ) {
+          eff += 1;
+        }
+        if (
+          hasBarbare &&
+          (item.subCategory?.includes('lourde') ||
+            item.subCategory?.includes('Pugilat') ||
+            item.id.includes('pugilat'))
+        ) {
+          eff += 1;
+        }
+        if (hasGarde && item.category === 'Melee' && item.subCategory?.includes('intermédiaire')) {
+          eff += 1;
+        }
+        if (hasRoublard && item.category === 'Melee' && item.subCategory?.includes('légère')) {
+          eff += 1;
+        }
+        if (
+          hasRanger &&
+          item.category === 'Ranged' &&
+          (item.subCategory?.includes('Arc') ||
+            item.subCategory?.includes('jet') ||
+            item.id.startsWith('tir_2m_arc') ||
+            item.id.startsWith('tir_1m_jet'))
+        ) {
+          eff += 1;
+        }
+        if (hasIngenieur && item.category === 'Ranged') {
+          eff += 1;
+        }
+        if (hasMaitreArcher && (item.subCategory?.includes('Arc') || item.id.startsWith('tir_2m_arc'))) {
+          eff += 1;
+        }
+        if (
+          hasTireurElite &&
+          (item.subCategory?.includes('Arbalète') ||
+            item.subCategory?.includes('poing') ||
+            item.id.startsWith('tir_2m_arbalete') ||
+            item.id.startsWith('tir_1m_poing'))
+        ) {
+          eff += 1;
+        }
+
+        if (eff > 3) return true;
+      }
+    }
+  }
+
+  return false;
 });
 
 // Total armor bonus from equipped items and talents
@@ -497,7 +602,7 @@ function godGiftLabel(stat?: string | null): string {
               <p class="text-grim-300 text-[11px] leading-relaxed">{{ orig.description }}</p>
               <div v-if="orig.modifiers" class="flex flex-wrap gap-1.5 pt-1">
                 <span v-if="orig.modifiers.mouvement" class="px-1.5 py-0.2 rounded bg-grim-900 border border-grim-700 text-[10px] font-mono text-cyan-300">
-                  Mouv {{ orig.modifiers.mouvement > 0 ? `+${orig.modifiers.mouvement}` : orig.modifiers.mouvement }}''
+                  Mouv {{ orig.modifiers.mouvement > 0 ? `+${orig.modifiers.mouvement}` : orig.modifiers.mouvement }}"
                 </span>
                 <span v-if="orig.modifiers.combat" class="px-1.5 py-0.2 rounded bg-grim-900 border border-grim-700 text-[10px] font-mono text-gold-300">
                   Combat {{ orig.modifiers.combat > 0 ? `+${orig.modifiers.combat}` : orig.modifiers.combat }}D
@@ -748,7 +853,7 @@ function godGiftLabel(stat?: string | null): string {
           <div class="grid grid-cols-5 gap-2 text-center">
             <div class="bg-grim-850 border border-grim-800 p-2 rounded">
               <div class="text-[10px] text-grim-400 font-bold uppercase">Mouv</div>
-              <div class="text-base font-mono font-bold text-grim-100">{{ fighterStats.mouvement }}''</div>
+              <div class="text-base font-mono font-bold text-grim-100">{{ fighterStats.mouvement }}"</div>
             </div>
             <div class="bg-grim-850 border border-grim-800 p-2 rounded">
               <div class="text-[10px] text-grim-400 font-bold uppercase">Combat</div>
@@ -863,6 +968,25 @@ function godGiftLabel(stat?: string | null): string {
                 </button>
               </div>
             </div>
+          </div>
+
+          <!-- Maîtrise Status Banner -->
+          <div
+            v-if="fighterHasMaitrise"
+            class="mt-2.5 p-2.5 rounded-lg border bg-amber-950/20 border-amber-500/40 flex items-center justify-between text-xs"
+          >
+            <div class="flex items-center gap-2">
+              <Sword class="w-4 h-4 text-amber-400 shrink-0" />
+              <div>
+                <span class="font-bold text-amber-300">Règle spéciale Maîtrise active</span>
+                <p class="text-[11px] text-grim-300">
+                  Le combattant peut relancer un jet d'attaque par tour (emplacement libre ou arme de niv ≤ 3 avec accès > 3).
+                </p>
+              </div>
+            </div>
+            <span class="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono font-bold border border-amber-500/30 whitespace-nowrap">
+              1 relance / tour
+            </span>
           </div>
         </div>
       </div>
@@ -992,10 +1116,18 @@ function godGiftLabel(stat?: string | null): string {
               <p v-if="!eq.isMagicItem && rulesetStore.getEquipment(eq.equipmentId)" class="text-[11px] text-grim-400">
                 <span v-if="rulesetStore.getEquipment(eq.equipmentId)?.puissance">Puissance: {{ rulesetStore.getEquipment(eq.equipmentId)?.puissance }} | </span>
                 <span v-if="rulesetStore.getEquipment(eq.equipmentId)?.precision">Précision: {{ rulesetStore.getEquipment(eq.equipmentId)?.precision }} | </span>
-                <span v-if="rulesetStore.getEquipment(eq.equipmentId)?.rangeInInches">Portée: {{ rulesetStore.getEquipment(eq.equipmentId)?.rangeInInches }}'' | </span>
-                <span v-if="rulesetStore.getEquipment(eq.equipmentId)?.specialRuleIds?.length">
-                  Règles: {{ rulesetStore.getEquipment(eq.equipmentId)?.specialRuleIds?.join(', ') }}
-                </span>
+                <span v-if="rulesetStore.getEquipment(eq.equipmentId)?.rangeInInches">Portée: {{ rulesetStore.getEquipment(eq.equipmentId)?.rangeInInches }}" | </span>
+                <div v-if="rulesetStore.getEquipment(eq.equipmentId)?.specialRuleIds?.length" class="flex flex-wrap items-center gap-1 mt-1">
+                  <span class="text-[10px] text-grim-400">Règles :</span>
+                  <span
+                    v-for="rid in rulesetStore.getEquipment(eq.equipmentId)?.specialRuleIds"
+                    :key="rid"
+                    class="inline-block px-1.5 py-0.2 text-[10px] rounded bg-grim-800 text-gold-300 border border-grim-700 font-medium cursor-help"
+                    :title="rulesetStore.getSpecialRule(rid)?.description || rid"
+                  >
+                    {{ rulesetStore.getSpecialRule(rid)?.name || rid }}
+                  </span>
+                </div>
               </p>
             </div>
 
@@ -1168,7 +1300,7 @@ function godGiftLabel(stat?: string | null): string {
                 <span class="text-[10px] px-1.5 py-0.2 rounded font-mono font-bold bg-cyan-950 text-cyan-300 border border-cyan-800">
                   Niv. {{ rulesetStore.getSpell(spellId)?.level }}
                 </span>
-                <span class="text-[10px] text-grim-400">Portée: {{ rulesetStore.getSpell(spellId)?.rangeInInches }}''</span>
+                <span class="text-[10px] text-grim-400">Portée: {{ rulesetStore.getSpell(spellId)?.rangeInInches }}"</span>
               </div>
               <p class="text-[11px] text-grim-300 leading-relaxed">{{ rulesetStore.getSpell(spellId)?.description }}</p>
             </div>
