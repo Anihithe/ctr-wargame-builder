@@ -2,6 +2,7 @@ using CtrWargameBuilder.Application.Services;
 using CtrWargameBuilder.Domain.Entities;
 using CtrWargameBuilder.Domain.Enums;
 using CtrWargameBuilder.Domain.Models.Ruleset;
+using CtrWargameBuilder.Domain.Validation;
 using CtrWargameBuilder.Infrastructure.Services;
 using Xunit;
 
@@ -147,6 +148,45 @@ public class WarbandValidationTests
         // Assert
         Assert.False(result.IsValid);
         Assert.Contains(result.Messages, m => m.Code == "WARBAND_SIZE_EXCEEDED");
+    }
+
+    [Fact]
+    public void Reserve_And_Graveyard_Fighters_ShouldNot_Count_Toward_Budget_Or_Roster_Limit()
+    {
+        // Arrange : 10 combattants actifs (10 PO) + 2 en réserve (4 PO) + 1 au cimetière (3 PO)
+        // Le budget est de 10 PO : la bande doit être valide car les inactifs sont exclus du calcul.
+        var warband = new Warband
+        {
+            FactionId = "alliance",
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter { CustomName = "Leader", Rank = 1, Role = OfficerRole.Leader, Status = FighterStatus.Active },
+                new Fighter { CustomName = "Bras droit", Rank = 1, Role = OfficerRole.BrasDroit, Status = FighterStatus.Active },
+                new Fighter { CustomName = "Soldat 1", Rank = 1, Status = FighterStatus.Active },
+                new Fighter { CustomName = "Soldat 2", Rank = 1, Status = FighterStatus.Active },
+                new Fighter { CustomName = "Soldat 3", Rank = 1, Status = FighterStatus.Active },
+                new Fighter { CustomName = "Soldat 4", Rank = 1, Status = FighterStatus.Active },
+                new Fighter { CustomName = "Soldat 5", Rank = 1, Status = FighterStatus.Active },
+                new Fighter { CustomName = "Soldat 6", Rank = 1, Status = FighterStatus.Active },
+                new Fighter { CustomName = "Soldat 7", Rank = 1, Status = FighterStatus.Active },
+                new Fighter { CustomName = "Soldat 8", Rank = 1, Status = FighterStatus.Active },
+
+                // En Réserve (hors table)
+                new Fighter { CustomName = "Réserve 1", Rank = 2, Status = FighterStatus.Reserve },
+                new Fighter { CustomName = "Réserve 2", Rank = 2, Status = FighterStatus.Reserve },
+
+                // Au Cimetière (mort en campagne)
+                new Fighter { CustomName = "Ancien Leader Tombé", Rank = 3, Role = OfficerRole.Leader, Status = FighterStatus.Graveyard }
+            ]
+        };
+
+        // Act
+        var result = _validator.Validate(warband, _ruleset);
+
+        // Assert
+        Assert.True(result.IsValid);
+        Assert.DoesNotContain(result.Messages, m => m.Severity == ValidationSeverity.Error);
     }
 
     [Fact]

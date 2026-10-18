@@ -33,46 +33,47 @@ public class WarbandValidator : IWarbandValidator
             result.AddError("ORIGINS_LIMIT_EXCEEDED", $"La Faction {faction.Name} autorise au maximum {maxOrigins} Origines (actuel : {warband.SelectedOriginIds.Count}).");
         }
 
-        // 3. Effectif de la Bande (1 combattant = 1 place)
+        // 3. Effectif de la Bande active sur table
+        var activeFighters = warband.Fighters.Where(f => f.Status == FighterStatus.Active).ToList();
         var maxFighters = ruleset.Config.MaxWarbandMembersStandard;
-        if (warband.Fighters.Count > maxFighters)
+        if (activeFighters.Count > maxFighters)
         {
-            result.AddError("WARBAND_SIZE_EXCEEDED", $"La bande dépasse le nombre maximal de combattants ({warband.Fighters.Count}/{maxFighters}).");
+            result.AddError("WARBAND_SIZE_EXCEEDED", $"La bande active dépasse le nombre maximal de combattants sur table ({activeFighters.Count}/{maxFighters}).");
         }
 
-        // 4. Budget PO
+        // 4. Budget PO (combattants actifs sur table uniquement)
         var totalGoldSpent = CalculateTotalGold(warband, ruleset);
         if (totalGoldSpent > warband.StartingGold)
         {
             result.AddError("BUDGET_EXCEEDED", $"Budget en Pièces d'Or dépassé : {totalGoldSpent} PO dépensées pour un budget de {warband.StartingGold} PO.");
         }
 
-        // 5. Validation des Officiers
-        var leaders = warband.Fighters.Where(f => f.Role == OfficerRole.Leader).ToList();
-        var brasDroits = warband.Fighters.Where(f => f.Role == OfficerRole.BrasDroit).ToList();
+        // 5. Validation des Officiers actifs sur table
+        var leaders = activeFighters.Where(f => f.Role == OfficerRole.Leader).ToList();
+        var brasDroits = activeFighters.Where(f => f.Role == OfficerRole.BrasDroit).ToList();
 
         if (leaders.Count != 1)
         {
-            result.AddError("LEADER_REQUIRED", $"La bande doit avoir exactement 1 Leader (actuel : {leaders.Count}).");
+            result.AddError("LEADER_REQUIRED", $"La bande active doit comporter exactement 1 Leader (actuel : {leaders.Count}).");
         }
 
-        if (brasDroits.Count != 1)
+        if (brasDroits.Count > 1)
         {
-            result.AddError("BRAS_DROIT_REQUIRED", $"La bande doit avoir exactement 1 Bras droit (actuel : {brasDroits.Count}).");
+            result.AddError("BRAS_DROIT_LIMIT_EXCEEDED", $"La bande ne peut avoir qu'un seul Bras droit actif (actuel : {brasDroits.Count}).");
         }
 
-        // 6. Quotas Spéciaux (Monstres et Animaux)
-        var monsterCount = warband.Fighters.Count(f => f.Type == FighterType.Monster);
+        // 6. Quotas Spéciaux (Monstres et Animaux sur table)
+        var monsterCount = activeFighters.Count(f => f.Type == FighterType.Monster);
         var maxMonsters = faction.UnlimitedMonsters ? int.MaxValue : ruleset.Config.MaxMonsters;
         if (monsterCount > maxMonsters)
         {
-            result.AddError("MONSTERS_LIMIT_EXCEEDED", $"La bande ne peut recruter que {ruleset.Config.MaxMonsters} Monstre au maximum (actuel : {monsterCount}).");
+            result.AddError("MONSTERS_LIMIT_EXCEEDED", $"La bande ne peut recruter que {ruleset.Config.MaxMonsters} Monstre au maximum sur table (actuel : {monsterCount}).");
         }
 
-        var animalCount = warband.Fighters.Count(f => f.Type == FighterType.Animal);
+        var animalCount = activeFighters.Count(f => f.Type == FighterType.Animal);
         if (animalCount > ruleset.Config.MaxAnimals)
         {
-            result.AddError("ANIMALS_LIMIT_EXCEEDED", $"La bande ne peut contenir que {ruleset.Config.MaxAnimals} Animaux au maximum (actuel : {animalCount}).");
+            result.AddError("ANIMALS_LIMIT_EXCEEDED", $"La bande ne peut recruter que {ruleset.Config.MaxAnimals} Animaux au maximum sur table (actuel : {animalCount}).");
         }
 
         // 7. Validation par Combattant
@@ -113,7 +114,7 @@ public class WarbandValidator : IWarbandValidator
             .GroupBy(e => e.Id, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
 
-        foreach (var fighter in warband.Fighters)
+        foreach (var fighter in warband.Fighters.Where(f => f.Status == FighterStatus.Active))
         {
             // Coût de la figurine selon type et rang
             if (fighter.Type == FighterType.Monster)

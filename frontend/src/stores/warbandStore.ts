@@ -1,9 +1,9 @@
 import { defineStore } from 'pinia';
 import { ref, computed, watch } from 'vue';
-import type { Warband, Fighter, EquippedItem, FighterType, OfficerRole, ValidationResult, ValidationError } from '@/types/warband';
+import type { Warband, Fighter, EquippedItem, FighterType, OfficerRole, FighterStatus, ValidationResult, ValidationError } from '@/types/warband';
 import { useRulesetStore } from './rulesetStore';
 
-const STORAGE_KEY = 'ctr_wargame_warbands_v1';
+const STORAGE_KEY = 'ctr_wargame_warbands_v2';
 const ACTIVE_WARBAND_KEY = 'ctr_wargame_active_id';
 
 function generateId(): string {
@@ -21,12 +21,23 @@ export const useWarbandStore = defineStore('warband', () => {
   const isSyncing = ref<boolean>(false);
   const serverValidation = ref<ValidationResult | null>(null);
 
-  // Initialize from LocalStorage
+  // Initialize from LocalStorage (with backward-compatible data migrations)
   function initFromStorage() {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('ctr_wargame_warbands_v1');
       if (stored) {
-        warbands.value = JSON.parse(stored);
+        const rawList = JSON.parse(stored);
+        warbands.value = rawList.map((wb: any) => ({
+          ...wb,
+          selectedOriginIds: Array.isArray(wb.selectedOriginIds)
+            ? wb.selectedOriginIds
+            : wb.originId ? [wb.originId] : [],
+          fighters: (wb.fighters || []).map((f: any) => ({
+            ...f,
+            status: f.status || 'Active',
+            officerRole: (f.officerRole === 'Officier' ? 'Leader' : f.officerRole === 'Second' ? 'BrasDroit' : f.officerRole) || 'None',
+          })),
+        }));
       }
       const activeId = localStorage.getItem(ACTIVE_WARBAND_KEY);
       if (activeId && warbands.value.some((w) => w.id === activeId)) {
@@ -79,9 +90,12 @@ export const useWarbandStore = defineStore('warband', () => {
         isValid: true,
         totalCostPo: 0,
         budgetPo: 10,
-        totalFighters: 0,
+        totalActiveFighters: 0,
+        totalReserveFighters: 0,
+        totalGraveyardFighters: 0,
         maxFighters: 10,
-        officerCount: 0,
+        leaderCount: 0,
+        brasDroitCount: 0,
         errors: [],
       };
     }
@@ -91,12 +105,19 @@ export const useWarbandStore = defineStore('warband', () => {
     const maxMembers = rulesetStore.config.maxWarbandMembersStandard || 10;
     const slotsConfig = rulesetStore.config.slotsByRank || { '1': 2, '2': 2, '3': 3, '4': 4 };
 
+    // Separate fighters by status
+    const activeFighters = wb.fighters.filter((f) => (f.status || 'Active') === 'Active');
+    const reserveFighters = wb.fighters.filter((f) => f.status === 'Reserve');
+    const graveyardFighters = wb.fighters.filter((f) => f.status === 'Graveyard');
+
     let totalCost = 0;
-    let officerCount = 0;
+    let leaderCount = 0;
+    let brasDroitCount = 0;
     let rank3Count = 0;
     let monsterCount = 0;
 
-    for (const f of wb.fighters) {
+    // Check only ACTIVE fighters for table budget and limits
+    for (const f of activeFighters) {
       let cost = 0;
       if (f.type === 'Guerrier') {
         cost = f.rank;
@@ -109,14 +130,25 @@ export const useWarbandStore = defineStore('warband', () => {
       }
       totalCost += cost;
 
-      if (f.officerRole !== 'None') {
-        officerCount++;
+      if (f.officerRole === 'Leader') {
+        leaderCount++;
         if (f.type === 'Monstre' && !faction?.canHaveMonstersAsOfficers) {
           errors.push({
             fighterId: f.id,
             fighterName: f.name,
             code: 'MONSTER_CANNOT_BE_OFFICER',
-            message: `Le monstre "${f.name}" ne peut pas être un Officier pour cette faction.`,
+            message: `Le monstre "${f.name}" ne peut pas être un Leader pour cette faction.`,
+            severity: 'Error',
+          });
+        }
+      } else if (f.officerRole === 'BrasDroit') {
+        brasDroitCount++;
+        if (f.type === 'Monstre' && !faction?.canHaveMonstersAsOfficers) {
+          errors.push({
+            fighterId: f.id,
+            fighterName: f.name,
+            code: 'MONSTER_CANNOT_BE_OFFICER',
+            message: `Le monstre "${f.name}" ne peut pas être un Bras droit pour cette faction.`,
             severity: 'Error',
           });
         }
@@ -161,13 +193,12 @@ export const useWarbandStore = defineStore('warband', () => {
             }
           }
         } else {
-          // Magic item at creation check
           if (!wb.allowMagicItemsAtCreation) {
             errors.push({
               fighterId: f.id,
               fighterName: f.name,
               code: 'MAGIC_ITEM_AT_CREATION_LOCKED',
-              message: `Objet magique équipé sur ${f.name} sans autorisation de création en campagne.`,
+              message: `Objet magique équipé sur ${f.name} sans déblocage explicite de campagne.`,
               severity: 'Error',
             });
           }
@@ -189,32 +220,40 @@ export const useWarbandStore = defineStore('warband', () => {
     if (totalCost > wb.startingGoldPo) {
       errors.push({
         code: 'BUDGET_EXCEEDED',
-        message: `Coût total (${totalCost} PO) supérieur au budget alloué (${wb.startingGoldPo} PO).`,
+        message: `Coût total actif (${totalCost} PO) supérieur au budget alloué (${wb.startingGoldPo} PO).`,
         severity: 'Error',
       });
     }
 
-    // Max members check (1 fighter = 1 slot)
-    if (wb.fighters.length > maxMembers) {
+    // Max active members check
+    if (activeFighters.length > maxMembers) {
       errors.push({
         code: 'MAX_FIGHTERS_EXCEEDED',
-        message: `La bande compte ${wb.fighters.length} combattants (maximum autorisé: ${maxMembers}).`,
+        message: `La bande active compte ${activeFighters.length} combattants sur table (maximum autorisé: ${maxMembers}).`,
         severity: 'Error',
       });
     }
 
-    // Officer requirement
-    if (officerCount === 0 && wb.fighters.length > 0) {
+    // Officers constraints: Max 1 Leader, Max 1 Bras Droit
+    if (leaderCount > 1) {
       errors.push({
-        code: 'NO_OFFICER',
-        message: 'La bande doit comporter au moins un Officier ou Meneur.',
+        code: 'LEADER_LIMIT_EXCEEDED',
+        message: `La bande compte ${leaderCount} Leaders actifs (maximum 1 seul Leader autorisé).`,
+        severity: 'Error',
+      });
+    } else if (leaderCount === 0 && activeFighters.length > 0) {
+      errors.push({
+        code: 'LEADER_REQUIRED',
+        message: 'La bande doit comporter un Leader désigné.',
         severity: 'Warning',
       });
-    } else if (officerCount > 1) {
+    }
+
+    if (brasDroitCount > 1) {
       errors.push({
-        code: 'MULTIPLE_OFFICERS',
-        message: `La bande a ${officerCount} officiers désignés (1 seul Officier principal autorisé).`,
-        severity: 'Warning',
+        code: 'BRAS_DROIT_LIMIT_EXCEEDED',
+        message: `La bande compte ${brasDroitCount} Bras droits actifs (maximum 1 seul Bras droit autorisé).`,
+        severity: 'Error',
       });
     }
 
@@ -222,7 +261,7 @@ export const useWarbandStore = defineStore('warband', () => {
     if (rank3Count > 2) {
       errors.push({
         code: 'RANK3_QUOTA_EXCEEDED',
-        message: `La bande compte ${rank3Count} combattants de Rang 3 (maximum standard: 2).`,
+        message: `La bande compte ${rank3Count} combattants de Rang 3 actifs (maximum standard: 2).`,
         severity: 'Error',
       });
     }
@@ -230,7 +269,17 @@ export const useWarbandStore = defineStore('warband', () => {
     if (monsterCount > 1 && !faction?.unlimitedMonsters) {
       errors.push({
         code: 'MONSTER_QUOTA_EXCEEDED',
-        message: `La bande compte ${monsterCount} monstres (maximum standard: 1).`,
+        message: `La bande compte ${monsterCount} monstres actifs (maximum standard: 1).`,
+        severity: 'Error',
+      });
+    }
+
+    // Origins count check
+    const maxOrigins = faction?.allowedOriginsCount || 2;
+    if (wb.selectedOriginIds && wb.selectedOriginIds.length > maxOrigins) {
+      errors.push({
+        code: 'ORIGINS_LIMIT_EXCEEDED',
+        message: `La faction ${faction?.name} autorise au maximum ${maxOrigins} Origines (${wb.selectedOriginIds.length} sélectionnées).`,
         severity: 'Error',
       });
     }
@@ -241,20 +290,24 @@ export const useWarbandStore = defineStore('warband', () => {
       isValid: !hasErrors,
       totalCostPo: totalCost,
       budgetPo: wb.startingGoldPo,
-      totalFighters: wb.fighters.length,
+      totalActiveFighters: activeFighters.length,
+      totalReserveFighters: reserveFighters.length,
+      totalGraveyardFighters: graveyardFighters.length,
       maxFighters: maxMembers,
-      officerCount,
+      leaderCount,
+      brasDroitCount,
       errors,
     };
   });
 
-  // Create new Warband (faction immutable, gold adjustable)
+  // Create new Warband
   function createWarband(name: string, factionId: string, startingGoldPo = 10, notes = ''): Warband {
     const newWb: Warband = {
       id: generateId(),
       name: name.trim() || 'Nouvelle Bande',
       rulesetVersion: rulesetStore.activeVersion || '0.8',
       factionId,
+      selectedOriginIds: [],
       startingGoldPo,
       currentGoldPo: startingGoldPo,
       allowMagicItemsAtCreation: false,
@@ -269,7 +322,6 @@ export const useWarbandStore = defineStore('warband', () => {
     selectedFighterId.value = null;
 
     syncWarbandWithBackend(newWb);
-
     return newWb;
   }
 
@@ -321,13 +373,46 @@ export const useWarbandStore = defineStore('warband', () => {
     syncWarbandWithBackend(currentWarband.value);
   }
 
+  // Toggle Origin selection
+  function toggleOrigin(originId: string) {
+    if (!currentWarband.value) return;
+    const faction = rulesetStore.getFaction(currentWarband.value.factionId);
+    const maxOrigins = faction?.allowedOriginsCount || 2;
+
+    if (!Array.isArray(currentWarband.value.selectedOriginIds)) {
+      currentWarband.value.selectedOriginIds = [];
+    }
+
+    const idx = currentWarband.value.selectedOriginIds.indexOf(originId);
+    if (idx !== -1) {
+      currentWarband.value.selectedOriginIds.splice(idx, 1);
+    } else {
+      if (currentWarband.value.selectedOriginIds.length < maxOrigins) {
+        currentWarband.value.selectedOriginIds.push(originId);
+      }
+    }
+
+    currentWarband.value.updatedAt = new Date().toISOString();
+    syncWarbandWithBackend(currentWarband.value);
+  }
+
   // Fighter CRUD
-  function addFighter(type: FighterType, rank: number, subTypeId?: string, defaultName?: string): Fighter | null {
+  function addFighter(
+    type: FighterType,
+    rank: number,
+    subTypeId?: string,
+    role: OfficerRole = 'None',
+    defaultName?: string
+  ): Fighter | null {
     if (!currentWarband.value) return null;
 
     let name = defaultName;
     if (!name) {
-      if (type === 'Monstre') {
+      if (role === 'Leader') {
+        name = `Leader (${type === 'Guerrier' ? `Rang ${rank}` : type})`;
+      } else if (role === 'BrasDroit') {
+        name = `Bras droit (${type === 'Guerrier' ? `Rang ${rank}` : type})`;
+      } else if (type === 'Monstre') {
         const m = rulesetStore.getMonster(subTypeId || '');
         name = m?.name || 'Monstre';
       } else if (type === 'Animal') {
@@ -337,9 +422,6 @@ export const useWarbandStore = defineStore('warband', () => {
       }
     }
 
-    const hasOfficer = currentWarband.value.fighters.some((f) => f.officerRole === 'Officier');
-    const role: OfficerRole = !hasOfficer && type === 'Guerrier' ? 'Officier' : 'None';
-
     const fighter: Fighter = {
       id: generateId(),
       warbandId: currentWarband.value.id,
@@ -348,6 +430,8 @@ export const useWarbandStore = defineStore('warband', () => {
       rank,
       subTypeId,
       officerRole: role,
+      status: 'Active',
+      allocatedXp: role === 'Leader' ? 12 : role === 'BrasDroit' ? 6 : 0,
       equippedItems: [],
       specializations: [],
       knownSpellIds: [],
@@ -359,6 +443,31 @@ export const useWarbandStore = defineStore('warband', () => {
     syncWarbandWithBackend(currentWarband.value);
 
     return fighter;
+  }
+
+  function setFighterStatus(fighterId: string, status: FighterStatus) {
+    if (!currentWarband.value) return;
+    const fighter = currentWarband.value.fighters.find((f) => f.id === fighterId);
+    if (fighter) {
+      fighter.status = status;
+      currentWarband.value.updatedAt = new Date().toISOString();
+      syncWarbandWithBackend(currentWarband.value);
+    }
+  }
+
+  function setFighterRole(fighterId: string, role: OfficerRole) {
+    if (!currentWarband.value) return;
+    const fighter = currentWarband.value.fighters.find((f) => f.id === fighterId);
+    if (fighter) {
+      fighter.officerRole = role;
+      if (role === 'Leader' && (!fighter.allocatedXp || fighter.allocatedXp < 12)) {
+        fighter.allocatedXp = 12;
+      } else if (role === 'BrasDroit' && (!fighter.allocatedXp || fighter.allocatedXp < 6)) {
+        fighter.allocatedXp = 6;
+      }
+      currentWarband.value.updatedAt = new Date().toISOString();
+      syncWarbandWithBackend(currentWarband.value);
+    }
   }
 
   function removeFighter(fighterId: string) {
@@ -382,7 +491,9 @@ export const useWarbandStore = defineStore('warband', () => {
     const copy: Fighter = JSON.parse(JSON.stringify(original));
     copy.id = generateId();
     copy.name = `${original.name} (Bis)`;
-    if (copy.officerRole === 'Officier') copy.officerRole = 'None';
+    // Never duplicate officer roles
+    copy.officerRole = 'None';
+    copy.allocatedXp = 0;
 
     for (const eq of copy.equippedItems) {
       eq.id = generateId();
@@ -538,7 +649,10 @@ export const useWarbandStore = defineStore('warband', () => {
     deleteWarband,
     duplicateWarband,
     updateWarband,
+    toggleOrigin,
     addFighter,
+    setFighterStatus,
+    setFighterRole,
     removeFighter,
     duplicateFighter,
     updateFighter,
