@@ -151,10 +151,48 @@ public class WarbandValidationTests
     }
 
     [Fact]
-    public void Reserve_And_Graveyard_Fighters_ShouldNot_Count_Toward_Budget_Or_Roster_Limit()
+    public void Reserve_And_Graveyard_Fighters_ShouldNot_Count_Toward_Roster_Limit_But_Count_Toward_Budget()
     {
-        // Arrange : 10 combattants actifs (10 PO) + 2 en réserve (4 PO) + 1 au cimetière (3 PO)
-        // Le budget est de 10 PO : la bande doit être valide car les inactifs sont exclus du calcul.
+        // Arrange : 10 combattants actifs (10 PO) + 2 en réserve (4 PO) + 1 au cimetière (3 PO) = 17 PO
+        // Le budget est de 20 PO : la bande est valide car l'effectif sur table est de 10 (max) et le coût total 17 PO <= 20 PO.
+        var warband = new Warband
+        {
+            FactionId = "alliance",
+            StartingGold = 20,
+            Fighters =
+            [
+                new Fighter { CustomName = "Leader", Rank = 1, Role = OfficerRole.Leader, Status = FighterStatus.Active },
+                new Fighter { CustomName = "Bras droit", Rank = 1, Role = OfficerRole.BrasDroit, Status = FighterStatus.Active },
+                new Fighter { CustomName = "Soldat 1", Rank = 1, Status = FighterStatus.Active },
+                new Fighter { CustomName = "Soldat 2", Rank = 1, Status = FighterStatus.Active },
+                new Fighter { CustomName = "Soldat 3", Rank = 1, Status = FighterStatus.Active },
+                new Fighter { CustomName = "Soldat 4", Rank = 1, Status = FighterStatus.Active },
+                new Fighter { CustomName = "Soldat 5", Rank = 1, Status = FighterStatus.Active },
+                new Fighter { CustomName = "Soldat 6", Rank = 1, Status = FighterStatus.Active },
+                new Fighter { CustomName = "Soldat 7", Rank = 1, Status = FighterStatus.Active },
+                new Fighter { CustomName = "Soldat 8", Rank = 1, Status = FighterStatus.Active },
+
+                // En Réserve (hors table, 4 PO)
+                new Fighter { CustomName = "Réserve 1", Rank = 2, Status = FighterStatus.Reserve },
+                new Fighter { CustomName = "Réserve 2", Rank = 2, Status = FighterStatus.Reserve },
+
+                // Au Cimetière (mort en campagne, 3 PO)
+                new Fighter { CustomName = "Ancien Leader Tombé", Rank = 3, Role = OfficerRole.Leader, Status = FighterStatus.Graveyard }
+            ]
+        };
+
+        // Act
+        var result = _validator.Validate(warband, _ruleset);
+
+        // Assert
+        Assert.True(result.IsValid);
+        Assert.DoesNotContain(result.Messages, m => m.Severity == ValidationSeverity.Error);
+    }
+
+    [Fact]
+    public void Reserve_And_Graveyard_Fighters_Exceeding_Budget_ShouldFail_Validation()
+    {
+        // Arrange : 10 combattants actifs (10 PO) + 2 en réserve (4 PO) = 14 PO total pour un budget de 10 PO
         var warband = new Warband
         {
             FactionId = "alliance",
@@ -171,13 +209,8 @@ public class WarbandValidationTests
                 new Fighter { CustomName = "Soldat 6", Rank = 1, Status = FighterStatus.Active },
                 new Fighter { CustomName = "Soldat 7", Rank = 1, Status = FighterStatus.Active },
                 new Fighter { CustomName = "Soldat 8", Rank = 1, Status = FighterStatus.Active },
-
-                // En Réserve (hors table)
                 new Fighter { CustomName = "Réserve 1", Rank = 2, Status = FighterStatus.Reserve },
-                new Fighter { CustomName = "Réserve 2", Rank = 2, Status = FighterStatus.Reserve },
-
-                // Au Cimetière (mort en campagne)
-                new Fighter { CustomName = "Ancien Leader Tombé", Rank = 3, Role = OfficerRole.Leader, Status = FighterStatus.Graveyard }
+                new Fighter { CustomName = "Réserve 2", Rank = 2, Status = FighterStatus.Reserve }
             ]
         };
 
@@ -185,8 +218,77 @@ public class WarbandValidationTests
         var result = _validator.Validate(warband, _ruleset);
 
         // Assert
-        Assert.True(result.IsValid);
-        Assert.DoesNotContain(result.Messages, m => m.Severity == ValidationSeverity.Error);
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Messages, m => m.Code == "BUDGET_EXCEEDED");
+    }
+
+    [Fact]
+    public void Missing_BrasDroit_ShouldFail_Validation()
+    {
+        // Arrange
+        var warband = new Warband
+        {
+            FactionId = "alliance",
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter { CustomName = "Leader", Rank = 2, Role = OfficerRole.Leader }
+            ]
+        };
+
+        // Act
+        var result = _validator.Validate(warband, _ruleset);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Messages, m => m.Code == "BRAS_DROIT_REQUIRED");
+    }
+
+    [Fact]
+    public void Missing_Both_Officers_ShouldFail_Validation()
+    {
+        // Arrange
+        var warband = new Warband
+        {
+            FactionId = "alliance",
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter { CustomName = "Soldat", Rank = 2, Role = OfficerRole.None }
+            ]
+        };
+
+        // Act
+        var result = _validator.Validate(warband, _ruleset);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Messages, m => m.Code == "LEADER_REQUIRED");
+        Assert.Contains(result.Messages, m => m.Code == "BRAS_DROIT_REQUIRED");
+    }
+
+    [Fact]
+    public void Too_Many_BrasDroits_ShouldFail_Validation()
+    {
+        // Arrange
+        var warband = new Warband
+        {
+            FactionId = "alliance",
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter { CustomName = "Leader", Rank = 1, Role = OfficerRole.Leader },
+                new Fighter { CustomName = "Bras droit 1", Rank = 1, Role = OfficerRole.BrasDroit },
+                new Fighter { CustomName = "Bras droit 2", Rank = 1, Role = OfficerRole.BrasDroit }
+            ]
+        };
+
+        // Act
+        var result = _validator.Validate(warband, _ruleset);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Messages, m => m.Code == "BRAS_DROIT_LIMIT_EXCEEDED");
     }
 
     [Fact]
