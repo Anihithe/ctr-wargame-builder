@@ -15,9 +15,6 @@ Ce répertoire contient toute la documentation fonctionnelle et technique du war
 - [**01-architecture-globale.md**](./technical/01-architecture-globale.md) : Architecture de la solution (.NET 10 Web API, SQLite, Vue.js 3, Authentification & Persistance hybride).
 - [**02-systeme-rulesets.md**](./technical/02-systeme-rulesets.md) : Gestion du versioning des règles (fichiers JSON versionnés V0.8, V0.9, drapeau Live et migration).
 
-### 3. Suivi de Projet & Démarche IA (`docs/`)
-- [**RETEX-DEMARCHE-IA.md**](./RETEX-DEMARCHE-IA.md) : Analyse complète de la démarche méthodologique, bilan des actions passées et futures, problèmes résolus, arbitrages et capitalisation de compétences IA.
-
 ---
 
 ## 🎯 Objectifs principaux du projet

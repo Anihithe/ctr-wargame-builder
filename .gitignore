@@ -32,3 +32,13 @@ frontend/vite.config.d.ts
 docs/rules_pdf/
 rules_pdf/
 
+# Local run & environment scripts (machine-specific)
+*.sh
+dev.sh
+start.sh
+frontend/dev-env.sh
+
+# Personal / Internal documentation
+docs/RETEX-DEMARCHE-IA.md
+RETEX*.md
+
