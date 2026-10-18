@@ -434,7 +434,7 @@ export const useWarbandStore = defineStore('warband', () => {
   }
 
   function applyAllegianceBonuses(wb: Warband) {
-    if (wb.allegianceId === 'conclave_des_mages') {
+    if (wb.allegianceId === 'conclave_des_mages' && wb.selectedAllegianceRuleName === 'Érudits') {
       for (const f of wb.fighters) {
         if (f.officerRole !== 'None') {
           const mageSpec = f.specializations.find((s) => s.specializationId === 'mage');
@@ -444,6 +444,44 @@ export const useWarbandStore = defineStore('warband', () => {
         }
       }
     }
+  }
+
+  function selectAllegianceRule(ruleName: string) {
+    if (!currentWarband.value) return;
+    const oldRule = currentWarband.value.selectedAllegianceRuleName;
+    if (oldRule === ruleName) return;
+
+    if (currentWarband.value.allegianceId === 'conclave_des_mages' && oldRule === 'Érudits') {
+      for (const f of currentWarband.value.fighters) {
+        const mageSpec = f.specializations.find((s) => s.specializationId === 'mage');
+        if (mageSpec) {
+          mageSpec.acquiredTalentIds = mageSpec.acquiredTalentIds.filter((id) => id !== 'incantation_maitrisee');
+        }
+      }
+    }
+
+    currentWarband.value.selectedAllegianceRuleName = ruleName;
+    applyAllegianceBonuses(currentWarband.value);
+    currentWarband.value.updatedAt = new Date().toISOString();
+    syncWarbandWithBackend(currentWarband.value);
+  }
+
+  function unselectAllegianceRule() {
+    if (!currentWarband.value) return;
+    const oldRule = currentWarband.value.selectedAllegianceRuleName;
+
+    if (currentWarband.value.allegianceId === 'conclave_des_mages' && oldRule === 'Érudits') {
+      for (const f of currentWarband.value.fighters) {
+        const mageSpec = f.specializations.find((s) => s.specializationId === 'mage');
+        if (mageSpec) {
+          mageSpec.acquiredTalentIds = mageSpec.acquiredTalentIds.filter((id) => id !== 'incantation_maitrisee');
+        }
+      }
+    }
+
+    currentWarband.value.selectedAllegianceRuleName = undefined;
+    currentWarband.value.updatedAt = new Date().toISOString();
+    syncWarbandWithBackend(currentWarband.value);
   }
 
   function updateWarband(patch: Partial<Warband>) {
@@ -653,6 +691,7 @@ export const useWarbandStore = defineStore('warband', () => {
       };
       if (
         currentWarband.value.allegianceId === 'conclave_des_mages' &&
+        currentWarband.value.selectedAllegianceRuleName === 'Érudits' &&
         fighter.officerRole !== 'None' &&
         specializationId === 'mage'
       ) {
@@ -664,6 +703,7 @@ export const useWarbandStore = defineStore('warband', () => {
     if (talentId) {
       if (
         currentWarband.value.allegianceId === 'conclave_des_mages' &&
+        currentWarband.value.selectedAllegianceRuleName === 'Érudits' &&
         fighter.officerRole !== 'None' &&
         talentId === 'incantation_maitrisee'
       ) {
@@ -784,6 +824,8 @@ export const useWarbandStore = defineStore('warband', () => {
     duplicateWarband,
     updateWarband,
     toggleOrigin,
+    selectAllegianceRule,
+    unselectAllegianceRule,
     addFighter,
     setFighterStatus,
     setFighterRole,
