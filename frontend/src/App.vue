@@ -2,8 +2,7 @@
 import { ref, onMounted } from 'vue';
 import { useWarbandStore } from '@/stores/warbandStore';
 import { useRulesetStore } from '@/stores/rulesetStore';
-import Navbar from '@/components/Navbar.vue';
-import WarbandHeader from '@/components/WarbandHeader.vue';
+import AppHeader from '@/components/AppHeader.vue';
 import FighterList from '@/components/FighterList.vue';
 import InspectorPanel from '@/components/InspectorPanel.vue';
 import CreateWarbandModal from '@/components/CreateWarbandModal.vue';
@@ -48,16 +47,14 @@ function openSpellModal(fighterId: string) {
 
 <template>
   <div class="min-h-screen bg-grim-950 text-grim-100 flex flex-col font-sans">
-    <!-- Main Top Navbar -->
-    <Navbar
+    <!-- Unified Persistent App Header -->
+    <AppHeader
       @open-create="showCreateModal = true"
       @open-migration="showMigrationModal = true"
     />
 
     <!-- Main Content Area -->
     <main class="flex-1 flex flex-col">
-      <!-- Warband Top Header (Meters, Selectors, Budget) -->
-      <WarbandHeader v-if="warbandStore.currentWarband" />
 
       <!-- If no warband selected or empty list -->
       <div
