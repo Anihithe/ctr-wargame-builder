@@ -41,7 +41,7 @@ public class WarbandValidator : IWarbandValidator
             result.AddError("WARBAND_SIZE_EXCEEDED", $"La bande active dépasse le nombre maximal de combattants sur table ({activeFighters.Count}/{maxFighters}).");
         }
 
-        // 4. Budget PO (combattants actifs sur table uniquement)
+        // 4. Budget PO (tous les combattants de la bande)
         var totalGoldSpent = CalculateTotalGold(warband, ruleset);
         if (totalGoldSpent > warband.StartingGold)
         {
@@ -52,12 +52,20 @@ public class WarbandValidator : IWarbandValidator
         var leaders = activeFighters.Where(f => f.Role == OfficerRole.Leader).ToList();
         var brasDroits = activeFighters.Where(f => f.Role == OfficerRole.BrasDroit).ToList();
 
-        if (leaders.Count != 1)
+        if (leaders.Count == 0)
         {
-            result.AddError("LEADER_REQUIRED", $"La bande active doit comporter exactement 1 Leader (actuel : {leaders.Count}).");
+            result.AddError("LEADER_REQUIRED", "La bande active doit comporter exactement 1 Leader (aucun désigné).");
+        }
+        else if (leaders.Count > 1)
+        {
+            result.AddError("LEADER_LIMIT_EXCEEDED", $"La bande active ne peut avoir qu'un seul Leader (actuel : {leaders.Count}).");
         }
 
-        if (brasDroits.Count > 1)
+        if (brasDroits.Count == 0)
+        {
+            result.AddError("BRAS_DROIT_REQUIRED", "La bande active doit comporter exactement 1 Bras droit (aucun désigné).");
+        }
+        else if (brasDroits.Count > 1)
         {
             result.AddError("BRAS_DROIT_LIMIT_EXCEEDED", $"La bande ne peut avoir qu'un seul Bras droit actif (actuel : {brasDroits.Count}).");
         }
@@ -114,7 +122,7 @@ public class WarbandValidator : IWarbandValidator
             .GroupBy(e => e.Id, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
 
-        foreach (var fighter in warband.Fighters.Where(f => f.Status == FighterStatus.Active))
+        foreach (var fighter in warband.Fighters)
         {
             // Coût de la figurine selon type et rang
             if (fighter.Type == FighterType.Monster)

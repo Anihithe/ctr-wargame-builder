@@ -236,7 +236,7 @@ export const useWarbandStore = defineStore('warband', () => {
     if (totalCost > wb.startingGoldPo) {
       errors.push({
         code: 'BUDGET_EXCEEDED',
-        message: `Coût total actif (${totalCost} PO) supérieur au budget alloué (${wb.startingGoldPo} PO).`,
+        message: `Coût total de la bande (${totalCost} PO) supérieur au budget alloué (${wb.startingGoldPo} PO).`,
         severity: 'Error',
       });
     }
@@ -250,18 +250,18 @@ export const useWarbandStore = defineStore('warband', () => {
       });
     }
 
-    // Officers constraints: Max 1 Leader, Max 1 Bras Droit
+    // Officers constraints: Exactly 1 Leader, Exactly 1 Bras Droit
     if (leaderCount > 1) {
       errors.push({
         code: 'LEADER_LIMIT_EXCEEDED',
         message: `La bande compte ${leaderCount} Leaders actifs (maximum 1 seul Leader autorisé).`,
         severity: 'Error',
       });
-    } else if (leaderCount === 0 && activeFighters.length > 0) {
+    } else if (leaderCount === 0) {
       errors.push({
         code: 'LEADER_REQUIRED',
-        message: 'La bande doit comporter un Leader désigné.',
-        severity: 'Warning',
+        message: 'La bande doit comporter un Leader actif désigné.',
+        severity: 'Error',
       });
     }
 
@@ -269,6 +269,12 @@ export const useWarbandStore = defineStore('warband', () => {
       errors.push({
         code: 'BRAS_DROIT_LIMIT_EXCEEDED',
         message: `La bande compte ${brasDroitCount} Bras droits actifs (maximum 1 seul Bras droit autorisé).`,
+        severity: 'Error',
+      });
+    } else if (brasDroitCount === 0) {
+      errors.push({
+        code: 'BRAS_DROIT_REQUIRED',
+        message: 'La bande doit comporter un Bras droit actif désigné.',
         severity: 'Error',
       });
     }
