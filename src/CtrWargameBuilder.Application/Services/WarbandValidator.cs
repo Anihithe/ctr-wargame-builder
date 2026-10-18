@@ -268,6 +268,12 @@ public class WarbandValidator : IWarbandValidator
 
             // Coût de spécialisation : 6 XP + surcoût si d'autres combattants la possèdent
             var duplicateCount = specializationFighterCounts.GetValueOrDefault(specChoice.SpecializationId, 1) - 1;
+            if (string.Equals(warband.AllegianceId, "conclave_des_mages", StringComparison.OrdinalIgnoreCase)
+                && string.Equals(specChoice.SpecializationId, "mage", StringComparison.OrdinalIgnoreCase))
+            {
+                // Collège de Magie : La sélection d'une 2ème Spécialisation de Mage n'a pas de surcoût
+                duplicateCount = Math.Max(0, duplicateCount - 1);
+            }
             var specCost = ruleset.Config.SpecializationXpCost + (duplicateCount * ruleset.Config.DuplicateSpecializationPenaltyXp);
             spentXp += specCost;
 
@@ -287,7 +293,15 @@ public class WarbandValidator : IWarbandValidator
                     result.AddError("TALENT_FACTION_RESTRICTED", $"Le talent '{talentDef.Name}' n'est pas accessible à la faction {faction.Name}.", fighter.Id);
                 }
 
-                spentXp += ruleset.Config.TalentXpCost;
+                // Règle Érudits (Conclave des mages) : Les Officiers obtiennent gratuitement le Talent Incantation maîtrisée (0 XP)
+                var isFreeConclaveTalent = string.Equals(warband.AllegianceId, "conclave_des_mages", StringComparison.OrdinalIgnoreCase)
+                    && fighter.Role != OfficerRole.None
+                    && string.Equals(talentId, "incantation_maitrisee", StringComparison.OrdinalIgnoreCase);
+
+                if (!isFreeConclaveTalent)
+                {
+                    spentXp += ruleset.Config.TalentXpCost;
+                }
             }
         }
 
