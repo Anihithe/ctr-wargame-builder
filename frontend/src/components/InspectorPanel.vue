@@ -2,12 +2,13 @@
 import { ref, computed } from 'vue';
 import { useWarbandStore } from '@/stores/warbandStore';
 import { useRulesetStore } from '@/stores/rulesetStore';
-import type { OfficerRole, FighterStatus } from '@/types/warband';
+import type { OfficerRole, FighterStatus, Fighter } from '@/types/warband';
 import type { StatProfile } from '@/types/ruleset';
 import {
   Shield,
   Sword,
   Sparkles,
+  Dices,
   Trash2,
   Plus,
   BookOpen,
@@ -167,6 +168,20 @@ const fighterStats = computed<StatProfile>(() => {
     }
   }
 
+  // Apply Don des Dieux bonus (Ordre du Temple)
+  if (
+    warband.value?.allegianceId === 'ordre_du_temple' &&
+    warband.value?.selectedAllegianceRuleName === 'Don des Dieux' &&
+    fighter.value.godGiftStat
+  ) {
+    const s = fighter.value.godGiftStat;
+    if (s === 'mouvement') stats.mouvement += 1;
+    else if (s === 'combat') stats.combat += 1;
+    else if (s === 'esquive') stats.esquive += 1;
+    else if (s === 'volonte') stats.volonte += 1;
+    else if (s === 'pv') stats.pv += 1;
+  }
+
   return stats;
 });
 
@@ -311,6 +326,41 @@ function onAddXp(delta: number) {
 function onSetXp(val: number) {
   if (!fighter.value || isNaN(val) || val < 0) return;
   warbandStore.setFighterXp(fighter.value.id, val);
+}
+
+const hasGodGiftActive = computed(() =>
+  warband.value?.allegianceId === 'ordre_du_temple' &&
+  warband.value?.selectedAllegianceRuleName === 'Don des Dieux'
+);
+
+const showGodGiftPicker = ref(false);
+
+function setGodGift(stat: Fighter['godGiftStat']) {
+  if (!fighter.value) return;
+  warbandStore.setFighterGodGift(fighter.value.id, stat);
+  showGodGiftPicker.value = false;
+}
+
+function rollGodGiftD6() {
+  const res = Math.floor(Math.random() * 6) + 1;
+  if (res === 1) setGodGift('mouvement');
+  else if (res === 2) setGodGift('pv');
+  else if (res === 3) setGodGift('volonte');
+  else if (res === 4) setGodGift('esquive');
+  else if (res === 5) setGodGift('combat');
+  else {
+    showGodGiftPicker.value = true;
+    alert('Résultat 6 au dé 6 : Don divin exceptionnel ! Choisissez la caractéristique de votre choix.');
+  }
+}
+
+function godGiftLabel(stat?: string | null): string {
+  if (stat === 'mouvement') return '+1 Mouvement';
+  if (stat === 'pv') return '+1 PV';
+  if (stat === 'volonte') return '+1 Volonté';
+  if (stat === 'esquive') return '+1 Esquive';
+  if (stat === 'combat') return '+1 Combat';
+  return '';
 }
 </script>
 
@@ -665,6 +715,99 @@ function onSetXp(val: number) {
           <div v-if="totalArmorBonus > 0" class="mt-2 text-xs text-blue-300 flex items-center gap-1.5">
             <Shield class="w-3.5 h-3.5" />
             <span>Protection totale équipée : <strong>+{{ totalArmorBonus }}</strong></span>
+          </div>
+
+          <!-- Don des Dieux Banner (Ordre du Temple) -->
+          <div
+            v-if="hasGodGiftActive"
+            class="mt-2.5 p-2.5 rounded-lg border bg-amber-950/20 border-amber-500/40 flex flex-col gap-2"
+          >
+            <div class="flex items-center justify-between text-xs">
+              <div class="flex items-center gap-2">
+                <Sparkles class="w-4 h-4 text-amber-400 shrink-0" />
+                <span v-if="fighter.godGiftStat" class="text-amber-200">
+                  Don des Dieux : <strong class="text-amber-300 font-mono">{{ godGiftLabel(fighter.godGiftStat) }}</strong>
+                </span>
+                <span v-else class="text-amber-400 italic">
+                  Don des Dieux non attribué (requis avant la 1ère spécialisation)
+                </span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  @click="showGodGiftPicker = !showGodGiftPicker"
+                  class="text-[11px] px-2 py-0.5 rounded bg-grim-800 hover:bg-grim-750 text-amber-300 border border-grim-700 transition"
+                >
+                  {{ showGodGiftPicker ? 'Fermer' : fighter.godGiftStat ? 'Modifier' : 'Attribuer' }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Inline Picker if open -->
+            <div v-if="showGodGiftPicker" class="pt-2 border-t border-amber-900/40 space-y-2">
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  @click="rollGodGiftD6"
+                  class="px-2.5 py-1 text-xs font-bold rounded bg-amber-600 hover:bg-amber-500 text-grim-950 transition flex items-center gap-1"
+                >
+                  <Dices class="w-3.5 h-3.5" />
+                  <span>Lancer d6</span>
+                </button>
+                <span class="text-[11px] text-grim-400">ou choisir :</span>
+              </div>
+              <div class="flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  @click="setGodGift('mouvement')"
+                  class="px-2 py-0.5 text-xs rounded border transition font-mono"
+                  :class="fighter.godGiftStat === 'mouvement' ? 'bg-amber-500 text-grim-950 font-bold border-amber-400' : 'bg-grim-850 text-grim-300 border-grim-700 hover:border-amber-500'"
+                >
+                  1: +1 Mouv
+                </button>
+                <button
+                  type="button"
+                  @click="setGodGift('pv')"
+                  class="px-2 py-0.5 text-xs rounded border transition font-mono"
+                  :class="fighter.godGiftStat === 'pv' ? 'bg-amber-500 text-grim-950 font-bold border-amber-400' : 'bg-grim-850 text-grim-300 border-grim-700 hover:border-amber-500'"
+                >
+                  2: +1 PV
+                </button>
+                <button
+                  type="button"
+                  @click="setGodGift('volonte')"
+                  class="px-2 py-0.5 text-xs rounded border transition font-mono"
+                  :class="fighter.godGiftStat === 'volonte' ? 'bg-amber-500 text-grim-950 font-bold border-amber-400' : 'bg-grim-850 text-grim-300 border-grim-700 hover:border-amber-500'"
+                >
+                  3: +1 Volonté
+                </button>
+                <button
+                  type="button"
+                  @click="setGodGift('esquive')"
+                  class="px-2 py-0.5 text-xs rounded border transition font-mono"
+                  :class="fighter.godGiftStat === 'esquive' ? 'bg-amber-500 text-grim-950 font-bold border-amber-400' : 'bg-grim-850 text-grim-300 border-grim-700 hover:border-amber-500'"
+                >
+                  4: +1 Esquive
+                </button>
+                <button
+                  type="button"
+                  @click="setGodGift('combat')"
+                  class="px-2 py-0.5 text-xs rounded border transition font-mono"
+                  :class="fighter.godGiftStat === 'combat' ? 'bg-amber-500 text-grim-950 font-bold border-amber-400' : 'bg-grim-850 text-grim-300 border-grim-700 hover:border-amber-500'"
+                >
+                  5: +1 Combat
+                </button>
+                <button
+                  v-if="fighter.godGiftStat"
+                  type="button"
+                  @click="setGodGift(null)"
+                  class="px-2 py-0.5 text-xs rounded bg-crimson-950/60 hover:bg-crimson-900 text-crimson-300 border border-crimson-800 transition"
+                  title="Retirer le Don des Dieux"
+                >
+                  Retirer
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

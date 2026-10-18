@@ -29,6 +29,7 @@ export interface Fighter {
   status: FighterStatus;
   allocatedXp?: number;
   notes?: string;
+  godGiftStat?: 'mouvement' | 'pv' | 'volonte' | 'esquive' | 'combat' | null;
   equippedItems: EquippedItem[];
   specializations: FighterSpecialization[];
   knownSpellIds: string[];
