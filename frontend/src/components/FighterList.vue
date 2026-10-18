@@ -24,6 +24,12 @@ const rulesetStore = useRulesetStore();
 
 const warband = computed(() => warbandStore.currentWarband);
 const faction = computed(() => (warband.value ? rulesetStore.getFaction(warband.value.factionId) : null));
+const allegiance = computed(() => (warband.value?.allegianceId ? rulesetStore.getAllegiance(warband.value.allegianceId) : null));
+const selectedOrigins = computed(() => {
+  if (!faction.value || !warband.value) return [];
+  const ids = warband.value.selectedOriginIds || [];
+  return faction.value.origins.filter((o) => ids.includes(o.id));
+});
 const fighters = computed(() => warband.value?.fighters || []);
 
 // Active Fighters split into Officers and Troops
@@ -86,101 +92,71 @@ function getRankBadgeClass(fighter: Fighter): string {
 
 <template>
   <div class="space-y-6">
-    <!-- Top Action Bar: Overview selector & Global Quick-Add -->
-    <div class="flex items-center justify-between">
-      <button
-        @click="selectOverview"
-        class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold border transition"
-        :class="
-          warbandStore.selectedFighterId === null
-            ? 'bg-gold-500/10 text-gold-400 border-gold-500/50 shadow-sm'
-            : 'bg-grim-900 text-grim-300 border-grim-800 hover:border-grim-700'
-        "
-      >
-        <Info class="w-4 h-4" />
-        <span>Vue d'ensemble de la bande</span>
-      </button>
-
-      <!-- Recruit Troops CTA -->
-      <div class="relative">
-        <button
-          @click="showTroopRecruitMenu = !showTroopRecruitMenu"
-          class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-gold-600 hover:bg-gold-500 text-grim-950 rounded-lg shadow transition active:scale-95"
-        >
-          <UserPlus class="w-4 h-4" />
-          <span>+ Recruter Combattant</span>
-        </button>
-
-        <!-- Recruitment Dropdown Menu -->
-        <div
-          v-if="showTroopRecruitMenu"
-          class="absolute right-0 mt-2 w-64 bg-grim-900 border border-grim-700 rounded-lg shadow-2xl z-40 p-2 space-y-1.5"
-        >
-          <div class="text-[11px] font-semibold text-grim-400 uppercase tracking-wider px-2 py-1">
-            Guerriers de troupe
+    <!-- Warband Overview Full-Width Card (Same width as fighter cards) -->
+    <div
+      v-if="warband"
+      @click="selectOverview"
+      class="p-4 rounded-xl border transition cursor-pointer relative group"
+      :class="
+        warbandStore.selectedFighterId === null
+          ? 'bg-gradient-to-br from-grim-850 to-grim-900 border-gold-500/90 shadow-lg ring-1 ring-gold-500/40'
+          : 'bg-grim-900 border-grim-800 hover:border-grim-700 hover:bg-grim-850/60'
+      "
+    >
+      <div class="flex items-start justify-between gap-3">
+        <div class="space-y-2 flex-1">
+          <div class="flex flex-wrap items-center gap-2">
+            <Shield class="w-4 h-4 text-gold-400 shrink-0" />
+            <h3 class="text-base font-bold font-display text-white group-hover:text-gold-300 transition">
+              {{ warband.name }}
+            </h3>
+            <span class="text-[10px] px-2 py-0.5 rounded font-semibold bg-gold-950/70 text-gold-400 border border-gold-800/80">
+              {{ faction?.name || warband.factionId }}
+            </span>
           </div>
-          <button
-            @click="recruitTroop('Guerrier', 1)"
-            class="w-full flex items-center justify-between px-3 py-1.5 text-xs rounded hover:bg-grim-800 text-grim-200 transition"
-          >
-            <div class="flex items-center gap-2">
-              <span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-bold">R1</span>
-              <span>Guerrier Rang 1</span>
-            </div>
-            <span class="font-mono text-gold-400 font-bold">1 PO</span>
-          </button>
-          <button
-            @click="recruitTroop('Guerrier', 2)"
-            class="w-full flex items-center justify-between px-3 py-1.5 text-xs rounded hover:bg-grim-800 text-grim-200 transition"
-          >
-            <div class="flex items-center gap-2">
-              <span class="px-1.5 py-0.5 rounded bg-blue-950 text-blue-300 text-[10px] font-bold">R2</span>
-              <span>Guerrier Rang 2</span>
-            </div>
-            <span class="font-mono text-gold-400 font-bold">2 PO</span>
-          </button>
-          <button
-            @click="recruitTroop('Guerrier', 3)"
-            class="w-full flex items-center justify-between px-3 py-1.5 text-xs rounded hover:bg-grim-800 text-grim-200 transition"
-          >
-            <div class="flex items-center gap-2">
-              <span class="px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 text-[10px] font-bold">R3</span>
-              <span>Guerrier Rang 3 (Élite)</span>
-            </div>
-            <span class="font-mono text-gold-400 font-bold">3 PO</span>
-          </button>
 
-          <div class="border-t border-grim-800 pt-1.5 text-[11px] font-semibold text-grim-400 uppercase tracking-wider px-2">
-            Monstres (Max 1)
-          </div>
-          <button
-            v-for="m in rulesetStore.currentRuleset.monsters"
-            :key="m.id"
-            @click="recruitTroop('Monstre', 4, m.id)"
-            class="w-full flex items-center justify-between px-3 py-1.5 text-xs rounded hover:bg-grim-800 text-purple-200 transition"
-          >
-            <div class="flex items-center gap-2">
-              <span class="px-1.5 py-0.5 rounded bg-purple-950 text-purple-300 text-[10px] font-bold">M</span>
-              <span>{{ m.name }}</span>
-            </div>
-            <span class="font-mono text-gold-400 font-bold">4 PO</span>
-          </button>
+          <!-- Origins & Allegiance summary tags -->
+          <div class="flex flex-wrap items-center gap-1.5 pt-0.5">
+            <!-- Origins Tags -->
+            <template v-if="selectedOrigins.length > 0">
+              <span
+                v-for="orig in selectedOrigins"
+                :key="orig.id"
+                class="text-[10px] px-2 py-0.5 rounded font-medium bg-cyan-950/60 text-cyan-300 border border-cyan-800/80"
+              >
+                {{ orig.name }}
+              </span>
+            </template>
+            <span v-else class="text-[10px] text-grim-500 italic">
+              Aucune origine sélectionnée
+            </span>
 
-          <div class="border-t border-grim-800 pt-1.5 text-[11px] font-semibold text-grim-400 uppercase tracking-wider px-2">
-            Animaux
+            <span class="text-grim-600 text-xs">•</span>
+
+            <!-- Allegiance Tag -->
+            <span
+              v-if="allegiance"
+              class="text-[10px] px-2 py-0.5 rounded font-medium bg-amber-950/60 text-amber-300 border border-amber-800/80"
+            >
+              {{ allegiance.name }}
+            </span>
+            <span v-else class="text-[10px] text-grim-500 italic">
+              Sans allégeance
+            </span>
           </div>
-          <button
-            v-for="r in [1, 2, 3]"
-            :key="r"
-            @click="recruitTroop('Animal', r, `animal-r${r}`)"
-            class="w-full flex items-center justify-between px-3 py-1.5 text-xs rounded hover:bg-grim-800 text-emerald-200 transition"
+        </div>
+
+        <div class="flex items-center gap-1.5 shrink-0 pt-0.5">
+          <span
+            v-if="warbandStore.selectedFighterId === null"
+            class="text-[10px] font-semibold text-gold-400 bg-gold-500/10 border border-gold-500/30 px-2 py-0.5 rounded-full"
           >
-            <div class="flex items-center gap-2">
-              <span class="px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 text-[10px] font-bold">A{{ r }}</span>
-              <span>Animal Rang {{ r }}</span>
-            </div>
-            <span class="font-mono text-gold-400 font-bold">{{ r }} PO</span>
-          </button>
+            Vue active
+          </span>
+          <ChevronRight
+            class="w-4 h-4 transition"
+            :class="warbandStore.selectedFighterId === null ? 'text-gold-400' : 'text-grim-500 group-hover:text-gold-400'"
+          />
         </div>
       </div>
     </div>
@@ -516,10 +492,93 @@ function getRankBadgeClass(fighter: Fighter): string {
           <h2 class="text-xs font-bold text-grim-200 uppercase tracking-wider font-display">
             Combattants
           </h2>
+          <span class="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-grim-900 border border-grim-800 text-grim-400">
+            {{ troopFighters.length }}
+          </span>
         </div>
-        <span class="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-grim-900 border border-grim-800 text-grim-400">
-          {{ troopFighters.length }} combattants
-        </span>
+
+        <!-- Recruit Troops CTA -->
+        <div class="relative">
+          <button
+            @click="showTroopRecruitMenu = !showTroopRecruitMenu"
+            class="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold bg-gold-600 hover:bg-gold-500 text-grim-950 rounded-md shadow transition active:scale-95"
+          >
+            <UserPlus class="w-3.5 h-3.5" />
+            <span>+ Recruter</span>
+          </button>
+
+          <!-- Recruitment Dropdown Menu -->
+          <div
+            v-if="showTroopRecruitMenu"
+            class="absolute right-0 mt-2 w-64 bg-grim-900 border border-grim-700 rounded-lg shadow-2xl z-40 p-2 space-y-1.5"
+          >
+            <div class="text-[11px] font-semibold text-grim-400 uppercase tracking-wider px-2 py-1">
+              Guerriers de troupe
+            </div>
+            <button
+              @click="recruitTroop('Guerrier', 1)"
+              class="w-full flex items-center justify-between px-3 py-1.5 text-xs rounded hover:bg-grim-800 text-grim-200 transition"
+            >
+              <div class="flex items-center gap-2">
+                <span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-bold">R1</span>
+                <span>Guerrier Rang 1</span>
+              </div>
+              <span class="font-mono text-gold-400 font-bold">1 PO</span>
+            </button>
+            <button
+              @click="recruitTroop('Guerrier', 2)"
+              class="w-full flex items-center justify-between px-3 py-1.5 text-xs rounded hover:bg-grim-800 text-grim-200 transition"
+            >
+              <div class="flex items-center gap-2">
+                <span class="px-1.5 py-0.5 rounded bg-blue-950 text-blue-300 text-[10px] font-bold">R2</span>
+                <span>Guerrier Rang 2</span>
+              </div>
+              <span class="font-mono text-gold-400 font-bold">2 PO</span>
+            </button>
+            <button
+              @click="recruitTroop('Guerrier', 3)"
+              class="w-full flex items-center justify-between px-3 py-1.5 text-xs rounded hover:bg-grim-800 text-grim-200 transition"
+            >
+              <div class="flex items-center gap-2">
+                <span class="px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 text-[10px] font-bold">R3</span>
+                <span>Guerrier Rang 3 (Élite)</span>
+              </div>
+              <span class="font-mono text-gold-400 font-bold">3 PO</span>
+            </button>
+
+            <div class="border-t border-grim-800 pt-1.5 text-[11px] font-semibold text-grim-400 uppercase tracking-wider px-2">
+              Monstres (Max 1)
+            </div>
+            <button
+              v-for="m in rulesetStore.currentRuleset.monsters"
+              :key="m.id"
+              @click="recruitTroop('Monstre', 4, m.id)"
+              class="w-full flex items-center justify-between px-3 py-1.5 text-xs rounded hover:bg-grim-800 text-purple-200 transition"
+            >
+              <div class="flex items-center gap-2">
+                <span class="px-1.5 py-0.5 rounded bg-purple-950 text-purple-300 text-[10px] font-bold">M</span>
+                <span>{{ m.name }}</span>
+              </div>
+              <span class="font-mono text-gold-400 font-bold">4 PO</span>
+            </button>
+
+            <div class="border-t border-grim-800 pt-1.5 text-[11px] font-semibold text-grim-400 uppercase tracking-wider px-2">
+              Animaux
+            </div>
+            <button
+              v-for="r in [1, 2, 3]"
+              :key="r"
+              @click="recruitTroop('Animal', r, `animal-r${r}`)"
+              class="w-full flex items-center justify-between px-3 py-1.5 text-xs rounded hover:bg-grim-800 text-emerald-200 transition"
+            >
+              <div class="flex items-center gap-2">
+                <span class="px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 text-[10px] font-bold">A{{ r }}</span>
+                <span>Animal Rang {{ r }}</span>
+              </div>
+              <span class="font-mono text-gold-400 font-bold">{{ r }} PO</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Troop Fighters List Cards -->
