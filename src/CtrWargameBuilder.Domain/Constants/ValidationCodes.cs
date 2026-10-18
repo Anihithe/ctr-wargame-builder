@@ -50,4 +50,5 @@ public static class ValidationCodes
     public const string TalentFactionRestricted = "TALENT_FACTION_RESTRICTED";
     public const string XpLimitExceeded = "XP_LIMIT_EXCEEDED";
     public const string SpellsLevelExceeded = "SPELLS_LEVEL_EXCEEDED";
+    public const string SpellsCannotBeCast = "SPELLS_CANNOT_BE_CAST";
 }

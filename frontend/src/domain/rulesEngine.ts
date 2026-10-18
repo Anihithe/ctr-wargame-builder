@@ -517,3 +517,59 @@ export function calculateFighterStats(
 
   return stats;
 }
+
+/**
+ * Checks whether a fighter has the ability to cast spells.
+ * Sources:
+ * - Specialization 'Mage' (primary spellcaster)
+ * - Specialization 'Protecteur' (innate spells + action Lancer un sort)
+ * - Specialization 'Barde' with talent 'charme_personne'
+ * - Specialization 'Druide' with talent 'magie_naturelle'
+ * - Specialization 'Moine' with talent 'ecole_de_la_lumiere'
+ * - Origin 'tribu_chamanique' for Officers
+ * - Faction 'L'Eternité' for Officers (Réanimation)
+ * - Equipped magic item 'bague_de_sort'
+ */
+export function canFighterCastSpells(
+  fighter: Fighter,
+  warband?: Warband | null,
+): boolean {
+  if (fighter.type === 'Animal') return false;
+
+  const hasSpec = (id: string) => fighter.specializations.some((s) => s.specializationId === id);
+  const hasTalent = (specId: string, talentId: string) =>
+    fighter.specializations.some((s) => s.specializationId === specId && s.acquiredTalentIds.includes(talentId));
+
+  if (hasSpec(SPEC_IDS.Mage)) return true;
+  if (hasSpec('protecteur')) return true;
+  if (hasTalent('barde', 'charme_personne')) return true;
+  if (hasTalent(SPEC_IDS.Druide, 'magie_naturelle')) return true;
+  if (hasTalent(SPEC_IDS.Moine, 'ecole_de_la_lumiere')) return true;
+
+  if (fighter.officerRole !== 'None') {
+    if (warband?.selectedOriginIds?.includes('tribu_chamanique')) return true;
+    if (warband?.factionId === FACTION_IDS.Eternite) return true;
+  }
+
+  if (fighter.equippedItems.some((eq) => eq.isMagicItem && eq.equipmentId === 'bague_de_sort')) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Cleans equipment names for tags and compact displays by stripping parenthesized examples
+ * e.g., "Arme légère 1M (Dague, Épée courte, Rapière)" -> "Arme légère 1M - Niv 1"
+ * e.g., "Arc (Court) - Niv 1" -> "Arc - Niv 1"
+ * e.g., "Bouclier (Écu, Rondache) - Niv 1" -> "Bouclier - Niv 1"
+ */
+export function cleanEquipmentName(name?: string, level?: number): string {
+  if (!name) return '';
+  let cleaned = name.replace(/\s*\([^)]*\)/g, '').replace(/\s{2,}/g, ' ').trim();
+  if (level !== undefined && !cleaned.includes('Niv')) {
+    cleaned = `${cleaned} - Niv ${level}`;
+  }
+  return cleaned;
+}
+

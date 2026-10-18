@@ -406,9 +406,22 @@ public class WarbandValidator : IWarbandValidator
             result.AddError(ValidationCodes.XpLimitExceeded, $"'{name}' a dépensé {spentXp} XP pour un budget alloué de {maxBaseXp} XP.", fighter.Id);
         }
 
-        // Sorts des Mages
+        // Sorts des Combattants
         if (fighter.KnownSpellIds.Count > 0)
         {
+            var canCast = fighter.Specializations.Any(s => string.Equals(s.SpecializationId, RuleConstants.Specializations.Mage, StringComparison.OrdinalIgnoreCase))
+                || fighter.Specializations.Any(s => string.Equals(s.SpecializationId, "protecteur", StringComparison.OrdinalIgnoreCase))
+                || fighter.Specializations.Any(s => string.Equals(s.SpecializationId, "barde", StringComparison.OrdinalIgnoreCase) && s.SelectedTalentIds.Contains("charme_personne", StringComparer.OrdinalIgnoreCase))
+                || fighter.Specializations.Any(s => string.Equals(s.SpecializationId, RuleConstants.Specializations.Druide, StringComparison.OrdinalIgnoreCase) && s.SelectedTalentIds.Contains("magie_naturelle", StringComparer.OrdinalIgnoreCase))
+                || fighter.Specializations.Any(s => string.Equals(s.SpecializationId, "moine", StringComparison.OrdinalIgnoreCase) && s.SelectedTalentIds.Contains("ecole_de_la_lumiere", StringComparer.OrdinalIgnoreCase))
+                || (fighter.Role != OfficerRole.None && (warband.SelectedOriginIds.Contains("tribu_chamanique", StringComparer.OrdinalIgnoreCase) || string.Equals(warband.FactionId, RuleConstants.Factions.Eternite, StringComparison.OrdinalIgnoreCase)))
+                || fighter.Equipments.Any(eq => string.Equals(eq.EquipmentId, "bague_de_sort", StringComparison.OrdinalIgnoreCase));
+
+            if (!canCast)
+            {
+                result.AddError(ValidationCodes.SpellsCannotBeCast, $"'{name}' ne possède pas la capacité d'apprendre ou de lancer des sorts.", fighter.Id);
+            }
+
             var totalSpellLevels = 0;
             var spellsDict = ruleset.Spells.ToDictionary(sp => sp.Id, sp => sp, StringComparer.OrdinalIgnoreCase);
 

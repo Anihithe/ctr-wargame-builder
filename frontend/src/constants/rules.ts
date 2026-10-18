@@ -115,4 +115,8 @@ export const VALIDATION_CODES = {
   ExcellenceCannotWearArmor: 'EXCELLENCE_CANNOT_WEAR_ARMOR',
   GoulesCannotWearArmor: 'GOULES_CANNOT_WEAR_ARMOR',
   MonstruositeRank1RequiresEsclavagistes: 'MONSTRUOSITE_RANK_1_REQUIRES_ESCLAVAGISTES',
+
+  // Spells
+  SpellsCannotBeCast: 'SPELLS_CANNOT_BE_CAST',
+  SpellsLevelExceeded: 'SPELLS_LEVEL_EXCEEDED',
 } as const;
