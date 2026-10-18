@@ -3,6 +3,54 @@
 Toutes les modifications notables apportées à ce projet sont documentées dans ce fichier.
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet adhère à [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [0.4.0-beta] - 2026-10-19
+
+### 🧹 Refactorisation & Élimination des Valeurs Magiques
+- **Centralisation des Constantes Métier & Thème** :
+  - Création de `RuleConstants.cs` et `ValidationCodes.cs` dans le Domaine .NET.
+  - Création de `src/constants/rules.ts` et `src/constants/theme.ts` dans le Frontend Vue 3.
+  - Élimination des chaînes en dur répétées et sécurisation des codes de validation entre frontend et backend.
+- **Moteur Métier Partagé (`rulesEngine.ts`)** :
+  - Centralisation DRY des calculs de caractéristiques modifiées (Mouvement en pouces `"`, Combat, Esquive, Volonté, Points de Vie).
+  - Prise en compte unifiée des bonus et modificateurs issus des Origines, Spécialisations et Talents.
+  - Nettoyage et formatage centralisé des noms d'équipements (`cleanEquipmentName`).
+
+### 🔮 Conditionnement des Sorts & Capacités Magiques
+- **Validation & Contrôle d'Accès aux Sorts** :
+  - Détection automatique des lanceurs de sorts (`canFighterCastSpells` : spécialisation Mage, traits magiques).
+  - Masquage/désactivation du panneau d'apprentissage de sorts dans l'inspecteur pour les unités non-lanceuses.
+  - Règle de validation autoritaire C# rejetant l'attribution de sorts à des non-lanceurs (`ValidationCodes.NotASpellcaster`).
+
+### 🎨 Épuration Visuelle & Ergonomie des Cartes de Combattants
+- **Cartes de Combattant (`FighterList.vue` & `InspectorPanel.vue`)** :
+  - Suppression de la mention textuelle redondante de la spécialisation sous le nom de l'unité (mise en valeur via les tags).
+  - Élimination des parenthèses superflues d'exemples d'armes dans les badges.
+  - Regroupement des armes identiques avec indicateur de quantité `x2`.
+  - Réorganisation ordonnée des tags : `Spécialisation(s)` → `Talent(s)` → `Armes` → `Bouclier` → `Armure`.
+  - Suppression de la mention inutile "Vue active" dans l'encart de faction.
+
+## [0.3.0-beta] - 2026-10-18
+
+### ⚔️ Refonte Complète de l'Équipement (Slots vs Mains)
+- **Suppression du concept ambigu de "Mains disponibles"** :
+  - Gestion stricte par emplacements (slots) d'équipement : 2 slots (R1/R2), 3 slots (R3), 4 slots (Monstres), 0 slot (Animaux).
+  - Découplage complet des armures : les protections ne consomment aucun slot offensif, débloquant l'accès à l'inventaire même lorsque les armes occupent tous les slots.
+  - Support sans accroc des monstres portant 2 armes à deux mains (4 slots).
+- **Catalogue Hiérarchisé d'Armes & Ajout Direct** :
+  - Structure en onglets par famille d'arme avec sous-sections de Rang (R1, R2, R3).
+  - Mise en valeur agrandie des statistiques des armes.
+  - Bouton d'ajout direct sans fermeture/réouverture intempestive de la fenêtre modale.
+  - Infobulles contextuelles au survol des mots-clés d'armes (*Acéré*, *Lourd*, etc.).
+
+### 🛡️ Règles Spécifiques de Factions & Origines
+- **Faction Excellence** : interdiction stricte du port de protections et d'armures.
+- **Faction Monstruosité** : interdiction du recrutement de troupes R1 par défaut, sauf sous l'origine *Esclavagiste* (avec profil statistique dédié).
+- **Spécialisations & Restrictions** : blocage des équipements incompatibles (ex: Barbare).
+
+### 🧪 Validation & Tests Unitaires Décuplés
+- **Extension de la suite xUnit** : passage de 14 à **32 tests unitaires complets** (100% verts).
+- Couverture intégrale des cas limites : budget, quotas d'officiers, slots monstres, interdiction d'armures pour l'Excellence, restrictions de sorts et calculs d'XP.
+
 ## [0.2.0-alpha] - 2026-10-18
 
 ### ✨ Nouvelles Fonctionnalités & Refonte Ergonomie (Style Trench-Companion)
