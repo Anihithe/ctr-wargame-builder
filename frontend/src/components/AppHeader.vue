@@ -48,7 +48,12 @@ function onSelectWarband(event: Event) {
 function updateGold(delta: number) {
   if (!warband.value) return;
   const newBudget = Math.max(1, warband.value.startingGoldPo + delta);
-  warbandStore.updateWarband({ startingGoldPo: newBudget });
+  warbandStore.updateWarband({ startingGoldPo: newBudget, currentGoldPo: newBudget });
+}
+
+function onGoldChange(val: number) {
+  if (!warband.value || isNaN(val) || val < 1) return;
+  warbandStore.updateWarband({ startingGoldPo: val, currentGoldPo: val });
 }
 </script>
 
@@ -181,15 +186,23 @@ function updateGold(delta: number) {
                 <div class="flex items-center gap-1.5">
                   <button
                     @click="updateGold(-1)"
-                    class="w-5 h-5 flex items-center justify-center bg-grim-700 hover:bg-grim-600 rounded text-grim-200 text-xs font-bold"
+                    class="w-5 h-5 flex items-center justify-center bg-grim-700 hover:bg-grim-600 rounded text-grim-200 text-xs font-bold transition"
                     title="Diminuer"
                   >
                     -
                   </button>
-                  <span class="font-mono font-bold text-sm text-gold-300 w-8 text-center">{{ warband.startingGoldPo }}</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max="999"
+                    :value="warband.startingGoldPo"
+                    @change="(e) => onGoldChange(Number((e.target as HTMLInputElement).value))"
+                    class="font-mono font-bold text-sm text-gold-300 w-12 text-center bg-grim-900 border border-grim-700 rounded px-1 py-0.5 focus:border-gold-500 focus:outline-none"
+                    title="Cliquer pour modifier directement le budget PO"
+                  />
                   <button
                     @click="updateGold(1)"
-                    class="w-5 h-5 flex items-center justify-center bg-grim-700 hover:bg-grim-600 rounded text-grim-200 text-xs font-bold"
+                    class="w-5 h-5 flex items-center justify-center bg-grim-700 hover:bg-grim-600 rounded text-grim-200 text-xs font-bold transition"
                     title="Augmenter"
                   >
                     +
@@ -209,7 +222,7 @@ function updateGold(delta: number) {
                 <Coins class="w-4 h-4" />
               </div>
               <div>
-                <div class="text-[11px] text-grim-400">Trésor dépensé (sur table)</div>
+                <div class="text-[11px] text-grim-400">Trésor dépensé</div>
                 <div class="text-sm font-mono font-bold" :class="validation.totalCostPo > warband.startingGoldPo ? 'text-crimson-400' : 'text-gold-300'">
                   {{ validation.totalCostPo }} / {{ warband.startingGoldPo }} PO
                 </div>

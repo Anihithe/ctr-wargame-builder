@@ -9,6 +9,7 @@ import CreateWarbandModal from '@/components/CreateWarbandModal.vue';
 import EquipmentPickerModal from '@/components/EquipmentPickerModal.vue';
 import MagicItemPickerModal from '@/components/MagicItemPickerModal.vue';
 import SpellPickerModal from '@/components/SpellPickerModal.vue';
+import SpecializationPickerModal from '@/components/SpecializationPickerModal.vue';
 import VersionMigrationModal from '@/components/VersionMigrationModal.vue';
 import { Shield, Plus } from 'lucide-vue-next';
 
@@ -21,6 +22,7 @@ const showMigrationModal = ref(false);
 const activeEquipmentFighterId = ref<string | null>(null);
 const activeMagicItemFighterId = ref<string | null>(null);
 const activeSpellFighterId = ref<string | null>(null);
+const activeSpecializationFighterId = ref<string | null>(null);
 
 onMounted(async () => {
   await rulesetStore.loadManifests();
@@ -42,6 +44,10 @@ function openMagicItemModal(fighterId: string) {
 
 function openSpellModal(fighterId: string) {
   activeSpellFighterId.value = fighterId;
+}
+
+function openSpecializationModal(fighterId: string) {
+  activeSpecializationFighterId.value = fighterId;
 }
 </script>
 
@@ -94,6 +100,7 @@ function openSpellModal(fighterId: string) {
             @open-equipment="openEquipmentModal"
             @open-magic-item="openMagicItemModal"
             @open-spell="openSpellModal"
+            @open-specialization="openSpecializationModal"
             @open-migration="showMigrationModal = true"
           />
         </div>
@@ -122,6 +129,12 @@ function openSpellModal(fighterId: string) {
       v-if="activeSpellFighterId"
       :fighter-id="activeSpellFighterId"
       @close="activeSpellFighterId = null"
+    />
+
+    <SpecializationPickerModal
+      v-if="activeSpecializationFighterId"
+      :fighter-id="activeSpecializationFighterId"
+      @close="activeSpecializationFighterId = null"
     />
 
     <VersionMigrationModal

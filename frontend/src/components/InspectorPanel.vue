@@ -22,6 +22,7 @@ const emit = defineEmits<{
   (e: 'open-equipment', fighterId: string): void;
   (e: 'open-magic-item', fighterId: string): void;
   (e: 'open-spell', fighterId: string): void;
+  (e: 'open-specialization', fighterId: string): void;
   (e: 'open-migration'): void;
 }>();
 
@@ -178,9 +179,49 @@ function toggleMagicItemsUnlock() {
   }
 }
 
-function addSpecialization(specId: string) {
-  if (!fighter.value || !specId) return;
-  warbandStore.toggleTalent(fighter.value.id, specId, '');
+const fighterSpentXp = computed(() => {
+  if (!fighter.value) return 0;
+  let total = fighter.value.specializations.length * 6;
+  for (const s of fighter.value.specializations) {
+    total += s.acquiredTalentIds.length * 6;
+  }
+  return total;
+});
+
+const fighterAvailableXp = computed(() => {
+  if (!fighter.value) return 0;
+  return Math.max(0, (fighter.value.allocatedXp || 0) - fighterSpentXp.value);
+});
+
+function onToggleTalent(specId: string, talentId: string) {
+  if (!fighter.value) return;
+  const fSpec = fighter.value.specializations.find((s) => s.specializationId === specId);
+  const isAcquired = fSpec?.acquiredTalentIds.includes(talentId);
+  if (!isAcquired && fighterAvailableXp.value < 6) {
+    alert('XP insuffisant : 6 XP sont requis pour acquérir ce talent.');
+    return;
+  }
+  warbandStore.toggleTalent(fighter.value.id, specId, talentId);
+}
+
+function onRemoveSpecialization(specId: string) {
+  if (!fighter.value) return;
+  const fSpec = fighter.value.specializations.find((s) => s.specializationId === specId);
+  if (fSpec && fSpec.acquiredTalentIds.length > 0) {
+    const ok = confirm(`Cette voie contient ${fSpec.acquiredTalentIds.length} talent(s) acquis.\n\nVoulez-vous la retirer ? Tous les talents associés seront retirés et les XP remboursés.`);
+    if (!ok) return;
+  }
+  warbandStore.removeSpecialization(fighter.value.id, specId);
+}
+
+function onAddXp(delta: number) {
+  if (!fighter.value) return;
+  warbandStore.addFighterXp(fighter.value.id, delta);
+}
+
+function onSetXp(val: number) {
+  if (!fighter.value || isNaN(val) || val < 0) return;
+  warbandStore.setFighterXp(fighter.value.id, val);
 }
 </script>
 
@@ -519,6 +560,72 @@ function addSpecialization(specId: string) {
         </div>
       </div>
 
+      <!-- Fighter XP Management Card -->
+      <div class="trench-card p-4 space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <Sparkles class="w-4 h-4 text-amber-400" />
+            <h3 class="text-xs font-bold text-white uppercase tracking-wider font-display">
+              Expérience & Évolution (XP)
+            </h3>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-grim-400">Total :</span>
+            <input
+              type="number"
+              min="0"
+              max="999"
+              :value="fighter.allocatedXp || 0"
+              @change="(e) => onSetXp(Number((e.target as HTMLInputElement).value))"
+              class="w-14 text-center font-mono font-bold text-xs bg-grim-900 border border-grim-700 rounded px-1.5 py-0.5 text-white focus:border-amber-500 focus:outline-none"
+              title="Cliquer pour modifier directement le total d'XP"
+            />
+            <div class="flex items-center gap-1">
+              <button
+                @click="onAddXp(1)"
+                class="px-2 py-0.5 text-xs font-bold rounded bg-amber-600/30 hover:bg-amber-600/50 text-amber-300 border border-amber-600/50 transition active:scale-95"
+                title="Gagner +1 XP"
+              >
+                +1
+              </button>
+              <button
+                @click="onAddXp(2)"
+                class="px-2 py-0.5 text-xs font-bold rounded bg-amber-600/30 hover:bg-amber-600/50 text-amber-300 border border-amber-600/50 transition active:scale-95"
+                title="Gagner +2 XP"
+              >
+                +2
+              </button>
+              <button
+                @click="onAddXp(6)"
+                class="px-2 py-0.5 text-xs font-bold rounded bg-amber-600/30 hover:bg-amber-600/50 text-amber-300 border border-amber-600/50 transition active:scale-95"
+                title="Gagner +6 XP (1 talent ou spécialisation)"
+              >
+                +6
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress bar and numbers -->
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-grim-300">
+              Disponible : <strong :class="fighterAvailableXp > 0 ? 'text-amber-300 font-bold' : 'text-grim-400'">{{ fighterAvailableXp }} XP</strong>
+            </span>
+            <span class="text-grim-400 text-[11px]">
+              Dépensé : {{ fighterSpentXp }} / {{ fighter.allocatedXp || 0 }} XP
+            </span>
+          </div>
+          <div class="w-full bg-grim-950 rounded-full h-2 overflow-hidden border border-grim-800">
+            <div
+              class="h-full bg-gradient-to-r from-amber-600 to-amber-400 rounded-full transition-all duration-300"
+              :style="{ width: `${Math.min(100, ((fighter.allocatedXp || 0) > 0 ? (fighterSpentXp / (fighter.allocatedXp || 1)) * 100 : 0))}%` }"
+            ></div>
+          </div>
+        </div>
+      </div>
+
       <!-- Equipment Slots Card -->
       <div class="trench-card p-5 space-y-4">
         <div class="flex items-center justify-between">
@@ -610,66 +717,88 @@ function addSpecialization(specId: string) {
           <div class="flex items-center gap-2">
             <Flame class="w-4 h-4 text-amber-400" />
             <h3 class="text-sm font-bold text-white uppercase tracking-wider font-display">
-              Spécialisations & Talents
+              Spécialisations & Talents ({{ fighter.specializations.length }} / 2)
             </h3>
           </div>
 
-          <select
-            @change="(e) => { addSpecialization((e.target as HTMLSelectElement).value); (e.target as HTMLSelectElement).value = ''; }"
-            class="bg-grim-850 border border-grim-700 text-xs text-grim-200 rounded px-2.5 py-1 focus:outline-none"
+          <button
+            @click="emit('open-specialization', fighter.id)"
+            :disabled="fighter.specializations.length >= 2 || fighterAvailableXp < 6"
+            class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded shadow transition"
+            :class="
+              fighter.specializations.length >= 2 || fighterAvailableXp < 6
+                ? 'bg-grim-800 text-grim-500 border border-grim-700 cursor-not-allowed'
+                : 'bg-amber-600 hover:bg-amber-500 text-grim-950 cursor-pointer active:scale-95'
+            "
+            :title="fighter.specializations.length >= 2 ? 'Maximum 2 spécialisations atteint' : fighterAvailableXp < 6 ? '6 XP requis pour choisir une voie' : 'Choisir une nouvelle voie'"
           >
-            <option value="">+ Choisir une voie</option>
-            <option
-              v-for="spec in rulesetStore.currentRuleset.specializations"
-              :key="spec.id"
-              :value="spec.id"
-            >
-              {{ spec.name }} ({{ spec.category }})
-            </option>
-          </select>
+            <Plus class="w-3.5 h-3.5" />
+            <span>+ Voie / Spécialisation (6 XP)</span>
+          </button>
         </div>
 
-        <div v-if="fighter.specializations.length === 0" class="text-xs text-grim-400 italic bg-grim-850 p-3 rounded text-center">
-          Aucune spécialisation choisie.
+        <div v-if="fighter.specializations.length === 0" class="text-xs text-grim-400 italic bg-grim-850 p-4 rounded text-center border border-dashed border-grim-800">
+          Aucune spécialisation choisie. Cliquez sur "+ Voie / Spécialisation" pour adopter une discipline martiale ou magique (coût : 6 XP).
         </div>
 
         <div v-else class="space-y-4">
           <div
             v-for="fSpec in fighter.specializations"
             :key="fSpec.id"
-            class="bg-grim-850 border border-grim-800 rounded-lg p-3 space-y-3"
+            class="bg-grim-850 border border-grim-800 rounded-lg p-3.5 space-y-3"
           >
-            <div class="flex items-center justify-between">
-              <span class="text-sm font-bold text-gold-300 font-display">
-                {{ rulesetStore.getSpecialization(fSpec.specializationId)?.name }}
-              </span>
-              <span class="text-[11px] text-grim-400">
-                {{ fSpec.acquiredTalentIds.length }} talent(s) acquis
-              </span>
+            <div class="flex items-start justify-between">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="text-sm font-bold text-amber-300 font-display">
+                    {{ rulesetStore.getSpecialization(fSpec.specializationId)?.name || fSpec.specializationId }}
+                  </span>
+                  <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-amber-950 text-amber-300 border border-amber-800">
+                    6 XP
+                  </span>
+                  <span class="text-[11px] text-grim-400">
+                    • {{ fSpec.acquiredTalentIds.length }} talent(s) acquis
+                  </span>
+                </div>
+                <p v-if="rulesetStore.getSpecialization(fSpec.specializationId)?.description" class="text-xs text-grim-300 mt-1 leading-relaxed">
+                  {{ rulesetStore.getSpecialization(fSpec.specializationId)?.description }}
+                </p>
+              </div>
+
+              <button
+                @click="onRemoveSpecialization(fSpec.specializationId)"
+                class="p-1 hover:bg-crimson-900/60 rounded text-grim-400 hover:text-crimson-300 transition shrink-0 ml-2"
+                title="Retirer cette spécialisation (rembourse 6 XP + talents)"
+              >
+                <Trash2 class="w-3.5 h-3.5" />
+              </button>
             </div>
 
-            <div class="space-y-1.5">
+            <div class="space-y-1.5 pt-2 border-t border-grim-800/80">
+              <div class="text-[10px] font-semibold text-grim-400 uppercase tracking-wider">
+                Talents de cette voie (6 XP chacun) :
+              </div>
               <div
                 v-for="t in rulesetStore.getSpecialization(fSpec.specializationId)?.talents || []"
                 :key="t.id"
-                @click="warbandStore.toggleTalent(fighter.id, fSpec.specializationId, t.id)"
-                class="flex items-start justify-between gap-3 p-2 rounded border cursor-pointer transition text-xs"
+                @click="onToggleTalent(fSpec.specializationId, t.id)"
+                class="flex items-start justify-between gap-3 p-2.5 rounded border cursor-pointer transition text-xs"
                 :class="fSpec.acquiredTalentIds.includes(t.id)
-                  ? 'bg-amber-950/40 border-amber-600/70 text-amber-200'
+                  ? 'bg-amber-950/40 border-amber-600/70 text-amber-200 ring-1 ring-amber-500/30'
                   : 'bg-grim-900 border-grim-800 hover:border-grim-700 text-grim-300'"
               >
                 <div class="space-y-0.5">
                   <div class="flex items-center gap-2">
-                    <span class="font-bold">{{ t.name }}</span>
-                    <span class="text-[10px] font-mono px-1 rounded bg-grim-950 text-grim-400 border border-grim-800">
+                    <span class="font-bold text-xs">{{ t.name }}</span>
+                    <span v-if="t.tier" class="text-[10px] font-mono px-1 rounded bg-grim-950 text-grim-400 border border-grim-800">
                       Tier {{ t.tier }}
                     </span>
                   </div>
-                  <p class="text-[11px] text-grim-400">{{ t.description }}</p>
+                  <p class="text-[11px] text-grim-400 leading-relaxed">{{ t.description }}</p>
                 </div>
 
-                <div class="flex items-center gap-1.5 shrink-0">
-                  <span class="font-mono font-bold text-gold-400">{{ t.xpCost }} XP</span>
+                <div class="flex items-center gap-2 shrink-0 mt-0.5">
+                  <span class="font-mono font-bold text-xs text-amber-400">6 XP</span>
                   <div
                     class="w-4 h-4 rounded border flex items-center justify-center transition"
                     :class="fSpec.acquiredTalentIds.includes(t.id) ? 'bg-amber-500 border-amber-400 text-grim-950' : 'border-grim-700'"
