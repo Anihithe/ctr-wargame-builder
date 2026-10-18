@@ -107,7 +107,7 @@ function toggleSpell(spell: Spell) {
               </div>
 
               <div class="text-[11px] text-grim-400 font-mono flex items-center gap-3">
-                <span>Portée: {{ spell.rangeInInches }}''</span>
+                <span>Portée: {{ spell.rangeInInches }}"</span>
                 <span>Type: {{ spell.type }}</span>
               </div>
 

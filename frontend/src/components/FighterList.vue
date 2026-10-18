@@ -18,6 +18,7 @@ import {
   Archive,
   Skull,
   Plus,
+  Lock,
 } from 'lucide-vue-next';
 
 const warbandStore = useWarbandStore();
@@ -128,29 +129,49 @@ function getFighterTalents(f: Fighter) {
 }
 
 function getFighterWeapons(f: Fighter) {
-  return f.equippedItems
-    .filter((eq) => {
-      if (eq.isMagicItem) return false;
-      const item = rulesetStore.getEquipment(eq.equipmentId);
-      return item?.category === 'Melee' || item?.category === 'Ranged';
-    })
-    .map((eq) => ({
-      id: eq.id,
-      name: rulesetStore.getEquipment(eq.equipmentId)?.name || eq.equipmentId,
-    }));
+  const counts = new Map<string, { count: number; name: string }>();
+  for (const eq of f.equippedItems) {
+    if (eq.isMagicItem) continue;
+    const item = rulesetStore.getEquipment(eq.equipmentId);
+    if (item?.category === 'Melee' || item?.category === 'Ranged') {
+      const existing = counts.get(eq.equipmentId);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        counts.set(eq.equipmentId, {
+          count: 1,
+          name: item.name || eq.equipmentId,
+        });
+      }
+    }
+  }
+  return Array.from(counts.entries()).map(([equipmentId, data]) => ({
+    id: equipmentId,
+    name: data.count > 1 ? `${data.name} x${data.count}` : data.name,
+  }));
 }
 
 function getFighterShields(f: Fighter) {
-  return f.equippedItems
-    .filter((eq) => {
-      if (eq.isMagicItem) return false;
-      const item = rulesetStore.getEquipment(eq.equipmentId);
-      return item?.category === 'Shield';
-    })
-    .map((eq) => ({
-      id: eq.id,
-      name: rulesetStore.getEquipment(eq.equipmentId)?.name || eq.equipmentId,
-    }));
+  const counts = new Map<string, { count: number; name: string }>();
+  for (const eq of f.equippedItems) {
+    if (eq.isMagicItem) continue;
+    const item = rulesetStore.getEquipment(eq.equipmentId);
+    if (item?.category === 'Shield') {
+      const existing = counts.get(eq.equipmentId);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        counts.set(eq.equipmentId, {
+          count: 1,
+          name: item.name || eq.equipmentId,
+        });
+      }
+    }
+  }
+  return Array.from(counts.entries()).map(([equipmentId, data]) => ({
+    id: equipmentId,
+    name: data.count > 1 ? `${data.name} x${data.count}` : data.name,
+  }));
 }
 
 function getFighterArmors(f: Fighter) {
@@ -167,17 +188,145 @@ function getFighterArmors(f: Fighter) {
 }
 
 function getFighterMagicItems(f: Fighter) {
-  return f.equippedItems
-    .filter((eq) => eq.isMagicItem)
-    .map((eq) => ({
-      id: eq.id,
-      name: rulesetStore.getMagicItem(eq.equipmentId)?.name || eq.equipmentId,
-    }));
+  const counts = new Map<string, { count: number; name: string }>();
+  for (const eq of f.equippedItems) {
+    if (!eq.isMagicItem) continue;
+    const item = rulesetStore.getMagicItem(eq.equipmentId);
+    const existing = counts.get(eq.equipmentId);
+    if (existing) {
+      existing.count += 1;
+    } else {
+      counts.set(eq.equipmentId, {
+        count: 1,
+        name: item?.name || eq.equipmentId,
+      });
+    }
+  }
+  return Array.from(counts.entries()).map(([equipmentId, data]) => ({
+    id: equipmentId,
+    name: data.count > 1 ? `${data.name} x${data.count}` : data.name,
+  }));
+}
+
+function hasFighterMaitrise(f: Fighter): boolean {
+  if (f.type === 'Animal') return false;
+  let maxSlots = 2;
+  if (f.type === 'Guerrier') {
+    maxSlots = rulesetStore.config.slotsByRank?.[f.rank.toString()] ?? (f.rank >= 3 ? 3 : 2);
+  } else if (f.type === 'Monstre') {
+    maxSlots = 4;
+  }
+  if (f.officerRole !== 'None' && warband.value?.selectedOriginIds?.includes('mutants')) {
+    maxSlots += 1;
+  }
+
+  let usedSlots = 0;
+  for (const eq of f.equippedItems) {
+    if (!eq.isMagicItem) {
+      const item = rulesetStore.getEquipment(eq.equipmentId);
+      usedSlots += item?.slots ?? 1;
+    } else {
+      const mItem = rulesetStore.getMagicItem(eq.equipmentId);
+      usedSlots += mItem?.slots || 0;
+    }
+  }
+
+  // 1. Emplacement libre
+  if (maxSlots - usedSlots > 0) return true;
+
+  // 2. Arme niv <= 3 avec accès effectif > 3
+  for (const eq of f.equippedItems) {
+    if (eq.isMagicItem) continue;
+    const item = rulesetStore.getEquipment(eq.equipmentId);
+    if (!item) continue;
+    if (item.category === 'Melee' || item.category === 'Ranged') {
+      if (item.level <= 3) {
+        let eff = f.rank;
+        const hasGuerrier = f.specializations.some((s) => s.specializationId === 'guerrier');
+        const hasBarbare = f.specializations.some((s) => s.specializationId === 'barbare');
+        const hasGarde = f.specializations.some((s) => s.specializationId === 'garde');
+        const hasRoublard = f.specializations.some((s) => s.specializationId === 'roublard');
+        const hasRanger = f.specializations.some((s) => s.specializationId === 'ranger');
+        const hasIngenieur = f.specializations.some((s) => s.specializationId === 'ingenieur');
+        const hasMaitreArcher = f.specializations.some((s) => s.specializationId === 'maitre_archer');
+        const hasTireurElite = f.specializations.some((s) => s.specializationId === 'tireur_d_elite');
+        const hasGardesRoyaux = warband.value?.selectedOriginIds?.includes('gardes_royaux');
+        const hasDestructeurs = warband.value?.selectedOriginIds?.includes('destructeurs');
+
+        if (item.subCategory === 'Arme intermédiaire' && hasGardesRoyaux) eff += 1;
+        if (
+          hasDestructeurs &&
+          (item.subCategory?.includes('lourde') ||
+            item.subCategory?.includes('Pugilat') ||
+            item.id.includes('pugilat'))
+        ) {
+          eff += 1;
+        }
+        if (
+          hasGuerrier &&
+          (item.subCategory?.includes('intermédiaire') || item.subCategory?.includes('lourde'))
+        ) {
+          eff += 1;
+        }
+        if (
+          hasBarbare &&
+          (item.subCategory?.includes('lourde') ||
+            item.subCategory?.includes('Pugilat') ||
+            item.id.includes('pugilat'))
+        ) {
+          eff += 1;
+        }
+        if (hasGarde && item.category === 'Melee' && item.subCategory?.includes('intermédiaire')) {
+          eff += 1;
+        }
+        if (hasRoublard && item.category === 'Melee' && item.subCategory?.includes('légère')) {
+          eff += 1;
+        }
+        if (
+          hasRanger &&
+          item.category === 'Ranged' &&
+          (item.subCategory?.includes('Arc') ||
+            item.subCategory?.includes('jet') ||
+            item.id.startsWith('tir_2m_arc') ||
+            item.id.startsWith('tir_1m_jet'))
+        ) {
+          eff += 1;
+        }
+        if (hasIngenieur && item.category === 'Ranged') {
+          eff += 1;
+        }
+        if (hasMaitreArcher && (item.subCategory?.includes('Arc') || item.id.startsWith('tir_2m_arc'))) {
+          eff += 1;
+        }
+        if (
+          hasTireurElite &&
+          (item.subCategory?.includes('Arbalète') ||
+            item.subCategory?.includes('poing') ||
+            item.id.startsWith('tir_2m_arbalete') ||
+            item.id.startsWith('tir_1m_poing'))
+        ) {
+          eff += 1;
+        }
+
+        if (eff > 3) return true;
+      }
+    }
+  }
+
+  return false;
 }
 
 function hasFighterBadges(f: Fighter): boolean {
-  return f.specializations.length > 0 || f.equippedItems.length > 0;
+  return f.specializations.length > 0 || f.equippedItems.length > 0 || hasFighterMaitrise(f);
 }
+
+const canRecruitRank1 = computed(() => {
+  if (!warband.value) return true;
+  if (warband.value.factionId === 'monstruosite') {
+    return warband.value.selectedOriginIds?.includes('esclavagistes') ?? false;
+  }
+  return true;
+});
 </script>
 
 <template>
@@ -381,6 +530,15 @@ function hasFighterBadges(f: Fighter): boolean {
               <Sparkles class="w-2.5 h-2.5 text-gold-400" />
               {{ mi.name }}
             </span>
+
+            <!-- 6. Maîtrise -->
+            <span
+              v-if="hasFighterMaitrise(leaderFighter)"
+              class="text-[10px] px-1.5 py-0.5 rounded bg-amber-950/70 border border-amber-600/70 text-amber-200 flex items-center gap-1 font-medium cursor-help"
+              title="Maîtrise : Le Combattant peut relancer un jet d'attaque par tour (emplacement libre ou arme de niv ≤ 3 avec accès > 3)."
+            >
+              <span>★ Maîtrise</span>
+            </span>
           </div>
         </div>
 
@@ -573,6 +731,15 @@ function hasFighterBadges(f: Fighter): boolean {
               <Sparkles class="w-2.5 h-2.5 text-gold-400" />
               {{ mi.name }}
             </span>
+
+            <!-- 6. Maîtrise -->
+            <span
+              v-if="hasFighterMaitrise(brasDroitFighter)"
+              class="text-[10px] px-1.5 py-0.5 rounded bg-amber-950/70 border border-amber-600/70 text-amber-200 flex items-center gap-1 font-medium cursor-help"
+              title="Maîtrise : Le Combattant peut relancer un jet d'attaque par tour (emplacement libre ou arme de niv ≤ 3 avec accès > 3)."
+            >
+              <span>★ Maîtrise</span>
+            </span>
           </div>
         </div>
 
@@ -668,6 +835,7 @@ function hasFighterBadges(f: Fighter): boolean {
               Guerriers de troupe
             </div>
             <button
+              v-if="canRecruitRank1"
               @click="recruitTroop('Guerrier', 1)"
               class="w-full flex items-center justify-between px-3 py-1.5 text-xs rounded hover:bg-grim-800 text-grim-200 transition"
             >
@@ -677,6 +845,17 @@ function hasFighterBadges(f: Fighter): boolean {
               </div>
               <span class="font-mono text-gold-400 font-bold">1 PO</span>
             </button>
+            <div
+              v-else-if="warband?.factionId === 'monstruosite'"
+              class="w-full flex items-center justify-between px-3 py-1.5 text-xs rounded bg-grim-950/60 text-grim-500 border border-grim-800 cursor-not-allowed select-none"
+              title="La Monstruosité ne possède pas de Rang 1 de base. L'origine Esclavagistes est requise."
+            >
+              <div class="flex items-center gap-2">
+                <span class="px-1.5 py-0.5 rounded bg-grim-900 text-grim-600 text-[10px] font-bold">R1</span>
+                <span class="italic text-[11px]">R1 (Esclavagistes requis)</span>
+              </div>
+              <Lock class="w-3.5 h-3.5 text-grim-600 shrink-0" />
+            </div>
             <button
               @click="recruitTroop('Guerrier', 2)"
               class="w-full flex items-center justify-between px-3 py-1.5 text-xs rounded hover:bg-grim-800 text-grim-200 transition"
@@ -856,6 +1035,15 @@ function hasFighterBadges(f: Fighter): boolean {
             >
               <Sparkles class="w-2.5 h-2.5 text-gold-400" />
               {{ mi.name }}
+            </span>
+
+            <!-- 6. Maîtrise -->
+            <span
+              v-if="hasFighterMaitrise(f)"
+              class="text-[10px] px-1.5 py-0.5 rounded bg-amber-950/70 border border-amber-600/70 text-amber-200 flex items-center gap-1 font-medium cursor-help"
+              title="Maîtrise : Le Combattant peut relancer un jet d'attaque par tour (emplacement libre ou arme de niv ≤ 3 avec accès > 3)."
+            >
+              <span>★ Maîtrise</span>
             </span>
           </div>
         </div>

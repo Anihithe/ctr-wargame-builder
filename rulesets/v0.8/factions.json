@@ -444,6 +444,13 @@
       "description": "Vos Combattants de Rang 4 sont des Monstres mais vous n'êtes pas limité à un seul Monstre. Ils peuvent sélectionner d'autres Spécialisations que la Bête et peuvent être Officiers. Vous pouvez sélectionner 3 Origines."
     },
     "profiles": {
+      "1": {
+        "mouvement": 6,
+        "combat": 3,
+        "esquive": 2,
+        "volonte": 3,
+        "pv": 5
+      },
       "2": {
         "mouvement": 6,
         "combat": 4,

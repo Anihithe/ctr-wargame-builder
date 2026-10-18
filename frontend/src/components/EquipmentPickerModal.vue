@@ -35,6 +35,10 @@ const hasMageDeBataille = computed(
 const isExcellence = computed(() => warband.value?.factionId === 'excellence');
 const hasGardesRoyaux = computed(() => warband.value?.selectedOriginIds?.includes('gardes_royaux') || false);
 const hasNoblesse = computed(() => warband.value?.selectedOriginIds?.includes('noblesse') || false);
+const hasChevaliersNoirs = computed(() => warband.value?.selectedOriginIds?.includes('chevaliers_noirs') || false);
+const hasCompagnieDeFer = computed(() => warband.value?.selectedOriginIds?.includes('compagnie_de_fer') || false);
+const hasDestructeurs = computed(() => warband.value?.selectedOriginIds?.includes('destructeurs') || false);
+const hasGoules = computed(() => warband.value?.selectedOriginIds?.includes('goules') || false);
 
 const hasGuerrierSpec = computed(() => fighter.value?.specializations.some((s) => s.specializationId === 'guerrier') || false);
 const hasBarbareSpec = computed(() => fighter.value?.specializations.some((s) => s.specializationId === 'barbare') || false);
@@ -83,7 +87,10 @@ const activeRankBonusSummary = computed(() => {
   if (hasMaitreArcherSpec.value) parts.push('+1 Maître archer (arcs)');
   if (hasTireurEliteSpec.value) parts.push("+1 Tireur d'élite (arbalètes et poing)");
   if (hasNoblesse.value) parts.push('+1 Noblesse (armures)');
+  if (hasChevaliersNoirs.value) parts.push('+1 Chevaliers noirs (armures)');
+  if (hasCompagnieDeFer.value) parts.push('+1 Compagnie de Fer (armures)');
   if (hasGardesRoyaux.value) parts.push('+1 Gardes royaux (armes inter)');
+  if (hasDestructeurs.value) parts.push('+1 Destructeurs (armes lourdes et pugilat)');
   return parts.join(' | ');
 });
 
@@ -135,8 +142,20 @@ const equippedArmor = computed(() => {
 function getEffectiveRank(eq: Equipment): number {
   if (!fighter.value) return 1;
   let rank = fighter.value.rank;
-  if (eq.category === 'Armor' && hasNoblesse.value) rank += 1;
-  if (eq.subCategory === 'Arme intermédiaire' && hasGardesRoyaux.value) rank += 1;
+  if (eq.category === 'Armor' && (hasNoblesse.value || hasChevaliersNoirs.value || hasCompagnieDeFer.value)) {
+    rank += 1;
+  }
+  if (eq.subCategory === 'Arme intermédiaire' && hasGardesRoyaux.value) {
+    rank += 1;
+  }
+  if (
+    hasDestructeurs.value &&
+    (eq.subCategory?.includes('lourde') ||
+      eq.subCategory?.includes('Pugilat') ||
+      eq.id.includes('pugilat'))
+  ) {
+    rank += 1;
+  }
   if (
     hasGuerrierSpec.value &&
     (eq.category === 'Shield' ||
@@ -245,6 +264,9 @@ function getEquipError(eq: Equipment): string | null {
   }
   if (isExcellence.value && (eq.category === 'Armor' || eq.category === 'Shield') && !hasGardesRoyaux.value) {
     return `Interdit pour L'Excellence (Réflexes surhumains : pas d'armure ni bouclier)`;
+  }
+  if (hasGoules.value && fighter.value?.rank === 1 && (eq.category === 'Armor' || eq.category === 'Shield')) {
+    return `Goules : les Combattants de Rang 1 ne peuvent pas porter de Protection`;
   }
   if (eq.category === 'Armor') {
     if (equippedArmor.value && equippedArmor.value.id !== eq.id) {
@@ -470,6 +492,9 @@ function unequipOne(equipmentId: string) {
               <strong :class="remainingSlots > 0 ? 'text-amber-400' : 'text-crimson-400'">
                 {{ remainingSlots }} / {{ maxSlots }}
               </strong>
+              <span v-if="remainingSlots > 0" class="text-emerald-400 ml-1 text-[11px] font-medium">
+                (Maîtrise active)
+              </span>
             </span>
             <span class="text-grim-600">|</span>
             <span>
@@ -578,7 +603,7 @@ function unequipOne(equipmentId: string) {
                   class="text-xs font-bold font-mono text-cyan-300 bg-grim-950/90 px-2.5 py-1 rounded border border-grim-800 flex items-center gap-1.5 shadow-sm"
                 >
                   <span class="text-grim-400 text-[10px] font-normal uppercase">Portée</span>
-                  <span class="text-sm font-extrabold text-cyan-400">{{ getActiveEquipment(fam)?.rangeInInches }}''</span>
+                  <span class="text-sm font-extrabold text-cyan-400">{{ getActiveEquipment(fam)?.rangeInInches }}"</span>
                 </span>
                 <span
                   v-if="getActiveEquipment(fam)?.protection"
@@ -602,9 +627,10 @@ function unequipOne(equipmentId: string) {
                 <span
                   v-for="rule in getActiveEquipment(fam)?.specialRuleIds"
                   :key="rule"
-                  class="text-[11px] px-2 py-0.5 rounded bg-grim-850 border border-grim-700 text-gold-300 font-medium"
+                  class="text-[11px] px-2 py-0.5 rounded bg-grim-850 border border-grim-700 text-gold-300 font-medium cursor-help"
+                  :title="rulesetStore.getSpecialRule(rule)?.description || rule"
                 >
-                  {{ rule }}
+                  {{ rulesetStore.getSpecialRule(rule)?.name || rule }}
                 </span>
               </div>
 
