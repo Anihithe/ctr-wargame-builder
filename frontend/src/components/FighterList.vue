@@ -198,7 +198,7 @@ function getRankBadgeClass(fighter: Fighter): string {
         <div class="flex items-center gap-2">
           <Crown class="w-4 h-4 text-amber-400" />
           <h2 class="text-xs font-bold text-grim-200 uppercase tracking-wider font-display">
-            Officiers de commandement
+            Officiers
           </h2>
         </div>
         <span class="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-grim-900 border border-grim-800 text-grim-400">
@@ -539,7 +539,7 @@ function getRankBadgeClass(fighter: Fighter): string {
         <div class="flex items-center gap-2">
           <Shield class="w-4 h-4 text-gold-400" />
           <h2 class="text-xs font-bold text-grim-200 uppercase tracking-wider font-display">
-            Combattants de troupe sur table
+            Combattants
           </h2>
         </div>
         <span class="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-grim-900 border border-grim-800 text-grim-400">
@@ -659,7 +659,7 @@ function getRankBadgeClass(fighter: Fighter): string {
         <div class="flex items-center gap-2">
           <Archive class="w-4 h-4 text-blue-400" />
           <h2 class="text-xs font-bold text-grim-300 uppercase tracking-wider font-display group-hover:text-white transition">
-            Réserve & Banc de touche
+            Réserve
           </h2>
           <span class="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-blue-950 text-blue-300 border border-blue-800">
             {{ reserveFighters.length }}
@@ -734,7 +734,7 @@ function getRankBadgeClass(fighter: Fighter): string {
         <div class="flex items-center gap-2">
           <Skull class="w-4 h-4 text-slate-400" />
           <h2 class="text-xs font-bold text-grim-400 uppercase tracking-wider font-display group-hover:text-slate-200 transition">
-            Cimetière & Pertes de campagne
+            Cimetière
           </h2>
           <span class="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-slate-900 text-slate-400 border border-slate-700">
             {{ graveyardFighters.length }}
