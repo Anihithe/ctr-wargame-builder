@@ -36,7 +36,7 @@ const allegiance = computed(() => warband.value ? rulesetStore.getAllegiance(war
 const availableAllegiances = computed(() => rulesetStore.currentRuleset.allegiances || []);
 
 const showAllOrigins = ref(false);
-const showAllegiancePicker = ref(false);
+const showAllAllegianceRules = ref(false);
 
 const selectedOrigins = computed(() => {
   if (!faction.value || !warband.value) return [];
@@ -53,20 +53,56 @@ const originsToDisplay = computed(() => {
   return faction.value.origins;
 });
 
+const allegianceRulesToDisplay = computed(() => {
+  if (!allegiance.value?.rules) return [];
+  if (warband.value?.selectedAllegianceRuleName && !showAllAllegianceRules.value) {
+    const found = allegiance.value.rules.filter(
+      (r) => r.name === warband.value?.selectedAllegianceRuleName
+    );
+    if (found.length > 0) return found;
+  }
+  return allegiance.value.rules;
+});
+
 function selectAllegiance(allegianceId: string) {
+  const allg = rulesetStore.getAllegiance(allegianceId);
+  const defaultRule = allg?.rules.length === 1 ? allg.rules[0].name : undefined;
   warbandStore.updateWarband({
     allegianceId,
-    selectedAllegianceRuleName: undefined,
+    selectedAllegianceRuleName: defaultRule,
   });
-  showAllegiancePicker.value = false;
+  showAllAllegianceRules.value = false;
 }
 
 function removeAllegiance() {
+  if (
+    warband.value?.allegianceId === 'conclave_des_mages' &&
+    warband.value?.selectedAllegianceRuleName === 'Érudits'
+  ) {
+    for (const f of warband.value.fighters) {
+      const mageSpec = f.specializations.find((s) => s.specializationId === 'mage');
+      if (mageSpec) {
+        mageSpec.acquiredTalentIds = mageSpec.acquiredTalentIds.filter(
+          (id) => id !== 'incantation_maitrisee'
+        );
+      }
+    }
+  }
   warbandStore.updateWarband({
     allegianceId: undefined,
     selectedAllegianceRuleName: undefined,
   });
-  showAllegiancePicker.value = false;
+  showAllAllegianceRules.value = false;
+}
+
+function onSelectAllegianceRule(ruleName: string) {
+  warbandStore.selectAllegianceRule(ruleName);
+  showAllAllegianceRules.value = false;
+}
+
+function onUnselectAllegianceRule() {
+  warbandStore.unselectAllegianceRule();
+  showAllAllegianceRules.value = true;
 }
 
 // Calculate base stats of selected fighter
@@ -227,6 +263,7 @@ function toggleMagicItemsUnlock() {
 function isConclaveFreeTalent(talentId: string): boolean {
   if (!fighter.value || fighter.value.officerRole === 'None') return false;
   if (warband.value?.allegianceId !== 'conclave_des_mages') return false;
+  if (warband.value?.selectedAllegianceRuleName !== 'Érudits') return false;
   return talentId === 'incantation_maitrisee';
 }
 
@@ -234,11 +271,13 @@ const fighterSpentXp = computed(() => {
   if (!fighter.value) return 0;
   let total = fighter.value.specializations.length * 6;
   const isOfficer = fighter.value.officerRole !== 'None';
-  const hasConclave = warband.value?.allegianceId === 'conclave_des_mages';
+  const hasErudits =
+    warband.value?.allegianceId === 'conclave_des_mages' &&
+    warband.value?.selectedAllegianceRuleName === 'Érudits';
 
   for (const s of fighter.value.specializations) {
     for (const tId of s.acquiredTalentIds) {
-      if (isOfficer && hasConclave && tId === 'incantation_maitrisee') {
+      if (isOfficer && hasErudits && tId === 'incantation_maitrisee') {
         continue; // Gratuit (0 XP)
       }
       total += 6;
@@ -399,13 +438,6 @@ function onSetXp(val: number) {
           <div v-if="allegiance" class="flex items-center gap-2">
             <button
               type="button"
-              @click="showAllegiancePicker = !showAllegiancePicker"
-              class="text-xs px-2.5 py-1 rounded bg-grim-800 hover:bg-grim-750 text-amber-300 border border-grim-700 transition"
-            >
-              {{ showAllegiancePicker ? 'Masquer la liste' : 'Changer' }}
-            </button>
-            <button
-              type="button"
               @click="removeAllegiance"
               class="p-1 rounded bg-grim-800 hover:bg-crimson-900/60 text-grim-400 hover:text-crimson-300 border border-grim-700 transition"
               title="Retirer l'allégeance"
@@ -415,8 +447,8 @@ function onSetXp(val: number) {
           </div>
         </div>
 
-        <!-- Case A: Allegiance is selected and we are NOT browsing the picker -->
-        <div v-if="allegiance && !showAllegiancePicker" class="space-y-3">
+        <!-- Case A: Allegiance is selected -->
+        <div v-if="allegiance" class="space-y-3">
           <div class="bg-amber-950/20 border border-amber-500/40 rounded-lg p-3.5 space-y-3">
             <div class="flex items-start justify-between">
               <div>
@@ -425,29 +457,74 @@ function onSetXp(val: number) {
               </div>
             </div>
 
-            <!-- Rules display: all active rules apply -->
-            <div class="space-y-2 pt-2 border-t border-amber-900/40">
-              <div class="text-[11px] font-semibold text-amber-400 uppercase tracking-wider">
-                Doctrines / Règles actives :
+            <!-- Sub-specialization / Doctrine rules selection (identical pattern to Origines) -->
+            <div v-if="allegiance.rules && allegiance.rules.length > 0" class="pt-2 border-t border-amber-900/40 space-y-2">
+              <div class="flex items-center justify-between">
+                <div class="text-[11px] font-semibold text-amber-400 uppercase tracking-wider">
+                  Doctrine / Spécialisation (1 au choix)
+                </div>
+                <div class="flex items-center gap-2">
+                  <span
+                    class="text-xs font-mono font-semibold"
+                    :class="warband.selectedAllegianceRuleName ? 'text-amber-400' : 'text-crimson-400'"
+                  >
+                    {{ warband.selectedAllegianceRuleName ? '1 / 1 sélectionnée' : '0 / 1 sélectionnée' }}
+                  </span>
+                  <button
+                    v-if="warband.selectedAllegianceRuleName && allegiance.rules.length > 1"
+                    type="button"
+                    @click="showAllAllegianceRules = !showAllAllegianceRules"
+                    class="text-[11px] px-2 py-0.5 rounded bg-grim-800 hover:bg-grim-750 text-amber-300 border border-grim-700 transition"
+                  >
+                    {{ showAllAllegianceRules ? 'Replier' : 'Modifier le choix' }}
+                  </button>
+                </div>
               </div>
-              <div class="space-y-2">
+
+              <!-- List of sub-rules -->
+              <div class="grid grid-cols-1 gap-2.5">
                 <div
-                  v-for="(rule, i) in allegiance.rules"
-                  :key="i"
-                  class="p-2.5 rounded-lg border bg-grim-850/80 border-amber-500/30 space-y-0.5"
+                  v-for="rule in allegianceRulesToDisplay"
+                  :key="rule.name"
+                  @click="onSelectAllegianceRule(rule.name)"
+                  class="p-3 rounded-lg border text-xs space-y-1.5 cursor-pointer transition select-none relative group"
+                  :class="
+                    warband.selectedAllegianceRuleName === rule.name
+                      ? 'border-amber-500 bg-amber-950/30 ring-1 ring-amber-500/50 shadow-md'
+                      : 'bg-grim-850 border-grim-800 hover:border-amber-700/60 hover:bg-grim-800/40 text-grim-400'
+                  "
                 >
-                  <div class="font-bold text-xs text-amber-300 flex items-center gap-1.5">
-                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-                    <span>{{ rule.name }}</span>
+                  <div class="flex items-center justify-between">
+                    <span
+                      class="font-bold text-sm"
+                      :class="warband.selectedAllegianceRuleName === rule.name ? 'text-amber-300' : 'text-grim-200'"
+                    >
+                      {{ rule.name }}
+                    </span>
+                    <div class="flex items-center gap-1">
+                      <button
+                        v-if="warband.selectedAllegianceRuleName === rule.name"
+                        type="button"
+                        @click.stop="onUnselectAllegianceRule"
+                        class="p-0.5 rounded hover:bg-crimson-900/50 text-grim-400 hover:text-crimson-300 transition"
+                        title="Retirer cette doctrine"
+                      >
+                        <X class="w-3.5 h-3.5" />
+                      </button>
+                      <div
+                        v-else
+                        class="w-4 h-4 rounded-full border border-grim-700 flex items-center justify-center transition"
+                      ></div>
+                    </div>
                   </div>
-                  <div class="text-grim-300 text-[11px] leading-relaxed pl-3">{{ rule.description }}</div>
+                  <p class="text-grim-300 text-[11px] leading-relaxed">{{ rule.description }}</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Case B: No allegiance selected OR browsing the list to change -->
+        <!-- Case B: No allegiance selected -->
         <div v-else class="space-y-3">
           <p class="text-xs text-grim-400">
             Sélectionnez une allégeance pour faire bénéficier vos combattants d'une doctrine de guerre spéciale :
@@ -458,31 +535,17 @@ function onSetXp(val: number) {
               v-for="allg in availableAllegiances"
               :key="allg.id"
               @click="selectAllegiance(allg.id)"
-              class="p-3 rounded-lg border text-xs space-y-2 cursor-pointer transition select-none"
-              :class="
-                warband.allegianceId === allg.id
-                  ? 'border-amber-500 bg-amber-950/30 ring-1 ring-amber-500/50'
-                  : 'bg-grim-850 border-grim-800 hover:border-amber-500/50 hover:bg-grim-800/60'
-              "
+              class="p-3.5 rounded-lg border bg-grim-850 border-grim-800 hover:border-amber-500/60 hover:bg-grim-800/60 cursor-pointer transition space-y-2 group"
             >
               <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="allegianceSelection"
-                    :value="allg.id"
-                    :checked="warband.allegianceId === allg.id"
-                    class="accent-amber-500 pointer-events-none"
-                  />
-                  <span class="font-bold text-sm" :class="warband.allegianceId === allg.id ? 'text-amber-300' : 'text-grim-200'">
-                    {{ allg.name }}
-                  </span>
-                </div>
-                <span v-if="warband.allegianceId === allg.id" class="text-[10px] px-2 py-0.5 rounded bg-amber-500 text-grim-950 font-bold uppercase">
-                  Actuelle
+                <span class="font-bold text-sm text-grim-200 group-hover:text-amber-300 transition">
+                  {{ allg.name }}
+                </span>
+                <span class="text-[10px] px-2 py-0.5 rounded bg-grim-800 border border-grim-700 text-grim-400">
+                  {{ allg.rules.length }} règle{{ allg.rules.length > 1 ? 's' : '' }}
                 </span>
               </div>
-              <p class="text-grim-300 text-[11px] leading-relaxed">{{ allg.description }}</p>
+              <p class="text-xs text-grim-400 leading-relaxed">{{ allg.description }}</p>
 
               <div class="space-y-1.5 pt-1.5 border-t border-grim-800/80">
                 <div v-for="(rule, i) in allg.rules" :key="i" class="text-[11px] bg-grim-900/60 p-2 rounded border border-grim-800/50">

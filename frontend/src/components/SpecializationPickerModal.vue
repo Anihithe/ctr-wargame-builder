@@ -25,6 +25,7 @@ const allSpecializations = computed(() => rulesetStore.currentRuleset.specializa
 function isConclaveFreeTalent(talentId: string): boolean {
   if (!fighter.value || fighter.value.officerRole === 'None') return false;
   if (warband.value?.allegianceId !== 'conclave_des_mages') return false;
+  if (warband.value?.selectedAllegianceRuleName !== 'Érudits') return false;
   return talentId === 'incantation_maitrisee';
 }
 
@@ -32,11 +33,13 @@ const spentXp = computed(() => {
   if (!fighter.value) return 0;
   let total = fighter.value.specializations.length * 6;
   const isOfficer = fighter.value.officerRole !== 'None';
-  const hasConclave = warband.value?.allegianceId === 'conclave_des_mages';
+  const hasErudits =
+    warband.value?.allegianceId === 'conclave_des_mages' &&
+    warband.value?.selectedAllegianceRuleName === 'Érudits';
 
   for (const s of fighter.value.specializations) {
     for (const tId of s.acquiredTalentIds) {
-      if (isOfficer && hasConclave && tId === 'incantation_maitrisee') {
+      if (isOfficer && hasErudits && tId === 'incantation_maitrisee') {
         continue;
       }
       total += 6;
