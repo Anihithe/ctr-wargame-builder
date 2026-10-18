@@ -1,0 +1,112 @@
+[
+  {
+    "id": "aceree",
+    "name": "Acérée",
+    "description": "Bonus d'un dé au jet d'attaque contre un ennemi n'ayant pas de bonus de Protection ni d'arme avec la règle spéciale Parade."
+  },
+  {
+    "id": "acrobate",
+    "name": "Acrobate",
+    "description": "Le Combattant divise par 2 le nombre de dés lancés pour définir les dégâts de Chute."
+  },
+  {
+    "id": "agile",
+    "name": "Agile",
+    "description": "Ignore le malus pour Enjamber et Escalader."
+  },
+  {
+    "id": "allonge",
+    "name": "Allonge",
+    "description": "Le Combattant peut frapper un ennemi à une distance de 1\". Il peut frapper à travers d'autres Combattants mais pas à travers des décors qui bloquent sa ligne de vue."
+  },
+  {
+    "id": "attaque_en_mouvement",
+    "name": "Attaque en mouvement",
+    "description": "Le Combattant peut effectuer un Tir pendant un mouvement normal (à n'importe quel moment). Si ce mouvement se termine par une Charge, ce Tir n'est pas compté comme une action."
+  },
+  {
+    "id": "decerebre",
+    "name": "Décérébré",
+    "description": "Le Combattant ne possède pas de Volonté. Il ne peut pas choisir de Spécialisation et n'est pas affecté par la règle spéciale Terreur. Utilisez la Volonté de l'Officier le plus proche pour un jet de Volonté opposé."
+  },
+  {
+    "id": "discret",
+    "name": "Discret",
+    "description": "Double le malus de Couvert."
+  },
+  {
+    "id": "encombrant",
+    "name": "Encombrant",
+    "description": "Le malus pour Enjamber est doublé, le Combattant ne peut plus ni Sauter ni Escalader et subit le double des dégâts de chute."
+  },
+  {
+    "id": "infiltre",
+    "name": "Infiltré",
+    "description": "Un Combattant peut être déployé n’importe où, en dehors des zones de Déploiement adverse, hors de vue de tout ennemi. Si un Combattant Infiltré est visible par au moins un Combattant adverse à la fin du Déploiement, il doit être redéployé dans sa zone de déploiement."
+  },
+  {
+    "id": "parade",
+    "name": "Parade",
+    "description": "Offre un bonus d'un dé au jet de Défense contre les attaques au corps à corps."
+  },
+  {
+    "id": "perce_armure",
+    "name": "Perce-armure (x)",
+    "description": "Le bonus de Protection de l'ennemi est réduit de x (minimum 0). Plusieurs occurrences de Perce-armure se cumulent."
+  },
+  {
+    "id": "poison",
+    "name": "Poison",
+    "description": "Si le Combattant inflige au moins une blessure suite à un jet d'attaque, lancez un dé. Sur 4+ l'ennemi subit une blessure supplémentaire."
+  },
+  {
+    "id": "rechargement",
+    "name": "Rechargement",
+    "description": "Après un tir, le Combattant doit sacrifier son mouvement ou une action avant de pouvoir tirer à nouveau."
+  },
+  {
+    "id": "reduction_degats",
+    "name": "Réduction de dégâts (x)",
+    "description": "Si le Combattant devait subir des dégâts, il réduit ces dégâts de x."
+  },
+  {
+    "id": "regeneration",
+    "name": "Régénération",
+    "description": "Au début de chacune de ses activations, lancez 3 dés. Pour chaque réussite (4+), le Combattant se soigne d’un PV. Il ne peut dépasser son nombre de PV de départ."
+  },
+  {
+    "id": "sadique",
+    "name": "Sadique",
+    "description": "Un Combattant Sadique peut effectuer une attaque contre un Combattant à son contact qui se désengage, même si celui-ci a réussi son test de désengagement."
+  },
+  {
+    "id": "souffle",
+    "name": "Souffle",
+    "description": "Placez le petit côté du gabarit en contact avec n’importe quel point du socle du tireur : tous les Combattants sous le gabarit sont touchés. Effectuez un jet de tir pour chaque Combattant touché. Ignore bonus/malus de position et de couverts."
+  },
+  {
+    "id": "technologie_avancee",
+    "name": "Technologie avancée",
+    "description": "Un Combattant qui bénéficie de cette règle peut sélectionner des armes de cette catégorie (+1 Perce-armure sur armes de tir)."
+  },
+  {
+    "id": "terreur",
+    "name": "Terreur",
+    "description": "Inflige un malus de -1 dé d'attaque lorsque le Combattant est ciblé par une attaque au corps à corps d'un Combattant ennemi ayant une valeur de Volonté inférieure à votre valeur de Combat."
+  },
+  {
+    "id": "tir_indirect",
+    "name": "Tir indirect",
+    "description": "Peut effectuer un tir ignorant les obstacles si le tireur et la cible n'ont pas de décor au-dessus d'eux."
+  },
+  {
+    "id": "vol_bond",
+    "name": "Vol/bond",
+    "description": "Un Combattant qui bénéficie de cette règle peut se déplacer verticalement et ignore le malus de Terrain difficile."
+  },
+  {
+    "id": "maitrise",
+    "name": "Maîtrise",
+    "description": "Le Combattant peut relancer un jet d'attaque par tour (s'il a un emplacement libre ou utilise une arme niveau <= 3 alors qu'il a accès à > 3)."
+  }
+]

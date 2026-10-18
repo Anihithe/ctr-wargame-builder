@@ -1,0 +1,753 @@
+[
+  {
+    "id": "guerrier",
+    "name": "Guerrier",
+    "description": "Compte comme ayant +1 Rang pour les Protections et Armes de CàC intermédiaires et lourdes. Réduit de 1 le malus de mouvement d'une armure.",
+    "talents": [
+      {
+        "id": "contre_attaque",
+        "name": "Contre-attaque",
+        "description": "1x/tour si une attaque CàC ennemie n'inflige aucune blessure, jet d'attaque gratuit contre cet ennemi."
+      },
+      {
+        "id": "feinte",
+        "name": "Feinte",
+        "description": "Réduit l'Esquive de l'ennemi de 1 lors d'une attaque CàC."
+      },
+      {
+        "id": "expert_de_la_charge",
+        "name": "Expert de la charge",
+        "description": "+2 dés d'attaque en charge."
+      },
+      {
+        "id": "costaud",
+        "name": "Costaud",
+        "description": "Réduit de 1 le malus d'Esquive d'une armure portée."
+      },
+      {
+        "id": "enchainement",
+        "name": "Enchaînement",
+        "description": "Double le bonus de la règle spéciale Paire.",
+        "allowedFactionIds": [
+          "alliance",
+          "tenacite",
+          "excellence",
+          "perfidie"
+        ]
+      },
+      {
+        "id": "fine_lame",
+        "name": "Fine lame",
+        "description": "Peut relancer son jet d'attaque s'il n'a pas chargé ce tour (conserve le second jet).",
+        "allowedFactionIds": [
+          "alliance",
+          "excellence"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "mage",
+    "name": "Mage",
+    "description": "Sélectionne des sorts du Livre des sorts dont la somme des niveaux <= Rang. Action Lancer un sort. Pas d'armure ni bouclier, -1 Combat.",
+    "talents": [
+      {
+        "id": "connaissances_approfondies",
+        "name": "Connaissances approfondies",
+        "description": "Peut sélectionner de nouveaux sorts dont le cumul <= Rang (sélectionnable plusieurs fois)."
+      },
+      {
+        "id": "incantation_maitrisee",
+        "name": "Incantation maîtrisée",
+        "description": "Peut ignorer un échec lors d'un jet pour Lancer un sort."
+      },
+      {
+        "id": "portee_accrue",
+        "name": "Portée accrue",
+        "description": "Portée des sorts augmentée de 50% (hors Souffle)."
+      },
+      {
+        "id": "mage_de_bataille",
+        "name": "Mage de bataille",
+        "description": "Peut porter des Protections normalement et n'a plus le malus de -1 Combat."
+      },
+      {
+        "id": "invocateur",
+        "name": "Invocateur",
+        "description": "Peut conserver 2 Invocations identiques simultanément.",
+        "allowedFactionIds": [
+          "alliance",
+          "excellence",
+          "eternite",
+          "monstruosite"
+        ]
+      },
+      {
+        "id": "deluge_de_sorts",
+        "name": "Déluge de sorts",
+        "description": "1x/partie, peut utiliser toute son activation pour lancer 2 sorts.",
+        "allowedFactionIds": [
+          "alliance",
+          "excellence",
+          "perfidie"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "barbare",
+    "name": "Barbare",
+    "description": "+1 Rang pour armes lourdes et pugilat. Ne peut pas sélectionner d'autres armes ni armure ni bouclier. +1 Esquive et +1 PV.",
+    "talents": [
+      {
+        "id": "rage",
+        "name": "Rage",
+        "description": "+2 dés d'attaque mais Esquive réduite de 1 jusqu'à prochaine activation."
+      },
+      {
+        "id": "balayage",
+        "name": "Balayage",
+        "description": "Frappe chaque ennemi à son contact avec malus de -1 Combat."
+      },
+      {
+        "id": "peintures_de_guerre",
+        "name": "Peintures de guerre",
+        "description": "Démarre la partie avec le sort Bouclier actif."
+      },
+      {
+        "id": "attaque_dans_la_course",
+        "name": "Attaque dans la course",
+        "description": "Combat gratuit après Course avec malus de -1 Combat."
+      },
+      {
+        "id": "berserker",
+        "name": "Berserker",
+        "description": "Bénéficie toujours de son bonus de charge.",
+        "allowedFactionIds": [
+          "alliance",
+          "tenacite",
+          "brutalite",
+          "monstruosite",
+          "eternite"
+        ]
+      },
+      {
+        "id": "constitution",
+        "name": "Constitution",
+        "description": "+2 PV à son profil.",
+        "allowedFactionIds": [
+          "tenacite",
+          "brutalite",
+          "monstruosite"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "garde",
+    "name": "Garde",
+    "description": "+1 Rang pour armes CàC intermédiaires. 1x/tour allié au contact peut bénéficier de Parade du Garde.",
+    "talents": [
+      {
+        "id": "armure_adaptee",
+        "name": "Armure adaptée",
+        "description": "Réduit de 1 le malus de mouvement ou d'Esquive d'une armure."
+      },
+      {
+        "id": "interception",
+        "name": "Interception",
+        "description": "1x/tour, portée d'engagement passe à 3\"."
+      },
+      {
+        "id": "assistance",
+        "name": "Assistance",
+        "description": "Alliés attaquant le même ennemi au CàC bénéficient de +1 dé d'attaque."
+      },
+      {
+        "id": "position_defensive",
+        "name": "Position défensive",
+        "description": "Si pas déplacé ce tour, +2 Protection."
+      },
+      {
+        "id": "fauchage",
+        "name": "Fauchage",
+        "description": "Règle Sadique avec arme Allonge et +1 dé si désengagement.",
+        "allowedFactionIds": [
+          "brutalite",
+          "eternite",
+          "perfidie",
+          "monstruosite"
+        ]
+      },
+      {
+        "id": "bouclier_partage",
+        "name": "Bouclier partagé",
+        "description": "1x/tour fait bénéficier son bouclier à un allié au contact ciblé par un tir.",
+        "allowedFactionIds": [
+          "alliance",
+          "excellence",
+          "tenacite"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "protecteur",
+    "name": "Protecteur",
+    "description": "Peut absorber les dégâts d'un allié à 3\". Connaît Soin et Bouclier (portée Contact). Action Lancer un sort.",
+    "talents": [
+      {
+        "id": "saint",
+        "name": "Saint",
+        "description": "Connaît le sort Sanctuaire."
+      },
+      {
+        "id": "bannissement",
+        "name": "Bannissement",
+        "description": "+1 dé d'attaque contre non-joueurs."
+      },
+      {
+        "id": "chatiment",
+        "name": "Châtiment",
+        "description": "Sacrifie un sort pour +2 dés d'attaque ce tour (sort perdu pour la partie)."
+      },
+      {
+        "id": "soigneur",
+        "name": "Soigneur",
+        "description": "Règle Dispensaire gratuite en fin de partie si pas mis hors jeu."
+      },
+      {
+        "id": "paladin",
+        "name": "Paladin",
+        "description": "Soin et Bouclier utilisés à portée normale.",
+        "allowedFactionIds": [
+          "alliance",
+          "excellence",
+          "tenacite"
+        ]
+      },
+      {
+        "id": "chevalier_de_la_mort",
+        "name": "Chevalier de la mort",
+        "description": "Remplace Soin par Régénération.",
+        "allowedFactionIds": [
+          "eternite"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "general",
+    "name": "Général",
+    "description": "Peut faire une activation groupée même s'il n'est pas Officier, et compte comme ayant son Rang doublé pour celle-ci.",
+    "talents": [
+      {
+        "id": "stratege",
+        "name": "Stratège",
+        "description": "Permet à un allié à 3\" de se déplacer de 3\" au début de son activation."
+      },
+      {
+        "id": "musicien",
+        "name": "Musicien",
+        "description": "Relance le jet d'initiative (conserve le second jet)."
+      },
+      {
+        "id": "banniere_trophees",
+        "name": "Bannière/Trophées",
+        "description": "1x/tour, un allié à 3\" peut relancer son jet d'attaque ou de défense."
+      },
+      {
+        "id": "cri_de_guerre",
+        "name": "Cri de guerre",
+        "description": "1x/partie, +1 dé d'attaque aux alliés à 3\" jusqu'à la fin du tour."
+      },
+      {
+        "id": "palmares_effroyable",
+        "name": "Palmarès effroyable",
+        "description": "Gagne la règle spéciale Terreur.",
+        "allowedFactionIds": [
+          "perfidie",
+          "brutalite",
+          "monstruosite",
+          "eternite"
+        ]
+      },
+      {
+        "id": "hero_decore",
+        "name": "Héros décoré",
+        "description": "Portée de l'activation groupée doublée.",
+        "allowedFactionIds": [
+          "alliance",
+          "excellence",
+          "tenacite"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "cavalier",
+    "name": "Cavalier",
+    "description": "Devient Cavalerie. Mouvement +50%. Pas d'escalade ni échelle. Armure/bouclier max Niv 1.",
+    "talents": [
+      {
+        "id": "cavalerie_lourde",
+        "name": "Cavalerie lourde",
+        "description": "Peut porter armure ou bouclier normalement."
+      },
+      {
+        "id": "inarretable",
+        "name": "Inarrêtable",
+        "description": "+1 dé d'attaque en charge et peut finir son mouvement après attaque CàC."
+      },
+      {
+        "id": "saut_de_haies",
+        "name": "Saut de haies",
+        "description": "Enjambe sans malus et traverse sans engagement (sauf Monstre/Cavalier)."
+      },
+      {
+        "id": "lance_de_cavalerie",
+        "name": "Lance de cavalerie",
+        "description": "Équipé d'une lance (profil arme 2M lourde Niv 3, n'occupe qu'un seul slot)."
+      },
+      {
+        "id": "cataphractaire",
+        "name": "Cataphractaire",
+        "description": "Annule le bonus de charge adverse.",
+        "allowedFactionIds": [
+          "alliance",
+          "excellence",
+          "tenacite"
+        ]
+      },
+      {
+        "id": "monture_bestiale",
+        "name": "Monture bestiale",
+        "description": "Ennemi chargé subit -1 dé d'attaque à sa prochaine activation.",
+        "allowedFactionIds": [
+          "tenacite",
+          "perfidie",
+          "brutalite",
+          "monstruosite"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "roublard",
+    "name": "Roublard",
+    "description": "+1 Rang pour armes CàC légères. Bénéficie d'Agile et Discret. Pas d'armure ni bouclier.",
+    "talents": [
+      {
+        "id": "attaque_sournoise",
+        "name": "Attaque sournoise",
+        "description": "+1 dé d'attaque si ennemi déjà engagé."
+      },
+      {
+        "id": "eclaireur",
+        "name": "Éclaireur",
+        "description": "Bénéficie de la règle spéciale Infiltré."
+      },
+      {
+        "id": "esquive_instinctive",
+        "name": "Esquive instinctive",
+        "description": "+1 Esquive."
+      },
+      {
+        "id": "pickpocket",
+        "name": "Pickpocket",
+        "description": "Pas de malus de mouvement lorsqu'il porte un Trésor."
+      },
+      {
+        "id": "maitrise_de_l_ombre",
+        "name": "Maîtrise de l'Ombre",
+        "description": "Désengagement sans malus ni jet et traverse les ennemis.",
+        "allowedFactionIds": [
+          "perfidie",
+          "alliance",
+          "excellence",
+          "eternite"
+        ]
+      },
+      {
+        "id": "poison_roublard",
+        "name": "Poison",
+        "description": "Règle spéciale Poison sur ses attaques.",
+        "allowedFactionIds": [
+          "perfidie",
+          "brutalite"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ranger",
+    "name": "Ranger",
+    "description": "+1 Rang pour Arcs et Armes de jet. Pas d'armure ni bouclier. Mouvement gratuit après déploiement.",
+    "talents": [
+      {
+        "id": "tir_precis",
+        "name": "Tir précis",
+        "description": "Ignore obstacles et couvert lors d'un tir."
+      },
+      {
+        "id": "explorateur",
+        "name": "Explorateur",
+        "description": "À couvert sur terrain difficile et pas de malus pour le traverser."
+      },
+      {
+        "id": "esquive_instinctive_ranger",
+        "name": "Esquive instinctive",
+        "description": "+1 Esquive."
+      },
+      {
+        "id": "espion",
+        "name": "Espion",
+        "description": "Bénéficie des règles Agile et Discret."
+      },
+      {
+        "id": "poison_ranger",
+        "name": "Poison",
+        "description": "Règle spéciale Poison.",
+        "allowedFactionIds": [
+          "perfidie"
+        ]
+      },
+      {
+        "id": "javelinier",
+        "name": "Javelinier",
+        "description": "Ignore malus -1 tir après mouvement avec arme de jet et +2 Puissance sans charge.",
+        "allowedFactionIds": [
+          "alliance",
+          "tenacite",
+          "brutalite",
+          "monstruosite"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "bete",
+    "name": "Bête",
+    "description": "Réservé aux Monstres. Peut être équipé normalement.",
+    "talents": [
+      {
+        "id": "terrifiant",
+        "name": "Terrifiant",
+        "description": "Bénéficie de la règle Terreur."
+      },
+      {
+        "id": "aerien",
+        "name": "Aérien",
+        "description": "Bénéficie de la règle Vol/bond."
+      },
+      {
+        "id": "peau_ecailleuse",
+        "name": "Peau écailleuse",
+        "description": "+1 Protection."
+      },
+      {
+        "id": "regeneration_bete",
+        "name": "Régénération",
+        "description": "Bénéficie de la règle Régénération."
+      },
+      {
+        "id": "genetiquement_modifiee",
+        "name": "Génétiquement modifiée",
+        "description": "Gagne l'arme Crache-feu (sans occuper d'emplacement).",
+        "allowedFactionIds": [
+          "perfidie",
+          "tenacite",
+          "monstruosite"
+        ]
+      },
+      {
+        "id": "machine_de_metal",
+        "name": "Machine de métal",
+        "description": "+2 Protection, pas d'armure.",
+        "allowedFactionIds": [
+          "tenacite",
+          "alliance"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "barde",
+    "name": "Barde",
+    "description": "Alliés à 6\" gagnent +1 Volonté. Alloue 1 emplacement à son instrument. Bonus de Mélodie (+1 M, +1 C ou +1 E) à des alliés à 3\".",
+    "talents": [
+      {
+        "id": "amplification",
+        "name": "Amplification",
+        "description": "Désigne autant d'alliés à 6\" que son Rang pour la Mélodie."
+      },
+      {
+        "id": "virtuose",
+        "name": "Virtuose",
+        "description": "Rang doublé pour désigner les alliés de Mélodie."
+      },
+      {
+        "id": "harmonie",
+        "name": "Harmonie",
+        "description": "Bonus de Mélodie dure jusqu'au tour suivant et peut cumuler 2 bonus."
+      },
+      {
+        "id": "charme_personne",
+        "name": "Charme-personne",
+        "description": "Connaît Paralysie et Contrôle mental. Action Lancer un sort."
+      },
+      {
+        "id": "hymne_macabre",
+        "name": "Hymne macabre",
+        "description": "Alliés sous Mélodie obtiennent Terreur.",
+        "allowedFactionIds": [
+          "brutalite",
+          "perfidie",
+          "monstruosite"
+        ]
+      },
+      {
+        "id": "chanteur",
+        "name": "Chanteur",
+        "description": "Plus besoin d'instrument.",
+        "allowedFactionIds": [
+          "alliance",
+          "excellence",
+          "eternite"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "druide",
+    "name": "Druide",
+    "description": "Permet de recruter 1 Monstre et 1 Animal de plus. Bénéficie d'un bonus d'espèce animal. Pas d'armure ni bouclier.",
+    "talents": [
+      {
+        "id": "metamorphose",
+        "name": "Métamorphose",
+        "description": "Se transforme en Animal avec un second bonus d'espèce."
+      },
+      {
+        "id": "chasse_en_meute",
+        "name": "Chasse en meute",
+        "description": "Active simultanément un Monstre ou Animal à 3\" (+1 jet d'attaque contre même cible)."
+      },
+      {
+        "id": "magie_naturelle",
+        "name": "Magie naturelle",
+        "description": "Connaît Brouillard et Boue. Action Lancer un sort."
+      },
+      {
+        "id": "communion",
+        "name": "Communion",
+        "description": "Action : Druide et alliés à 6\" gagnent Régénération à leur prochaine activation."
+      },
+      {
+        "id": "ermite",
+        "name": "Ermite",
+        "description": "Bénéficie de Discret et ignore terrain difficile.",
+        "allowedFactionIds": [
+          "excellence",
+          "alliance",
+          "monstruosite",
+          "perfidie"
+        ]
+      },
+      {
+        "id": "renaissance",
+        "name": "Renaissance",
+        "description": "1x/partie, si devait perdre son dernier PV, reste en jeu avec 1 PV.",
+        "allowedFactionIds": [
+          "excellence",
+          "brutalite",
+          "alliance"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ingenieur",
+    "name": "L'Ingénieur",
+    "description": "+1 Rang pour armes de tir. Bénéficient de Technologie avancée ou +3\" portée.",
+    "talents": [
+      {
+        "id": "machine_de_guerre",
+        "name": "Machine de guerre",
+        "description": "Action : +1 Puissance et +3\" portée tant qu'il reste immobile."
+      },
+      {
+        "id": "armure_mecanique",
+        "name": "Armure mécanique",
+        "description": "+2 Protection, pas d'armure."
+      },
+      {
+        "id": "ameliorations_techniques",
+        "name": "Améliorations techniques",
+        "description": "Autres combattants gagnent Technologie avancée (ou +3\" portée)."
+      },
+      {
+        "id": "jet_pack",
+        "name": "Jet pack/ailes mécaniques",
+        "description": "Bénéficie de Vol/bond."
+      },
+      {
+        "id": "stabilisation",
+        "name": "Stabilisation",
+        "description": "Technologie avancée sans risque de perte de PV.",
+        "allowedFactionIds": [
+          "perfidie"
+        ]
+      },
+      {
+        "id": "armurier",
+        "name": "Armurier",
+        "description": "Bonus de Technologie avancée devient +1 Puissance.",
+        "allowedFactionIds": [
+          "alliance",
+          "tenacite"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "moine",
+    "name": "Moine",
+    "description": "Utilise sa Volonté au lieu du Combat pour l'attaque. Armes de Pugilat uniquement.",
+    "talents": [
+      {
+        "id": "ecole_de_l_eau",
+        "name": "École de l'Eau",
+        "description": "Volonté au lieu d'Esquive en défense CàC. Pas d'armure ni bouclier."
+      },
+      {
+        "id": "ecole_du_feu",
+        "name": "École du Feu",
+        "description": "Tir gratuit Souffle : Puissance +0, Précision 3+."
+      },
+      {
+        "id": "ecole_du_vent",
+        "name": "École du Vent",
+        "description": "Bénéficie de Agile et Acrobate."
+      },
+      {
+        "id": "ecole_de_la_terre",
+        "name": "École de la Terre",
+        "description": "Peut sélectionner des armes légères."
+      },
+      {
+        "id": "ecole_de_la_lumiere",
+        "name": "École de la Lumière",
+        "description": "Connaît Dissipation. Action Lancer un sort.",
+        "allowedFactionIds": [
+          "alliance",
+          "excellence",
+          "tenacite"
+        ]
+      },
+      {
+        "id": "ecole_de_l_ombre",
+        "name": "École de l'Ombre",
+        "description": "Peut équiper une arme de tir.",
+        "allowedFactionIds": [
+          "perfidie",
+          "eternite",
+          "brutalite",
+          "monstruosite"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "maitre_archer",
+    "name": "Maître archer",
+    "description": "+1 Rang pour Arcs. Bénéficie et confère Tir indirect aux alliés à 3\".",
+    "talents": [
+      {
+        "id": "pluie_de_fleches",
+        "name": "Pluie de flèches",
+        "description": "Tir de zone à 1,5\" d'un point ciblé (-2 dés)."
+      },
+      {
+        "id": "tir_puissant",
+        "name": "Tir puissant",
+        "description": "Toute l'activation : Tir +1 dé d'attaque et Perce-armure (1)."
+      },
+      {
+        "id": "fleche_dans_le_genou",
+        "name": "Flèche dans le genou",
+        "description": "Tir à -1 dé, si blessure divise mouvement ennemi par 2."
+      },
+      {
+        "id": "tir_en_melee",
+        "name": "Tir en mêlée",
+        "description": "Peut tirer engagé avec malus de -1 dé."
+      },
+      {
+        "id": "entrainement_des_anciens",
+        "name": "Entraînement des anciens",
+        "description": "Toute activation pour tirer 2 fois avec malus de -1 dé.",
+        "allowedFactionIds": [
+          "alliance",
+          "excellence"
+        ]
+      },
+      {
+        "id": "cible_a_abattre",
+        "name": "Cible à abattre",
+        "description": "+1 dé d'attaque aux alliés ciblant le même ennemi au tir.",
+        "allowedFactionIds": [
+          "alliance",
+          "tenacite",
+          "excellence"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "tireur_d_elite",
+    "name": "Tireur d'élite",
+    "description": "+1 Rang pour Arbalètes/Arquebuses et Armes de poing. Perd la règle Rechargement.",
+    "talents": [
+      {
+        "id": "tir_embusque",
+        "name": "Tir embusqué",
+        "description": "Réduit l'Esquive ennemie de 1 si tir depuis un Couvert."
+      },
+      {
+        "id": "tir_en_mouvement",
+        "name": "Tir en mouvement",
+        "description": "Armes de poing gagnent Attaque en mouvement."
+      },
+      {
+        "id": "tir_penetrant",
+        "name": "Tir pénétrant",
+        "description": "Malus de Perce-armure doublé."
+      },
+      {
+        "id": "tir_destabilisant",
+        "name": "Tir déstabilisant",
+        "description": "Repousse la cible d'autant de pouces que de blessures."
+      },
+      {
+        "id": "tir_perforant",
+        "name": "Tir perforant",
+        "description": "Si tir blesse, attaque à -2 dés sur ennemi dans le prolongement.",
+        "allowedFactionIds": [
+          "alliance",
+          "tenacite"
+        ]
+      },
+      {
+        "id": "gros_calibre",
+        "name": "Gros calibre",
+        "description": "+1 Puissance à ses armes de tir.",
+        "allowedFactionIds": [
+          "brutalite",
+          "monstruosite",
+          "perfidie"
+        ]
+      }
+    ]
+  }
+]

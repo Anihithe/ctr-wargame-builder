@@ -1,0 +1,502 @@
+[
+  {
+    "id": "alliance",
+    "name": "L'Alliance",
+    "races": "Humains",
+    "allowedOriginsCount": 3,
+    "specialRule": {
+      "name": "Polyvalents",
+      "description": "Vous pouvez sélectionner 3 Origines au lieu de 2."
+    },
+    "profiles": {
+      "1": {
+        "mouvement": 6,
+        "combat": 3,
+        "esquive": 2,
+        "volonte": 4,
+        "pv": 6
+      },
+      "2": {
+        "mouvement": 6,
+        "combat": 4,
+        "esquive": 3,
+        "volonte": 5,
+        "pv": 7
+      },
+      "3": {
+        "mouvement": 6,
+        "combat": 5,
+        "esquive": 4,
+        "volonte": 6,
+        "pv": 8
+      }
+    },
+    "origins": [
+      {
+        "id": "cite_developpee",
+        "name": "Cité développée",
+        "description": "Les Combattants de cette faction bénéficient de la catégorie Technologie avancée."
+      },
+      {
+        "id": "inquisition",
+        "name": "Inquisition",
+        "description": "Une fois par tour, vous pouvez relancer un jet d'attaque contre les Combattants non joueurs."
+      },
+      {
+        "id": "celestes",
+        "name": "Célestes",
+        "description": "Vos Officiers bénéficient de la règle spéciale Vol/bond."
+      },
+      {
+        "id": "academie_militaire",
+        "name": "Académie militaire",
+        "description": "Si au moins 2 Combattants attaquent simultanément au corps à corps un ennemi (via une Activation groupée), ils bénéficient d'un bonus de +1 dé d'attaque."
+      },
+      {
+        "id": "chef_d_armee",
+        "name": "Chef d'armée",
+        "description": "Votre Leader obtient gratuitement la Spécialisation du Général."
+      },
+      {
+        "id": "noblesse",
+        "name": "Noblesse",
+        "description": "Vos Combattants comptent comme ayant 1 Rang de plus pour la sélection d'une Armure."
+      }
+    ]
+  },
+  {
+    "id": "excellence",
+    "name": "L'Excellence",
+    "races": "Elfes, Elfes sylvains, Elfes noirs",
+    "allowedOriginsCount": 2,
+    "specialRule": {
+      "name": "Clairvoyants & Réflexes surhumains",
+      "description": "Clairvoyants : bonus de +1 au jet d'Initiative. Réflexes surhumains : vos Combattants ne peuvent pas porter d'armure ni de bouclier. En contrepartie, ils bénéficient d'un bonus d'Esquive de +1 au corps à corps."
+    },
+    "profiles": {
+      "1": {
+        "mouvement": 6,
+        "combat": 3,
+        "esquive": 2,
+        "volonte": 4,
+        "pv": 5
+      },
+      "2": {
+        "mouvement": 6,
+        "combat": 4,
+        "esquive": 3,
+        "volonte": 5,
+        "pv": 6
+      },
+      "3": {
+        "mouvement": 6,
+        "combat": 5,
+        "esquive": 4,
+        "volonte": 6,
+        "pv": 7
+      }
+    },
+    "origins": [
+      {
+        "id": "sylvains",
+        "name": "Sylvains",
+        "description": "Un Combattant ne portant pas d'armure ni de bouclier bénéficie au choix : de la règle spéciale Agile, ou d'un bonus de Protection de +2 mais malus de -1 Esquive."
+      },
+      {
+        "id": "ombres_des_bois",
+        "name": "Ombres des bois",
+        "description": "Les Combattants bénéficient d'un bonus d'un dé d'attaque lorsqu'ils effectuent un tir depuis un Couvert."
+      },
+      {
+        "id": "gardes_royaux",
+        "name": "Gardes royaux",
+        "description": "Vos Combattants peuvent être équipés normalement de Protection et comptent comme ayant 1 Rang de plus pour la sélection des armes intermédiaires."
+      },
+      {
+        "id": "tour_d_argent",
+        "name": "Tour d'argent",
+        "description": "Une fois par tour, vous pouvez relancer un jet pour Lancer un sort."
+      },
+      {
+        "id": "peuple_des_cimes",
+        "name": "Peuple des cimes",
+        "description": "Vos Officiers bénéficient de la règle spéciale Vol/bond."
+      },
+      {
+        "id": "foret_noire",
+        "name": "Forêt noire",
+        "description": "Les armes de corps à corps de vos Combattants bénéficient de la règle spéciale Poison."
+      }
+    ]
+  },
+  {
+    "id": "perfidie",
+    "name": "La Perfidie",
+    "races": "Gobelins, Skaven",
+    "allowedOriginsCount": 2,
+    "specialRule": {
+      "name": "Insaisissables",
+      "description": "Les Combattants de cette faction qui ne portent pas d'armure ni de bouclier bénéficient des règles spéciales Agile et Discret."
+    },
+    "profiles": {
+      "1": {
+        "mouvement": 7,
+        "combat": 3,
+        "esquive": 3,
+        "volonte": 3,
+        "pv": 5
+      },
+      "2": {
+        "mouvement": 6,
+        "combat": 4,
+        "esquive": 4,
+        "volonte": 5,
+        "pv": 6
+      },
+      "3": {
+        "mouvement": 6,
+        "combat": 5,
+        "esquive": 4,
+        "volonte": 6,
+        "pv": 7
+      }
+    },
+    "origins": [
+      {
+        "id": "savants_fous",
+        "name": "Savants fous",
+        "description": "Les Combattants bénéficient de Technologie avancée mais le bonus est de +1 Puissance. À chaque tir tech, sur 1 ou 2 au d6 le Combattant subit 1 blessure."
+      },
+      {
+        "id": "clan_de_guerriers",
+        "name": "Clan de guerriers",
+        "description": "Vos Combattants bénéficient de la règle Insaisissable même s'ils portent une armure et/ou un bouclier."
+      },
+      {
+        "id": "maitre_des_betes",
+        "name": "Maître des Bêtes",
+        "description": "Les Combattants de type Animal ajoutent Acéré à leurs armes et peuvent être activés gratuitement par vos Officiers."
+      },
+      {
+        "id": "kamikazes",
+        "name": "Kamikazes",
+        "description": "Les Combattants bénéficient de la règle spéciale Acrobate."
+      },
+      {
+        "id": "empoisonneurs",
+        "name": "Empoisonneurs",
+        "description": "Les armes de corps à corps de vos Combattants bénéficient de la règle spéciale Poison."
+      },
+      {
+        "id": "mutants",
+        "name": "Mutants",
+        "description": "Vos Officiers gagnent 1 emplacement supplémentaire."
+      }
+    ]
+  },
+  {
+    "id": "brutalite",
+    "name": "La Brutalité",
+    "races": "Orcs, Hommes-bêtes, Homme-lézards",
+    "allowedOriginsCount": 2,
+    "specialRule": {
+      "name": "Fureur",
+      "description": "Un Combattant blessé ajoute 1 dé à son jet d'attaque au corps à corps."
+    },
+    "profiles": {
+      "1": {
+        "mouvement": 6,
+        "combat": 4,
+        "esquive": 2,
+        "volonte": 3,
+        "pv": 6
+      },
+      "2": {
+        "mouvement": 5,
+        "combat": 5,
+        "esquive": 3,
+        "volonte": 5,
+        "pv": 7
+      },
+      "3": {
+        "mouvement": 5,
+        "combat": 6,
+        "esquive": 3,
+        "volonte": 6,
+        "pv": 8
+      }
+    },
+    "origins": [
+      {
+        "id": "destructeurs",
+        "name": "Destructeurs",
+        "description": "Les Combattants comptent comme ayant 1 Rang de plus pour la sélection des armes de pugilat et lourdes."
+      },
+      {
+        "id": "betes_feroces",
+        "name": "Bêtes féroces",
+        "description": "Les Combattants de type Animal gagnent +1 PV et ajoutent Perce-armure (1) à leurs armes."
+      },
+      {
+        "id": "peuple_sauvage",
+        "name": "Peuple sauvage",
+        "description": "Vos Officiers bénéficient de la règle spéciale Terreur."
+      },
+      {
+        "id": "traqueurs",
+        "name": "Traqueurs",
+        "description": "Les Combattants bénéficient de la règle spéciale Discret et d'un bonus de +1 Mouvement pour effectuer une Charge."
+      },
+      {
+        "id": "brutes_volantes",
+        "name": "Brutes volantes",
+        "description": "Vos Officiers bénéficient de la règle spéciale Vol/bond."
+      },
+      {
+        "id": "tribu_chamanique",
+        "name": "Tribu chamanique",
+        "description": "Vos Officiers connaissent un sort de niveau 1 et peuvent utiliser l'action Lancer un sort."
+      }
+    ]
+  },
+  {
+    "id": "eternite",
+    "name": "L'Eternité",
+    "races": "Morts-vivants",
+    "allowedOriginsCount": 2,
+    "specialRule": {
+      "name": "Nécromancie, Aura de peur & Aspect repoussant",
+      "description": "Nécromancie : relance du jet de blessure fin de partie pour Rang 1. Officiers ont le sort Réanimation (niv 3). Aura de peur : ennemis à 3\" des Officiers subissent -1 Volonté. Aspect repoussant : règle spéciale Terreur pour la faction."
+    },
+    "profiles": {
+      "1": {
+        "mouvement": 5,
+        "combat": 3,
+        "esquive": 1,
+        "volonte": 0,
+        "pv": 5,
+        "specialRuleIds": [
+          "decerebre"
+        ]
+      },
+      "2": {
+        "mouvement": 6,
+        "combat": 4,
+        "esquive": 3,
+        "volonte": 6,
+        "pv": 7
+      },
+      "3": {
+        "mouvement": 6,
+        "combat": 5,
+        "esquive": 4,
+        "volonte": 6,
+        "pv": 8
+      }
+    },
+    "origins": [
+      {
+        "id": "vampires",
+        "name": "Vampires",
+        "description": "Lorsqu'un Officier inflige des blessures au CàC, lancez 1 dé par blessure. Sur 4+, il regagne 1 PV perdu."
+      },
+      {
+        "id": "goules",
+        "name": "Goules",
+        "description": "Vos Combattants de Rang 1 ne peuvent pas porter de Protection, mais gagnent +1 Mouvement et Agile."
+      },
+      {
+        "id": "necropole",
+        "name": "Nécropole",
+        "description": "Les Combattants de Rang 1 peuvent être remis en jeu à 6\" de l'Officier ayant lancé Réanimation."
+      },
+      {
+        "id": "spectres_des_cryptes",
+        "name": "Spectres des cryptes",
+        "description": "1x/tour, un Combattant désigné gagne Vol/bond, traverse les décors et ignore terrain difficile."
+      },
+      {
+        "id": "chevaliers_noirs",
+        "name": "Chevaliers noirs",
+        "description": "Vos Combattants comptent comme ayant 1 Rang de plus pour la sélection d'une Armure."
+      },
+      {
+        "id": "morts_ailes",
+        "name": "Morts ailés",
+        "description": "Vos Officiers bénéficient de la règle spéciale Vol/bond."
+      }
+    ]
+  },
+  {
+    "id": "tenacite",
+    "name": "La Tenacité",
+    "races": "Nains, Nains du chaos",
+    "allowedOriginsCount": 2,
+    "specialRule": {
+      "name": "Runes",
+      "description": "Chacun de vos Officiers peut utiliser l'action Placer une Rune 1 fois par partie (au déploiement ou contact). Résout automatiquement un sort parmi : Célérité, Bouclier, Soin, Force décuplée, Lévitation."
+    },
+    "profiles": {
+      "1": {
+        "mouvement": 5,
+        "combat": 3,
+        "esquive": 2,
+        "volonte": 4,
+        "pv": 7
+      },
+      "2": {
+        "mouvement": 5,
+        "combat": 4,
+        "esquive": 3,
+        "volonte": 5,
+        "pv": 8
+      },
+      "3": {
+        "mouvement": 5,
+        "combat": 5,
+        "esquive": 3,
+        "volonte": 6,
+        "pv": 9
+      }
+    },
+    "origins": [
+      {
+        "id": "ingenieurs",
+        "name": "Ingénieurs",
+        "description": "Les Combattants bénéficient de la catégorie Technologie avancée."
+      },
+      {
+        "id": "tueurs",
+        "name": "Tueurs",
+        "description": "Un Combattant ne portant ni armure ni bouclier gagne +1 Mouvement et ignore la règle Terreur."
+      },
+      {
+        "id": "compagnie_de_fer",
+        "name": "Compagnie de Fer",
+        "description": "Vos Combattants comptent comme ayant 1 Rang de plus pour la sélection d'une Armure."
+      },
+      {
+        "id": "regiment_du_bouclier",
+        "name": "Régiment du Bouclier",
+        "description": "Si au moins 2 Combattants avec Bouclier sont au contact l'un de l'autre, ils bénéficient de Couvert contre le Tir."
+      },
+      {
+        "id": "maitres_des_runes",
+        "name": "Maîtres des runes",
+        "description": "Chacun de vos Officiers peut placer autant de Runes que son Rang au cours de la partie."
+      },
+      {
+        "id": "stratoport",
+        "name": "Stratoport",
+        "description": "Vos Officiers bénéficient de la règle spéciale Vol/bond."
+      }
+    ]
+  },
+  {
+    "id": "mercenaires",
+    "name": "Les Mercenaires",
+    "races": "Chasseurs de primes, Pirates, Renégats",
+    "allowedOriginsCount": 2,
+    "specialRule": {
+      "name": "Épées à louer",
+      "description": "Vous pouvez sélectionner des Combattants venant de toutes les autres factions du jeu. Ils ne bénéficient pas de la règle de leur faction d'origine mais gardent l'Allégeance. Utilisez la faction d'origine pour les Talents."
+    },
+    "profiles": {
+      "1": {
+        "mouvement": 6,
+        "combat": 3,
+        "esquive": 2,
+        "volonte": 4,
+        "pv": 6
+      },
+      "2": {
+        "mouvement": 6,
+        "combat": 4,
+        "esquive": 3,
+        "volonte": 5,
+        "pv": 7
+      },
+      "3": {
+        "mouvement": 6,
+        "combat": 5,
+        "esquive": 4,
+        "volonte": 6,
+        "pv": 8
+      }
+    },
+    "origins": [
+      {
+        "id": "diversite",
+        "name": "Diversité",
+        "description": "Vous pouvez sélectionner 2 Origines parmi les autres factions (ne permet pas de profiter de la règle spéciale de faction)."
+      }
+    ]
+  },
+  {
+    "id": "monstruosite",
+    "name": "La Monstruosité",
+    "races": "Ogres, Trolls",
+    "allowedOriginsCount": 3,
+    "canHaveMonstersAsOfficers": true,
+    "unlimitedMonsters": true,
+    "specialRule": {
+      "name": "Peuple de Colosses",
+      "description": "Vos Combattants de Rang 4 sont des Monstres mais vous n'êtes pas limité à un seul Monstre. Ils peuvent sélectionner d'autres Spécialisations que la Bête et peuvent être Officiers. Vous pouvez sélectionner 3 Origines."
+    },
+    "profiles": {
+      "2": {
+        "mouvement": 6,
+        "combat": 4,
+        "esquive": 3,
+        "volonte": 5,
+        "pv": 7
+      },
+      "3": {
+        "mouvement": 6,
+        "combat": 5,
+        "esquive": 3,
+        "volonte": 6,
+        "pv": 8
+      },
+      "4": {
+        "mouvement": 6,
+        "combat": 7,
+        "esquive": 3,
+        "volonte": 6,
+        "pv": 10
+      }
+    },
+    "origins": [
+      {
+        "id": "gardiens_des_cavernes",
+        "name": "Gardiens des cavernes",
+        "description": "Vos Officiers bénéficient de la règle spéciale Régénération."
+      },
+      {
+        "id": "creatures_des_cieux",
+        "name": "Créatures des Cieux",
+        "description": "Vos Officiers bénéficient de la règle spéciale Vol/bond."
+      },
+      {
+        "id": "rejetons_de_l_abime",
+        "name": "Rejetons de l'Abîme",
+        "description": "Vos Officiers bénéficient de la règle spéciale Terreur."
+      },
+      {
+        "id": "betes_de_somme",
+        "name": "Bêtes de somme",
+        "description": "Les Monstres de votre faction peuvent porter un deuxième trésor sans malus de mouvement supplémentaire."
+      },
+      {
+        "id": "esclavagistes",
+        "name": "Esclavagistes",
+        "description": "Vous pouvez recruter des Combattants de Rang 1 avec le profil : M:6, C:3, E:2, V:3, PV:5."
+      },
+      {
+        "id": "veterans",
+        "name": "Vétérans",
+        "description": "Les Monstres de votre faction peuvent être équipés normalement."
+      }
+    ]
+  }
+]

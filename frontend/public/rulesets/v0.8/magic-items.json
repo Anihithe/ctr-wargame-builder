@@ -1,0 +1,290 @@
+[
+  {
+    "id": "potion_vitesse",
+    "name": "Potion de vitesse",
+    "category": "Consumable",
+    "type": "Potion",
+    "effect": "Course gratuite",
+    "costInGold": 1
+  },
+  {
+    "id": "potion_force",
+    "name": "Potion de force",
+    "category": "Consumable",
+    "type": "Potion",
+    "effect": "+2 dés au CàC",
+    "costInGold": 1
+  },
+  {
+    "id": "potion_precision",
+    "name": "Potion de précision",
+    "category": "Consumable",
+    "type": "Potion",
+    "effect": "+2 dés au Tir",
+    "costInGold": 1
+  },
+  {
+    "id": "potion_resistance",
+    "name": "Potion de résistance",
+    "category": "Consumable",
+    "type": "Potion",
+    "effect": "+2 Protection",
+    "costInGold": 1
+  },
+  {
+    "id": "potion_vie",
+    "name": "Potion de vie",
+    "category": "Consumable",
+    "type": "Potion",
+    "effect": "Rend jusqu'à 2 PV",
+    "costInGold": 1
+  },
+  {
+    "id": "potion_legerete",
+    "name": "Potion de légèreté",
+    "category": "Consumable",
+    "type": "Potion",
+    "effect": "Chute sans risque de blessure",
+    "costInGold": 1
+  },
+  {
+    "id": "parchemin_celerite",
+    "name": "Parchemin de Célérité",
+    "category": "Consumable",
+    "type": "Parchemin",
+    "effect": "Lance automatiquement Célérité",
+    "costInGold": 1
+  },
+  {
+    "id": "parchemin_force",
+    "name": "Parchemin de Force décuplée",
+    "category": "Consumable",
+    "type": "Parchemin",
+    "effect": "Lance automatiquement Force décuplée",
+    "costInGold": 1
+  },
+  {
+    "id": "parchemin_boule_feu",
+    "name": "Parchemin de Boule de feu",
+    "category": "Consumable",
+    "type": "Parchemin",
+    "effect": "Lance automatiquement Boule de feu",
+    "costInGold": 1
+  },
+  {
+    "id": "parchemin_bouclier",
+    "name": "Parchemin de Bouclier",
+    "category": "Consumable",
+    "type": "Parchemin",
+    "effect": "Lance automatiquement Bouclier",
+    "costInGold": 1
+  },
+  {
+    "id": "parchemin_soin",
+    "name": "Parchemin de Soin",
+    "category": "Consumable",
+    "type": "Parchemin",
+    "effect": "Lance automatiquement Soin",
+    "costInGold": 1
+  },
+  {
+    "id": "parchemin_levitation",
+    "name": "Parchemin de Lévitation",
+    "category": "Consumable",
+    "type": "Parchemin",
+    "effect": "Lance automatiquement Lévitation",
+    "costInGold": 1
+  },
+  {
+    "id": "saphir",
+    "name": "Saphir",
+    "category": "Consumable",
+    "type": "Pierre",
+    "effect": "+1 Mouvement permanent",
+    "costInGold": 1
+  },
+  {
+    "id": "rubis",
+    "name": "Rubis",
+    "category": "Consumable",
+    "type": "Pierre",
+    "effect": "+1 Combat permanent",
+    "costInGold": 1
+  },
+  {
+    "id": "emeraude",
+    "name": "Émeraude",
+    "category": "Consumable",
+    "type": "Pierre",
+    "effect": "+1 Esquive permanent",
+    "costInGold": 1
+  },
+  {
+    "id": "amethyste",
+    "name": "Améthyste",
+    "category": "Consumable",
+    "type": "Pierre",
+    "effect": "+1 Volonté permanent",
+    "costInGold": 1
+  },
+  {
+    "id": "topaze",
+    "name": "Topaze",
+    "category": "Consumable",
+    "type": "Pierre",
+    "effect": "+1 PV permanent",
+    "costInGold": 1
+  },
+  {
+    "id": "diamant",
+    "name": "Diamant",
+    "category": "Consumable",
+    "type": "Pierre",
+    "effect": "+1 sur 2 stats permanent",
+    "costInGold": 2
+  },
+  {
+    "id": "echelle_magique",
+    "name": "Échelle magique",
+    "category": "MagicItem",
+    "slots": 0,
+    "effect": "1x/partie pose une échelle (action) de 3\"",
+    "costInGold": 1
+  },
+  {
+    "id": "targe",
+    "name": "Targe",
+    "category": "MagicItem",
+    "slots": 0,
+    "effect": "Bénéficie de Parade",
+    "costInGold": 1
+  },
+  {
+    "id": "cape_dragon",
+    "name": "Cape en peau de dragon",
+    "category": "MagicItem",
+    "slots": 0,
+    "effect": "+1 Protection contre le Tir",
+    "costInGold": 1
+  },
+  {
+    "id": "propulseurs",
+    "name": "Propulseurs",
+    "category": "MagicItem",
+    "slots": 0,
+    "effect": "Vol/bond 1x/partie (Nécessite Technologie avancée)",
+    "costInGold": 1
+  },
+  {
+    "id": "grappin",
+    "name": "Grappin",
+    "category": "MagicItem",
+    "slots": 0,
+    "effect": "Bénéficie de Agile",
+    "costInGold": 1
+  },
+  {
+    "id": "focus_magique",
+    "name": "Focus magique",
+    "category": "MagicItem",
+    "slots": 0,
+    "effect": "Ignore un échec lors de Lancer un sort",
+    "costInGold": 1
+  },
+  {
+    "id": "cape_dissimulation",
+    "name": "Cape de dissimulation",
+    "category": "MagicItem",
+    "slots": 0,
+    "effect": "Bénéficie de Discret",
+    "costInGold": 1
+  },
+  {
+    "id": "bras_mecanique",
+    "name": "Bras mécanique",
+    "category": "MagicItem",
+    "slots": 0,
+    "effect": "Gagne 1 emplacement supplémentaire (Nécessite Technologie avancée)",
+    "costInGold": 1
+  },
+  {
+    "id": "amulette_antimagie",
+    "name": "Amulette d'anti-magie",
+    "category": "MagicItem",
+    "slots": 0,
+    "effect": "Ne peut pas être ciblé par un sort",
+    "costInGold": 1
+  },
+  {
+    "id": "heaume_commandement",
+    "name": "Heaume de commandement",
+    "category": "MagicItem",
+    "slots": 0,
+    "effect": "Officier uniquement. +1 Rang pour activation groupée",
+    "costInGold": 1
+  },
+  {
+    "id": "diademe_apaisement",
+    "name": "Diadème d'apaisement",
+    "category": "MagicItem",
+    "slots": 0,
+    "effect": "Ignoré par les non-joueurs",
+    "costInGold": 1
+  },
+  {
+    "id": "bracelet_equilibre",
+    "name": "Bracelet d'équilibre",
+    "category": "MagicItem",
+    "slots": 0,
+    "effect": "Bénéficie de Acrobate",
+    "costInGold": 1
+  },
+  {
+    "id": "trophee_massacre",
+    "name": "Trophée du massacre",
+    "category": "MagicItem",
+    "slots": 0,
+    "effect": "Porteur et alliés à 3\" bénéficient de Terreur",
+    "costInGold": 2
+  },
+  {
+    "id": "amulette_sanctification",
+    "name": "Amulette de sanctification",
+    "category": "MagicItem",
+    "slots": 0,
+    "effect": "1x/partie lance automatiquement Sanctuaire",
+    "costInGold": 2
+  },
+  {
+    "id": "collier_chance",
+    "name": "Collier de chance",
+    "category": "MagicItem",
+    "slots": 0,
+    "effect": "Relance du jet de butin sur trésor",
+    "costInGold": 2
+  },
+  {
+    "id": "cor_de_guerre",
+    "name": "Cor de guerre",
+    "category": "MagicItem",
+    "slots": 0,
+    "effect": "Action : +2 Combat aux alliés à 3\" jusqu'à la fin du tour",
+    "costInGold": 2
+  },
+  {
+    "id": "bague_de_sort",
+    "name": "Bague de sort",
+    "category": "MagicItem",
+    "slots": 0,
+    "effect": "Porteur connaît un sort niv 1 et le lance sans jet",
+    "costInGold": 2
+  },
+  {
+    "id": "couronne_joyaux",
+    "name": "Couronne de joyaux",
+    "category": "MagicItem",
+    "slots": 0,
+    "effect": "Au début d'activation, +1 sur 2 stats pour le tour",
+    "costInGold": 2
+  }
+]

@@ -1,0 +1,54 @@
+{
+  "profilesByRank": {
+    "1": {
+      "mouvement": 6,
+      "combat": 4,
+      "esquive": 3,
+      "volonte": 4,
+      "pv": 5
+    },
+    "2": {
+      "mouvement": 6,
+      "combat": 5,
+      "esquive": 4,
+      "volonte": 5,
+      "pv": 6
+    },
+    "3": {
+      "mouvement": 6,
+      "combat": 6,
+      "esquive": 5,
+      "volonte": 6,
+      "pv": 7
+    }
+  },
+  "speciesBonuses": [
+    {
+      "id": "mouvement_plus_2",
+      "name": "+2 Mouvement",
+      "modifiers": {
+        "mouvement": 2
+      }
+    },
+    {
+      "id": "mvt_prot_plus_1",
+      "name": "+1 Mouvement et +1 Protection",
+      "modifiers": {
+        "mouvement": 1,
+        "protection": 1
+      }
+    },
+    {
+      "id": "vol_bond",
+      "name": "Vol/bond",
+      "specialRuleIds": [
+        "vol_bond"
+      ]
+    },
+    {
+      "id": "bonus_charge_2_des",
+      "name": "Bonus de charge : +2 dés d'attaque",
+      "description": "+2 dés d'attaque en charge"
+    }
+  ]
+}

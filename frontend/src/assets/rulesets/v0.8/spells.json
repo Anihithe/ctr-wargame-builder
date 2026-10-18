@@ -1,0 +1,202 @@
+[
+  {
+    "id": "celerite",
+    "name": "Célérité",
+    "level": 1,
+    "type": "Enchantement",
+    "rangeInInches": 12,
+    "description": "Désignez un allié à 12\" ou moins en Ligne de Vue. Il gagne +2 Mouvement pour le reste de la partie."
+  },
+  {
+    "id": "force_decuplee",
+    "name": "Force décuplée",
+    "level": 1,
+    "type": "Enchantement",
+    "rangeInInches": 12,
+    "description": "Désignez un allié à 12\" ou moins en Ligne de Vue. Il gagne +1 Combat pour le reste de la partie."
+  },
+  {
+    "id": "brouillard",
+    "name": "Brouillard",
+    "level": 1,
+    "type": "Invocation",
+    "rangeInInches": 12,
+    "description": "Placez un élément 6\"x3\"x1\" à 12\" ou moins. Bloque les lignes de vue mais traversable. Se dissipe sur 1-2 au d6 au début de chaque tour."
+  },
+  {
+    "id": "bouclier",
+    "name": "Bouclier",
+    "level": 1,
+    "type": "Enchantement",
+    "rangeInInches": 12,
+    "description": "Désignez un allié à 12\" ou moins en Ligne de Vue. Il gagne Réduction de dégâts (1) jusqu'à subir au moins 1 blessure."
+  },
+  {
+    "id": "boule_de_feu",
+    "name": "Boule de feu",
+    "level": 1,
+    "type": "Tir Magique",
+    "rangeInInches": 12,
+    "description": "Tir gratuit : Puissance +3, Précision 4+, Portée 12\". Utilise la Volonté du lanceur au lieu du Combat."
+  },
+  {
+    "id": "levitation",
+    "name": "Lévitation",
+    "level": 1,
+    "type": "Enchantement",
+    "rangeInInches": 12,
+    "description": "Désignez un allié à 12\" ou moins en Ligne de Vue. Il gagne Vol/bond pour le reste de la partie."
+  },
+  {
+    "id": "soin",
+    "name": "Soin",
+    "level": 1,
+    "type": "Soin",
+    "rangeInInches": 12,
+    "description": "Désignez un allié à 12\" ou moins en Ligne de Vue. Il regagne immédiatement 3 PV (sans dépasser son max)."
+  },
+  {
+    "id": "teleportation",
+    "name": "Téléportation",
+    "level": 1,
+    "type": "Déplacement",
+    "rangeInInches": 6,
+    "description": "Placez le lanceur de sort sur un point en Ligne de Vue à 6\" ou moins."
+  },
+  {
+    "id": "desenchantement",
+    "name": "Désenchantement",
+    "level": 1,
+    "type": "Anti-Magie",
+    "rangeInInches": 12,
+    "description": "Désignez un Combattant à 12\" ou moins en Ligne de Vue. Il perd immédiatement tous ses Enchantements."
+  },
+  {
+    "id": "desinvocation",
+    "name": "Désinvocation",
+    "level": 1,
+    "type": "Anti-Magie",
+    "rangeInInches": 12,
+    "description": "Désignez une Invocation à 12\" ou moins en Ligne de Vue. Elle est retirée du jeu."
+  },
+  {
+    "id": "paralysie",
+    "name": "Paralysie",
+    "level": 2,
+    "type": "Contrôle",
+    "rangeInInches": 12,
+    "description": "Désignez un ennemi à 12\" ou moins. Jet de Volonté opposé : en cas de réussite, ne s'active pas au prochain tour. En cas d'échec, son mouvement est divisé par 2."
+  },
+  {
+    "id": "peur",
+    "name": "Peur",
+    "level": 2,
+    "type": "Enchantement",
+    "rangeInInches": 12,
+    "description": "Désignez un allié à 12\" ou moins. Il bénéficie de la règle Terreur pour le reste de la partie."
+  },
+  {
+    "id": "telekinesie",
+    "name": "Télékinésie",
+    "level": 2,
+    "type": "Scénario",
+    "rangeInInches": 12,
+    "description": "Déplacez un Trésor visible non central et non engagé à 12\" de jusqu'à 5\" en gardant la Ligne de Vue."
+  },
+  {
+    "id": "poussee",
+    "name": "Poussée",
+    "level": 2,
+    "type": "Tir Magique",
+    "rangeInInches": 12,
+    "description": "Tir avec Volonté (Puissance +6, Précision 4+, Portée 12\"). Au lieu de blesser, repousse la cible d'autant de \" à l'opposé."
+  },
+  {
+    "id": "foudre",
+    "name": "Foudre",
+    "level": 2,
+    "type": "Tir Magique",
+    "rangeInInches": 12,
+    "description": "Cible et figurines à 2\" ou moins subissent un tir avec Volonté (Puissance +0, Précision 4+). Ignore les Protections."
+  },
+  {
+    "id": "trait_de_glace",
+    "name": "Trait de glace",
+    "level": 2,
+    "type": "Tir Magique",
+    "rangeInInches": 12,
+    "description": "Tir avec Volonté (Puissance +3, Précision 4+, Portée 12\"). Si dégât, mouvement ennemi divisé par 2."
+  },
+  {
+    "id": "mur",
+    "name": "Mur",
+    "level": 2,
+    "type": "Invocation",
+    "rangeInInches": 12,
+    "description": "Placez un élément solide 6\"x3\"x1\" à 12\" ou moins sans obstacle."
+  },
+  {
+    "id": "dissipation",
+    "name": "Dissipation",
+    "level": 2,
+    "type": "Anti-Magie",
+    "rangeInInches": 12,
+    "description": "Retire une Invocation ou tous les Enchantements d'un Combattant à 12\" ou moins."
+  },
+  {
+    "id": "boue",
+    "name": "Boue",
+    "level": 2,
+    "type": "Invocation",
+    "rangeInInches": 12,
+    "description": "La zone de 3\" autour du point ciblé à 12\" devient un Terrain difficile."
+  },
+  {
+    "id": "invocation_animal",
+    "name": "Invocation d'Animal",
+    "level": 2,
+    "type": "Invocation",
+    "rangeInInches": 0,
+    "description": "Invoque un Animal temporaire Rang 1 au contact du lanceur avec un bonus d'espèce au choix."
+  },
+  {
+    "id": "fournaise",
+    "name": "Fournaise",
+    "level": 3,
+    "type": "Tir Magique",
+    "rangeInInches": 0,
+    "description": "Tir de Souffle avec Volonté : Puissance +2, Précision 3+."
+  },
+  {
+    "id": "mutations",
+    "name": "Mutations",
+    "level": 3,
+    "type": "Enchantement",
+    "rangeInInches": 12,
+    "description": "Transforme un allié en Monstre jusqu'à la fin du tour (conserve équipements et PV perdus)."
+  },
+  {
+    "id": "controle_mental",
+    "name": "Contrôle mental",
+    "level": 3,
+    "type": "Contrôle",
+    "rangeInInches": 12,
+    "description": "Jet de Volonté opposé à 12\" : active l'ennemi comme allié ce tour. Si échec, son Mouvement est divisé par 2."
+  },
+  {
+    "id": "sanctuaire",
+    "name": "Sanctuaire",
+    "level": 3,
+    "type": "Enchantement",
+    "rangeInInches": 3,
+    "description": "Alliés à 3\" gagnent Réduction de dégâts (1) et sont ignorés par les monstres non joueurs jusqu'à la fin du tour."
+  },
+  {
+    "id": "invocation_soldat",
+    "name": "Invocation de soldat",
+    "level": 3,
+    "type": "Invocation",
+    "rangeInInches": 0,
+    "description": "Invoque un Combattant temporaire Rang 2 de votre faction avec son équipement au contact du lanceur."
+  }
+]
