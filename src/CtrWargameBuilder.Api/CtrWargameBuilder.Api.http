@@ -1,0 +1,6 @@
+@CtrWargameBuilder.Api_HostAddress = http://localhost:5253
+
+GET {{CtrWargameBuilder.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

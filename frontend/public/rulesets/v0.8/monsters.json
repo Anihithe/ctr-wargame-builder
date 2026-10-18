@@ -1,0 +1,35 @@
+[
+  {
+    "id": "tank",
+    "name": "Le Tank",
+    "mouvement": 5,
+    "combat": 6,
+    "esquive": 3,
+    "volonte": 7,
+    "pv": 12,
+    "rank": 4,
+    "costInGold": 4
+  },
+  {
+    "id": "brute",
+    "name": "La Brute",
+    "mouvement": 6,
+    "combat": 7,
+    "esquive": 3,
+    "volonte": 6,
+    "pv": 10,
+    "rank": 4,
+    "costInGold": 4
+  },
+  {
+    "id": "predateur",
+    "name": "Le Prédateur",
+    "mouvement": 7,
+    "combat": 6,
+    "esquive": 4,
+    "volonte": 6,
+    "pv": 9,
+    "rank": 4,
+    "costInGold": 4
+  }
+]

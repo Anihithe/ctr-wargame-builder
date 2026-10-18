@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-grim-950 text-grim-200 antialiased font-sans;
+  }
+
+  h1, h2, h3, .font-display {
+    font-family: 'Cinzel', serif;
+    letter-spacing: 0.05em;
+  }
+
+  /* Custom scrollbar for dark tactical wargame look */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0b0f14;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+  }
+}
+
+.trench-card {
+  @apply bg-grim-900 border border-grim-800 rounded-lg shadow-md transition-all duration-150;
+}
+
+.trench-card-interactive {
+  @apply trench-card hover:border-gold-500/50 hover:bg-grim-850 cursor-pointer;
+}
+
+.trench-badge {
+  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border;
+}
+
+.gold-gradient-text {
+  @apply bg-gradient-to-r from-gold-400 via-amber-300 to-gold-500 bg-clip-text text-transparent;
+}

@@ -1,0 +1,596 @@
+[
+  {
+    "id": "cac_1m_legere_1",
+    "name": "Arme légère 1M (Dague, Épée courte, Rapière)",
+    "category": "Melee",
+    "subCategory": "Arme légère",
+    "level": 1,
+    "hands": 1,
+    "slots": 1,
+    "puissance": 1,
+    "precision": 3,
+    "specialRuleIds": [
+      "aceree"
+    ],
+    "costInGold": 0
+  },
+  {
+    "id": "cac_1m_legere_2",
+    "name": "Arme légère 1M - Niv 2",
+    "category": "Melee",
+    "subCategory": "Arme légère",
+    "level": 2,
+    "hands": 1,
+    "slots": 1,
+    "puissance": 1,
+    "precision": 3,
+    "specialRuleIds": [
+      "aceree"
+    ],
+    "costInGold": 0
+  },
+  {
+    "id": "cac_1m_legere_3",
+    "name": "Arme légère 1M - Niv 3",
+    "category": "Melee",
+    "subCategory": "Arme légère",
+    "level": 3,
+    "hands": 1,
+    "slots": 1,
+    "puissance": 2,
+    "precision": 3,
+    "specialRuleIds": [
+      "aceree"
+    ],
+    "costInGold": 0
+  },
+  {
+    "id": "cac_pugilat_1",
+    "name": "Pugilat (Poings, Griffes) - Niv 1",
+    "category": "Melee",
+    "subCategory": "Pugilat",
+    "level": 1,
+    "hands": 1,
+    "slots": 0,
+    "puissance": 0,
+    "precision": 3,
+    "specialRuleIds": [],
+    "notes": "N'occupe pas d'emplacement, ne bénéficie pas de Paire.",
+    "costInGold": 0
+  },
+  {
+    "id": "cac_pugilat_2",
+    "name": "Pugilat - Niv 2",
+    "category": "Melee",
+    "subCategory": "Pugilat",
+    "level": 2,
+    "hands": 1,
+    "slots": 1,
+    "puissance": 2,
+    "precision": 4,
+    "specialRuleIds": [
+      "agile"
+    ],
+    "costInGold": 0
+  },
+  {
+    "id": "cac_pugilat_3",
+    "name": "Pugilat - Niv 3",
+    "category": "Melee",
+    "subCategory": "Pugilat",
+    "level": 3,
+    "hands": 1,
+    "slots": 1,
+    "puissance": 3,
+    "precision": 4,
+    "specialRuleIds": [
+      "agile"
+    ],
+    "costInGold": 0
+  },
+  {
+    "id": "cac_1m_inter_1",
+    "name": "Arme intermédiaire 1M (Arme de base, Bardiche, Lance) - Niv 1",
+    "category": "Melee",
+    "subCategory": "Arme intermédiaire",
+    "level": 1,
+    "hands": 1,
+    "slots": 1,
+    "puissance": 3,
+    "precision": 4,
+    "specialRuleIds": [
+      "parade"
+    ],
+    "costInGold": 0
+  },
+  {
+    "id": "cac_1m_inter_2",
+    "name": "Arme intermédiaire 1M - Niv 2",
+    "category": "Melee",
+    "subCategory": "Arme intermédiaire",
+    "level": 2,
+    "hands": 1,
+    "slots": 1,
+    "puissance": 3,
+    "precision": 4,
+    "specialRuleIds": [
+      "parade"
+    ],
+    "costInGold": 0
+  },
+  {
+    "id": "cac_1m_inter_3",
+    "name": "Arme intermédiaire 1M - Niv 3",
+    "category": "Melee",
+    "subCategory": "Arme intermédiaire",
+    "level": 3,
+    "hands": 1,
+    "slots": 1,
+    "puissance": 4,
+    "precision": 4,
+    "specialRuleIds": [
+      "allonge",
+      "parade"
+    ],
+    "costInGold": 0
+  },
+  {
+    "id": "cac_1m_lourde_1",
+    "name": "Arme lourde 1M (Marteau, Épée longue, Masse) - Niv 1",
+    "category": "Melee",
+    "subCategory": "Arme lourde",
+    "level": 1,
+    "hands": 1,
+    "slots": 1,
+    "puissance": 5,
+    "precision": 5,
+    "specialRuleIds": [],
+    "chargeBonus": "+2 Puissance",
+    "costInGold": 0
+  },
+  {
+    "id": "cac_1m_lourde_2",
+    "name": "Arme lourde 1M - Niv 2",
+    "category": "Melee",
+    "subCategory": "Arme lourde",
+    "level": 2,
+    "hands": 1,
+    "slots": 1,
+    "puissance": 6,
+    "precision": 5,
+    "specialRuleIds": [
+      "perce_armure"
+    ],
+    "perceArmure": 1,
+    "chargeBonus": "+2 Puissance",
+    "costInGold": 0
+  },
+  {
+    "id": "cac_1m_lourde_3",
+    "name": "Arme lourde 1M - Niv 3",
+    "category": "Melee",
+    "subCategory": "Arme lourde",
+    "level": 3,
+    "hands": 1,
+    "slots": 1,
+    "puissance": 7,
+    "precision": 5,
+    "specialRuleIds": [
+      "perce_armure"
+    ],
+    "perceArmure": 2,
+    "chargeBonus": "+2 Puissance",
+    "costInGold": 0
+  },
+  {
+    "id": "cac_2m_legere_1",
+    "name": "Arme légère 2M (Bâton, Sabre, Katana) - Niv 1",
+    "category": "Melee",
+    "subCategory": "Arme légère",
+    "level": 1,
+    "hands": 2,
+    "slots": 2,
+    "puissance": 2,
+    "precision": 3,
+    "specialRuleIds": [
+      "aceree"
+    ],
+    "costInGold": 0
+  },
+  {
+    "id": "cac_2m_legere_2",
+    "name": "Arme légère 2M - Niv 2",
+    "category": "Melee",
+    "subCategory": "Arme légère",
+    "level": 2,
+    "hands": 2,
+    "slots": 2,
+    "puissance": 2,
+    "precision": 3,
+    "specialRuleIds": [
+      "aceree"
+    ],
+    "costInGold": 0
+  },
+  {
+    "id": "cac_2m_legere_3",
+    "name": "Arme légère 2M - Niv 3",
+    "category": "Melee",
+    "subCategory": "Arme légère",
+    "level": 3,
+    "hands": 2,
+    "slots": 2,
+    "puissance": 3,
+    "precision": 3,
+    "specialRuleIds": [
+      "aceree"
+    ],
+    "costInGold": 0
+  },
+  {
+    "id": "cac_2m_inter_1",
+    "name": "Arme intermédiaire 2M (Fourche, Pique, Hallebarde) - Niv 1",
+    "category": "Melee",
+    "subCategory": "Arme intermédiaire",
+    "level": 1,
+    "hands": 2,
+    "slots": 2,
+    "puissance": 3,
+    "precision": 4,
+    "specialRuleIds": [
+      "allonge",
+      "parade"
+    ],
+    "costInGold": 0
+  },
+  {
+    "id": "cac_2m_inter_2",
+    "name": "Arme intermédiaire 2M - Niv 2",
+    "category": "Melee",
+    "subCategory": "Arme intermédiaire",
+    "level": 2,
+    "hands": 2,
+    "slots": 2,
+    "puissance": 4,
+    "precision": 4,
+    "specialRuleIds": [
+      "allonge",
+      "parade"
+    ],
+    "costInGold": 0
+  },
+  {
+    "id": "cac_2m_inter_3",
+    "name": "Arme intermédiaire 2M - Niv 3",
+    "category": "Melee",
+    "subCategory": "Arme intermédiaire",
+    "level": 3,
+    "hands": 2,
+    "slots": 2,
+    "puissance": 4,
+    "precision": 4,
+    "specialRuleIds": [
+      "allonge",
+      "parade",
+      "perce_armure"
+    ],
+    "perceArmure": 1,
+    "costInGold": 0
+  },
+  {
+    "id": "cac_2m_lourde_1",
+    "name": "Arme lourde 2M (Gourdin, Épée/Hache à 2 mains, Fléau) - Niv 1",
+    "category": "Melee",
+    "subCategory": "Arme lourde",
+    "level": 1,
+    "hands": 2,
+    "slots": 2,
+    "puissance": 6,
+    "precision": 5,
+    "specialRuleIds": [
+      "perce_armure"
+    ],
+    "perceArmure": 1,
+    "chargeBonus": "+2 Puissance",
+    "costInGold": 0
+  },
+  {
+    "id": "cac_2m_lourde_2",
+    "name": "Arme lourde 2M - Niv 2",
+    "category": "Melee",
+    "subCategory": "Arme lourde",
+    "level": 2,
+    "hands": 2,
+    "slots": 2,
+    "puissance": 7,
+    "precision": 5,
+    "specialRuleIds": [
+      "perce_armure"
+    ],
+    "perceArmure": 2,
+    "chargeBonus": "+2 Puissance",
+    "costInGold": 0
+  },
+  {
+    "id": "cac_2m_lourde_3",
+    "name": "Arme lourde 2M - Niv 3",
+    "category": "Melee",
+    "subCategory": "Arme lourde",
+    "level": 3,
+    "hands": 2,
+    "slots": 2,
+    "puissance": 6,
+    "precision": 5,
+    "specialRuleIds": [
+      "perce_armure"
+    ],
+    "perceArmure": 3,
+    "chargeBonus": "Puissance x2",
+    "costInGold": 0
+  },
+  {
+    "id": "tir_1m_jet_1",
+    "name": "Arme de jet (Couteau, Hachette, Javelot) - Niv 1",
+    "category": "Ranged",
+    "subCategory": "Arme de jet",
+    "level": 1,
+    "hands": 1,
+    "slots": 1,
+    "puissance": 1,
+    "precision": 4,
+    "rangeFormula": "Combat",
+    "specialRuleIds": [
+      "attaque_en_mouvement"
+    ],
+    "costInGold": 0
+  },
+  {
+    "id": "tir_1m_jet_2",
+    "name": "Arme de jet - Niv 2",
+    "category": "Ranged",
+    "subCategory": "Arme de jet",
+    "level": 2,
+    "hands": 1,
+    "slots": 1,
+    "puissance": 2,
+    "precision": 4,
+    "rangeFormula": "Combat",
+    "specialRuleIds": [
+      "attaque_en_mouvement"
+    ],
+    "costInGold": 0
+  },
+  {
+    "id": "tir_1m_jet_3",
+    "name": "Arme de jet - Niv 3",
+    "category": "Ranged",
+    "subCategory": "Arme de jet",
+    "level": 3,
+    "hands": 1,
+    "slots": 1,
+    "puissance": 2,
+    "precision": 4,
+    "rangeFormula": "Combat",
+    "specialRuleIds": [
+      "attaque_en_mouvement",
+      "perce_armure"
+    ],
+    "perceArmure": 1,
+    "costInGold": 0
+  },
+  {
+    "id": "tir_1m_poing_1",
+    "name": "Arme de poing (Fronde, Arbalète de poing, Pistolet) - Niv 1",
+    "category": "Ranged",
+    "subCategory": "Arme de poing",
+    "level": 1,
+    "hands": 1,
+    "slots": 1,
+    "puissance": 3,
+    "precision": 4,
+    "rangeInInches": 8,
+    "specialRuleIds": [
+      "rechargement"
+    ],
+    "costInGold": 0
+  },
+  {
+    "id": "tir_1m_poing_2",
+    "name": "Arme de poing - Niv 2",
+    "category": "Ranged",
+    "subCategory": "Arme de poing",
+    "level": 2,
+    "hands": 1,
+    "slots": 1,
+    "puissance": 4,
+    "precision": 4,
+    "rangeInInches": 10,
+    "specialRuleIds": [
+      "rechargement"
+    ],
+    "costInGold": 0
+  },
+  {
+    "id": "tir_1m_poing_3",
+    "name": "Arme de poing - Niv 3",
+    "category": "Ranged",
+    "subCategory": "Arme de poing",
+    "level": 3,
+    "hands": 1,
+    "slots": 1,
+    "puissance": 4,
+    "precision": 4,
+    "rangeInInches": 12,
+    "specialRuleIds": [
+      "rechargement"
+    ],
+    "costInGold": 0
+  },
+  {
+    "id": "tir_2m_arc_1",
+    "name": "Arc (Court) - Niv 1",
+    "category": "Ranged",
+    "subCategory": "Arc",
+    "level": 1,
+    "hands": 2,
+    "slots": 2,
+    "puissance": 3,
+    "precision": 4,
+    "rangeInInches": 12,
+    "specialRuleIds": [],
+    "costInGold": 0
+  },
+  {
+    "id": "tir_2m_arc_2",
+    "name": "Arc (Intermédiaire) - Niv 2",
+    "category": "Ranged",
+    "subCategory": "Arc",
+    "level": 2,
+    "hands": 2,
+    "slots": 2,
+    "puissance": 4,
+    "precision": 4,
+    "rangeInInches": 15,
+    "specialRuleIds": [],
+    "costInGold": 0
+  },
+  {
+    "id": "tir_2m_arc_3",
+    "name": "Arc (Long) - Niv 3",
+    "category": "Ranged",
+    "subCategory": "Arc",
+    "level": 3,
+    "hands": 2,
+    "slots": 2,
+    "puissance": 4,
+    "precision": 4,
+    "rangeInInches": 18,
+    "specialRuleIds": [],
+    "costInGold": 0
+  },
+  {
+    "id": "tir_2m_arbalete_1",
+    "name": "Arbalète/Arquebuse (Légère) - Niv 1",
+    "category": "Ranged",
+    "subCategory": "Arbalète/Arquebuse",
+    "level": 1,
+    "hands": 2,
+    "slots": 2,
+    "puissance": 3,
+    "precision": 4,
+    "rangeInInches": 12,
+    "specialRuleIds": [
+      "rechargement",
+      "perce_armure"
+    ],
+    "perceArmure": 1,
+    "costInGold": 0
+  },
+  {
+    "id": "tir_2m_arbalete_2",
+    "name": "Arbalète/Arquebuse (Intermédiaire) - Niv 2",
+    "category": "Ranged",
+    "subCategory": "Arbalète/Arquebuse",
+    "level": 2,
+    "hands": 2,
+    "slots": 2,
+    "puissance": 4,
+    "precision": 4,
+    "rangeInInches": 15,
+    "specialRuleIds": [
+      "rechargement",
+      "perce_armure"
+    ],
+    "perceArmure": 1,
+    "costInGold": 0
+  },
+  {
+    "id": "tir_2m_arbalete_3",
+    "name": "Arbalète/Arquebuse (Lourde) - Niv 3",
+    "category": "Ranged",
+    "subCategory": "Arbalète/Arquebuse",
+    "level": 3,
+    "hands": 2,
+    "slots": 2,
+    "puissance": 4,
+    "precision": 4,
+    "rangeInInches": 18,
+    "specialRuleIds": [
+      "rechargement",
+      "perce_armure"
+    ],
+    "perceArmure": 1,
+    "costInGold": 0
+  },
+  {
+    "id": "prot_bouclier_1",
+    "name": "Bouclier (Écu, Rondache) - Niv 1",
+    "category": "Shield",
+    "subCategory": "Bouclier",
+    "level": 1,
+    "hands": 1,
+    "slots": 1,
+    "protection": 1,
+    "specialRuleIds": [],
+    "costInGold": 0
+  },
+  {
+    "id": "prot_bouclier_3",
+    "name": "Grand Bouclier (Pavois) - Niv 3",
+    "category": "Shield",
+    "subCategory": "Bouclier",
+    "level": 3,
+    "hands": 1,
+    "slots": 2,
+    "protection": 2,
+    "specialRuleIds": [
+      "encombrant"
+    ],
+    "costInGold": 0
+  },
+  {
+    "id": "prot_armure_1",
+    "name": "Armure (Cuir/Gambison) - Niv 1",
+    "category": "Armor",
+    "subCategory": "Armure",
+    "level": 1,
+    "hands": 0,
+    "slots": 1,
+    "protection": 1,
+    "specialRuleIds": [],
+    "costInGold": 0
+  },
+  {
+    "id": "prot_armure_2",
+    "name": "Armure (Cotte de mailles) - Niv 2",
+    "category": "Armor",
+    "subCategory": "Armure",
+    "level": 2,
+    "hands": 0,
+    "slots": 1,
+    "protection": 2,
+    "statModifiers": {
+      "esquive": -1
+    },
+    "specialRuleIds": [],
+    "costInGold": 0
+  },
+  {
+    "id": "prot_armure_3",
+    "name": "Armure (Plates) - Niv 3",
+    "category": "Armor",
+    "subCategory": "Armure",
+    "level": 3,
+    "hands": 0,
+    "slots": 1,
+    "protection": 3,
+    "statModifiers": {
+      "esquive": -1,
+      "mouvement": -1
+    },
+    "specialRuleIds": [
+      "encombrant"
+    ],
+    "costInGold": 0
+  }
+]

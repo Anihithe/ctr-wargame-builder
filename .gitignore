@@ -1,0 +1,25 @@
+# .NET
+bin/
+obj/
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+# Build artifacts & Frontend
+node_modules/
+dist/
+wwwroot
+.tools/
+*.local
+
+# IDE
+.vscode/
+.idea/
+
+# AI & Agent artifacts
+.gemini/
+.agents/
+AGENTS.md
+GEMINI.md
+*.tsbuildinfo

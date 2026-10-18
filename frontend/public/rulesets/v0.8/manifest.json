@@ -1,0 +1,24 @@
+{
+  "version": "0.8",
+  "name": "Règles Version 0.8 (Playtest)",
+  "releaseDate": "2026-10-18",
+  "isLive": true,
+  "config": {
+    "defaultStartingGold": 10,
+    "maxWarbandMembersStandard": 10,
+    "maxWarbandMembersDuel": 15,
+    "maxMonsters": 1,
+    "maxAnimals": 2,
+    "officerLeaderBaseXp": 12,
+    "officerBrasDroitBaseXp": 6,
+    "specializationXpCost": 6,
+    "talentXpCost": 6,
+    "duplicateSpecializationPenaltyXp": 6,
+    "slotsByRank": {
+      "1": 2,
+      "2": 2,
+      "3": 3,
+      "4": 4
+    }
+  }
+}

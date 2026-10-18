@@ -1,0 +1,129 @@
+[
+  {
+    "id": "corps_d_armee",
+    "name": "Corps d'armée",
+    "description": "Discipline militaire et formation de phalange.",
+    "rules": [
+      {
+        "name": "Phalange",
+        "description": "Vos Combattants bénéficient d'un bonus de +1 au jet de défense contre les attaques au corps à corps et ne peuvent pas être repoussés s'ils sont au contact d'au moins 2 alliés."
+      },
+      {
+        "name": "Professionnels",
+        "description": "Vos Combattants gagnent un bonus de +1 en Volonté."
+      }
+    ]
+  },
+  {
+    "id": "explorateurs",
+    "name": "Explorateurs",
+    "description": "Habitués des terrains accidentés et de la verticalité.",
+    "rules": [
+      {
+        "name": "Pas assurés",
+        "description": "Les Combattants n'ont pas de malus de mouvement pour traverser un Terrain difficile."
+      },
+      {
+        "name": "Grimpeurs",
+        "description": "Les Combattants ne portant pas d'armure ni de bouclier bénéficient de la règle spéciale Agile."
+      }
+    ]
+  },
+  {
+    "id": "fanatiques",
+    "name": "Fanatiques",
+    "description": "Zélotes rapides et insensibles à la terreur.",
+    "rules": [
+      {
+        "name": "Frénésie",
+        "description": "Les Combattants ne sont pas affectés par la règle spéciale Terreur et bénéficient d'un bonus de +1 Mouvement. En contrepartie, ils ne peuvent pas porter d'armure ni de bouclier."
+      }
+    ]
+  },
+  {
+    "id": "conclave_des_mages",
+    "name": "Conclave des Mages",
+    "description": "Académie de lanceurs de sorts.",
+    "rules": [
+      {
+        "name": "Érudits",
+        "description": "Les Officiers possédant l'action \"Lancer un sort\" obtiennent gratuitement le Talent Incantation maîtrisée."
+      },
+      {
+        "name": "Collège de Magie",
+        "description": "La sélection d'une 2ème Spécialisation de Mage n'a pas de surcoût. Le surcoût s'applique ensuite (+1 po pour le 3ème, +2 po pour le 4ème, ...)."
+      }
+    ]
+  },
+  {
+    "id": "ordre_du_temple",
+    "name": "Ordre du Temple",
+    "description": "Bénédictions sacrées et protection des dieux.",
+    "rules": [
+      {
+        "name": "Don des Dieux",
+        "description": "Avant de choisir la première Spécialisation, lancez un dé 6, le Combattant gagne : 1: +1 Mouvement ; 2: +1 PV ; 3: +1 Volonté ; 4: +1 Esquive ; 5: +1 Combat ; 6: Bonus au choix."
+      },
+      {
+        "name": "Protection divine",
+        "description": "Vous pouvez relancer un jet de défense par tour."
+      }
+    ]
+  },
+  {
+    "id": "guilde_des_ombres",
+    "name": "Guilde des Ombres",
+    "description": "Maîtres de l'embuscade et de l'infiltration.",
+    "rules": [
+      {
+        "name": "Plan secret",
+        "description": "Une fois par partie, avant le jet d'initiative, vous pouvez décider de commencer le tour."
+      },
+      {
+        "name": "Infiltration",
+        "description": "Jusqu'à 3 de vos Combattants peuvent effectuer un mouvement après le déploiement de tous les joueurs."
+      }
+    ]
+  },
+  {
+    "id": "chasseurs",
+    "name": "Chasseurs",
+    "description": "Tireurs précis et lames acérées.",
+    "rules": [
+      {
+        "name": "Tir ajusté",
+        "description": "Vos Combattants ignorent le malus de -1 dé d'attaque au tir après un mouvement."
+      },
+      {
+        "name": "Lames affûtées",
+        "description": "Vos Combattants bénéficient de la règle spéciale Acérée sur leurs armes de corps à corps. Si une arme possède déjà cette règle, elle est remplacée par un bonus de +1 Puissance à la place."
+      }
+    ]
+  },
+  {
+    "id": "union_des_peuples",
+    "name": "Union des peuples",
+    "description": "Coalition autorisant des alliés inter-factions.",
+    "rules": [
+      {
+        "name": "Collaboration",
+        "description": "Vous pouvez recruter des Combattants provenant d'une (et une seule) autre faction. Ils ne bénéficient pas des règles et Origines de votre faction mais peuvent bénéficier d'une Origine de leur faction (ne peut pas permettre de profiter de la règle spéciale de faction)."
+      }
+    ]
+  },
+  {
+    "id": "brigands",
+    "name": "Brigands",
+    "description": "Combattants fourbes et sans pitié.",
+    "rules": [
+      {
+        "name": "Embuscade",
+        "description": "Une fois par tour, lorsqu'un Combattant ennemi se déplace (à n'importe quel moment), vous pouvez activer un de vos Combattants qui ne s'est pas encore activé ce tour pour qu'il fasse un mouvement + une action. Si vous engagez le Combattant ennemi, il peut utiliser son action pour effectuer un Combat. Si vous faites également une action de Combat, résolvez simultanément les jets d'attaque."
+      },
+      {
+        "name": "Coups bas",
+        "description": "Vos Combattants bénéficient de la règle spéciale Sadique."
+      }
+    ]
+  }
+]
