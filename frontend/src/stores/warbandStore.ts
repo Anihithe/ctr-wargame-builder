@@ -116,19 +116,35 @@ export const useWarbandStore = defineStore('warband', () => {
     let rank3Count = 0;
     let monsterCount = 0;
 
-    // Check only ACTIVE fighters for table budget and limits
-    for (const f of activeFighters) {
+    // Calculate total cost for all warband troops (Active, Reserve, Graveyard)
+    for (const f of wb.fighters) {
       let cost = 0;
       if (f.type === 'Guerrier') {
         cost = f.rank;
-        if (f.rank === 3) rank3Count++;
       } else if (f.type === 'Monstre') {
         cost = 4;
-        monsterCount++;
       } else if (f.type === 'Animal') {
         cost = f.rank;
       }
+      for (const eq of f.equippedItems) {
+        if (eq.isMagicItem) {
+          const mi = rulesetStore.getMagicItem(eq.equipmentId);
+          if (mi) cost += mi.costInGold || 0;
+        } else {
+          const eqDef = rulesetStore.getEquipment(eq.equipmentId);
+          if (eqDef) cost += eqDef.costInGold || 0;
+        }
+      }
       totalCost += cost;
+    }
+
+    // Check ACTIVE fighters for table quotas and officer roles
+    for (const f of activeFighters) {
+      if (f.type === 'Guerrier') {
+        if (f.rank === 3) rank3Count++;
+      } else if (f.type === 'Monstre') {
+        monsterCount++;
+      }
 
       if (f.officerRole === 'Leader') {
         leaderCount++;
@@ -585,6 +601,40 @@ export const useWarbandStore = defineStore('warband', () => {
     syncWarbandWithBackend(currentWarband.value);
   }
 
+  function removeSpecialization(fighterId: string, specializationId: string) {
+    if (!currentWarband.value) return;
+    const fighter = currentWarband.value.fighters.find((f) => f.id === fighterId);
+    if (!fighter) return;
+
+    const idx = fighter.specializations.findIndex((s) => s.specializationId === specializationId);
+    if (idx !== -1) {
+      fighter.specializations.splice(idx, 1);
+      currentWarband.value.updatedAt = new Date().toISOString();
+      syncWarbandWithBackend(currentWarband.value);
+    }
+  }
+
+  function addFighterXp(fighterId: string, deltaXp: number) {
+    if (!currentWarband.value) return;
+    const fighter = currentWarband.value.fighters.find((f) => f.id === fighterId);
+    if (!fighter) return;
+
+    const currentXp = fighter.allocatedXp || 0;
+    fighter.allocatedXp = Math.max(0, currentXp + deltaXp);
+    currentWarband.value.updatedAt = new Date().toISOString();
+    syncWarbandWithBackend(currentWarband.value);
+  }
+
+  function setFighterXp(fighterId: string, totalXp: number) {
+    if (!currentWarband.value) return;
+    const fighter = currentWarband.value.fighters.find((f) => f.id === fighterId);
+    if (!fighter) return;
+
+    fighter.allocatedXp = Math.max(0, totalXp);
+    currentWarband.value.updatedAt = new Date().toISOString();
+    syncWarbandWithBackend(currentWarband.value);
+  }
+
   // Spells
   function toggleSpell(fighterId: string, spellId: string) {
     if (!currentWarband.value) return;
@@ -659,6 +709,9 @@ export const useWarbandStore = defineStore('warband', () => {
     equipItem,
     unequipItem,
     toggleTalent,
+    removeSpecialization,
+    addFighterXp,
+    setFighterXp,
     toggleSpell,
     migrateRulesetVersion,
     syncWarbandWithBackend,
