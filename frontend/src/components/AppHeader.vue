@@ -50,11 +50,6 @@ function updateGold(delta: number) {
   const newBudget = Math.max(1, warband.value.startingGoldPo + delta);
   warbandStore.updateWarband({ startingGoldPo: newBudget });
 }
-
-function onAllegianceChange(e: Event) {
-  const target = e.target as HTMLSelectElement;
-  warbandStore.updateWarband({ allegianceId: target.value || undefined });
-}
 </script>
 
 <template>
@@ -176,31 +171,8 @@ function onAllegianceChange(e: Event) {
             </div>
           </div>
 
-          <!-- Selectors: Allegiance & Budget PO -->
+          <!-- Selectors: Budget PO -->
           <div class="flex flex-wrap items-center gap-3">
-            <!-- Allégeance dropdown -->
-            <div class="flex items-center gap-2 bg-grim-850 px-3 py-1.5 rounded-lg border border-grim-700">
-              <Shield class="w-4 h-4 text-amber-400" />
-              <div class="text-xs">
-                <div class="text-grim-400 leading-none mb-1">Allégeance</div>
-                <select
-                  :value="warband.allegianceId || ''"
-                  @change="onAllegianceChange"
-                  class="bg-transparent text-xs font-semibold text-grim-100 focus:outline-none cursor-pointer"
-                >
-                  <option value="" class="bg-grim-900 text-grim-400">Aucune</option>
-                  <option
-                    v-for="al in rulesetStore.currentRuleset.allegiances"
-                    :key="al.id"
-                    :value="al.id"
-                    class="bg-grim-900 text-grim-100"
-                  >
-                    {{ al.name }}
-                  </option>
-                </select>
-              </div>
-            </div>
-
             <!-- Budget PO Adjuster -->
             <div class="flex items-center gap-2 bg-grim-850 px-3 py-1.5 rounded-lg border border-grim-700">
               <Coins class="w-4 h-4 text-gold-400" />

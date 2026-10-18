@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
 import { useWarbandStore } from '@/stores/warbandStore';
 import { useRulesetStore } from '@/stores/rulesetStore';
 import type { OfficerRole, FighterStatus } from '@/types/warband';
@@ -13,6 +13,9 @@ import {
   BookOpen,
   Flame,
   Check,
+  X,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-vue-next';
 
 const emit = defineEmits<{
@@ -29,11 +32,49 @@ const warband = computed(() => warbandStore.currentWarband);
 const fighter = computed(() => warbandStore.selectedFighter);
 const faction = computed(() => warband.value ? rulesetStore.getFaction(warband.value.factionId) : null);
 const allegiance = computed(() => warband.value ? rulesetStore.getAllegiance(warband.value.allegianceId) : null);
+const availableAllegiances = computed(() => rulesetStore.currentRuleset.allegiances || []);
+
+const showAllOrigins = ref(false);
+const showAllegiancePicker = ref(false);
+
 const selectedOrigins = computed(() => {
   if (!faction.value || !warband.value) return [];
   const ids = warband.value.selectedOriginIds || [];
   return faction.value.origins.filter((o) => ids.includes(o.id));
 });
+
+const originsToDisplay = computed(() => {
+  if (!faction.value?.origins) return [];
+  const max = faction.value.allowedOriginsCount || 2;
+  if (selectedOrigins.value.length >= max && !showAllOrigins.value) {
+    return selectedOrigins.value;
+  }
+  return faction.value.origins;
+});
+
+function selectAllegiance(allegianceId: string) {
+  const allg = rulesetStore.getAllegiance(allegianceId);
+  const defaultRule = allg?.rules?.[0]?.name;
+  warbandStore.updateWarband({
+    allegianceId,
+    selectedAllegianceRuleName: defaultRule,
+  });
+  showAllegiancePicker.value = false;
+}
+
+function removeAllegiance() {
+  warbandStore.updateWarband({
+    allegianceId: undefined,
+    selectedAllegianceRuleName: undefined,
+  });
+  showAllegiancePicker.value = false;
+}
+
+function selectAllegianceRule(ruleName: string) {
+  warbandStore.updateWarband({
+    selectedAllegianceRuleName: ruleName,
+  });
+}
 
 // Calculate base stats of selected fighter
 const fighterStats = computed<StatProfile>(() => {
@@ -165,23 +206,33 @@ function addSpecialization(specId: string) {
           <div class="text-grim-300 text-[11px] leading-relaxed">{{ faction.specialRule.description }}</div>
         </div>
 
-        <!-- Origins Available (Clickable multi-select) -->
+        <!-- Origins Available (Clickable multi-select with folding) -->
         <div v-if="faction?.origins && faction.origins.length > 0" class="pt-2 border-t border-grim-800 space-y-2">
           <div class="flex items-center justify-between">
             <div class="text-[11px] font-semibold text-grim-400 uppercase tracking-wider">
               Origines accessibles ({{ faction.allowedOriginsCount }} max)
             </div>
-            <span class="text-xs font-mono font-semibold" :class="selectedOrigins.length > faction.allowedOriginsCount ? 'text-crimson-400' : 'text-cyan-400'">
-              {{ selectedOrigins.length }} / {{ faction.allowedOriginsCount }} sélectionnée(s)
-            </span>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-mono font-semibold" :class="selectedOrigins.length > faction.allowedOriginsCount ? 'text-crimson-400' : 'text-cyan-400'">
+                {{ selectedOrigins.length }} / {{ faction.allowedOriginsCount }} sélectionnée(s)
+              </span>
+              <button
+                v-if="selectedOrigins.length >= faction.allowedOriginsCount"
+                type="button"
+                @click="showAllOrigins = !showAllOrigins"
+                class="text-[11px] px-2 py-0.5 rounded bg-grim-800 hover:bg-grim-750 text-cyan-300 border border-grim-700 transition"
+              >
+                {{ showAllOrigins ? 'Replier' : 'Modifier le choix' }}
+              </button>
+            </div>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
             <div
-              v-for="orig in faction.origins"
+              v-for="orig in originsToDisplay"
               :key="orig.id"
               @click="warbandStore.toggleOrigin(orig.id)"
-              class="p-3 rounded-lg border text-xs space-y-1.5 cursor-pointer transition select-none relative"
+              class="p-3 rounded-lg border text-xs space-y-1.5 cursor-pointer transition select-none relative group"
               :class="
                 warband.selectedOriginIds?.includes(orig.id)
                   ? 'border-cyan-500 bg-cyan-950/30 ring-1 ring-cyan-500/50 shadow-md'
@@ -192,15 +243,20 @@ function addSpecialization(specId: string) {
                 <span class="font-bold text-sm" :class="warband.selectedOriginIds?.includes(orig.id) ? 'text-cyan-300' : 'text-grim-200'">
                   {{ orig.name }}
                 </span>
-                <div
-                  class="w-4 h-4 rounded border flex items-center justify-center transition"
-                  :class="
-                    warband.selectedOriginIds?.includes(orig.id)
-                      ? 'bg-cyan-500 border-cyan-400 text-grim-950'
-                      : 'border-grim-700'
-                  "
-                >
-                  <Check v-if="warband.selectedOriginIds?.includes(orig.id)" class="w-3 h-3 stroke-[3]" />
+                <div class="flex items-center gap-1">
+                  <button
+                    v-if="warband.selectedOriginIds?.includes(orig.id)"
+                    type="button"
+                    @click.stop="warbandStore.toggleOrigin(orig.id)"
+                    class="p-0.5 rounded hover:bg-crimson-900/50 text-grim-400 hover:text-crimson-300 transition"
+                    title="Retirer cette origine"
+                  >
+                    <X class="w-3.5 h-3.5" />
+                  </button>
+                  <div
+                    v-else
+                    class="w-4 h-4 rounded border border-grim-700 flex items-center justify-center transition"
+                  ></div>
                 </div>
               </div>
               <p class="text-grim-300 text-[11px] leading-relaxed">{{ orig.description }}</p>
@@ -226,22 +282,115 @@ function addSpecialization(specId: string) {
         </div>
       </div>
 
-      <!-- Allegiance Details Card (if selected) -->
-      <div v-if="allegiance" class="trench-card p-5 space-y-3">
-        <div class="flex items-center gap-2">
-          <Shield class="w-5 h-5 text-amber-400" />
-          <h3 class="text-base font-bold text-white font-display">Allégeance : {{ allegiance.name }}</h3>
+      <!-- Allegiance Section -->
+      <div class="trench-card p-5 space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <Shield class="w-5 h-5 text-amber-400" />
+            <h3 class="text-base font-bold text-white font-display">
+              Allégeance
+              <span v-if="!allegiance" class="text-xs font-normal text-grim-400 font-sans">(Optionnelle)</span>
+            </h3>
+          </div>
+          <div v-if="allegiance" class="flex items-center gap-2">
+            <button
+              type="button"
+              @click="showAllegiancePicker = !showAllegiancePicker"
+              class="text-xs px-2.5 py-1 rounded bg-grim-800 hover:bg-grim-750 text-amber-300 border border-grim-700 transition"
+            >
+              {{ showAllegiancePicker ? 'Masquer la liste' : 'Changer' }}
+            </button>
+            <button
+              type="button"
+              @click="removeAllegiance"
+              class="p-1 rounded bg-grim-800 hover:bg-crimson-900/60 text-grim-400 hover:text-crimson-300 border border-grim-700 transition"
+              title="Retirer l'allégeance"
+            >
+              <X class="w-4 h-4" />
+            </button>
+          </div>
         </div>
-        <p class="text-xs text-grim-300">{{ allegiance.description }}</p>
 
-        <div class="space-y-2 pt-2 border-t border-grim-800">
-          <div
-            v-for="(rule, i) in allegiance.rules"
-            :key="i"
-            class="bg-grim-850 p-2.5 rounded border border-grim-800 text-xs space-y-1"
-          >
-            <div class="font-bold text-amber-300">{{ rule.name }}</div>
-            <div class="text-grim-300 text-[11px] leading-relaxed">{{ rule.description }}</div>
+        <!-- Case A: Allegiance is selected and we are NOT browsing the picker -->
+        <div v-if="allegiance && !showAllegiancePicker" class="space-y-3">
+          <div class="bg-amber-950/20 border border-amber-500/40 rounded-lg p-3.5 space-y-3">
+            <div class="flex items-start justify-between">
+              <div>
+                <h4 class="text-sm font-bold text-amber-300">{{ allegiance.name }}</h4>
+                <p class="text-xs text-grim-300 leading-relaxed">{{ allegiance.description }}</p>
+              </div>
+            </div>
+
+            <!-- Rules display or radio variant selection -->
+            <div class="space-y-2 pt-2 border-t border-amber-900/40">
+              <div v-if="allegiance.rules.length > 1" class="text-[11px] font-semibold text-amber-400 uppercase tracking-wider">
+                Doctrines / Règles applicables :
+              </div>
+              <div class="space-y-2">
+                <label
+                  v-for="(rule, i) in allegiance.rules"
+                  :key="i"
+                  class="flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition select-none"
+                  :class="
+                    allegiance.rules.length > 1 && (warband.selectedAllegianceRuleName === rule.name || (!warband.selectedAllegianceRuleName && i === 0))
+                      ? 'border-amber-500 bg-amber-950/40 ring-1 ring-amber-500/40'
+                      : 'bg-grim-850/80 border-grim-800 hover:border-grim-700'
+                  "
+                >
+                  <input
+                    v-if="allegiance.rules.length > 1"
+                    type="radio"
+                    name="allegianceRule"
+                    :value="rule.name"
+                    :checked="warband.selectedAllegianceRuleName === rule.name || (!warband.selectedAllegianceRuleName && i === 0)"
+                    @change="selectAllegianceRule(rule.name)"
+                    class="mt-0.5 accent-amber-500"
+                  />
+                  <div class="space-y-0.5 flex-1">
+                    <div class="font-bold text-xs text-amber-300">{{ rule.name }}</div>
+                    <div class="text-grim-300 text-[11px] leading-relaxed">{{ rule.description }}</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Case B: No allegiance selected OR browsing the list to change -->
+        <div v-else class="space-y-3">
+          <p class="text-xs text-grim-400">
+            Sélectionnez une allégeance pour faire bénéficier vos combattants d'une doctrine de guerre spéciale :
+          </p>
+
+          <div class="grid grid-cols-1 gap-2.5 max-h-96 overflow-y-auto pr-1">
+            <div
+              v-for="allg in availableAllegiances"
+              :key="allg.id"
+              @click="selectAllegiance(allg.id)"
+              class="p-3 rounded-lg border text-xs space-y-2 cursor-pointer transition select-none"
+              :class="
+                warband.allegianceId === allg.id
+                  ? 'border-amber-500 bg-amber-950/30 ring-1 ring-amber-500/50'
+                  : 'bg-grim-850 border-grim-800 hover:border-amber-500/50 hover:bg-grim-800/60'
+              "
+            >
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-sm" :class="warband.allegianceId === allg.id ? 'text-amber-300' : 'text-grim-200'">
+                  {{ allg.name }}
+                </span>
+                <span v-if="warband.allegianceId === allg.id" class="text-[10px] px-2 py-0.5 rounded bg-amber-500 text-grim-950 font-bold uppercase">
+                  Actuelle
+                </span>
+              </div>
+              <p class="text-grim-300 text-[11px] leading-relaxed">{{ allg.description }}</p>
+
+              <div class="space-y-1.5 pt-1.5 border-t border-grim-800/80">
+                <div v-for="(rule, i) in allg.rules" :key="i" class="text-[11px] bg-grim-900/60 p-2 rounded border border-grim-800/50">
+                  <span class="font-semibold text-amber-400">{{ rule.name }} : </span>
+                  <span class="text-grim-300 leading-relaxed">{{ rule.description }}</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
