@@ -3,7 +3,8 @@ import { ref, computed } from 'vue';
 import { useWarbandStore } from '@/stores/warbandStore';
 import { useRulesetStore } from '@/stores/rulesetStore';
 import type { Spell } from '@/types/ruleset';
-import { BookOpen, X, Check } from 'lucide-vue-next';
+import { canFighterCastSpells } from '@/domain/rulesEngine';
+import { BookOpen, X, Check, AlertCircle } from 'lucide-vue-next';
 
 const props = defineProps<{
   fighterId: string;
@@ -19,6 +20,8 @@ const rulesetStore = useRulesetStore();
 const warband = computed(() => warbandStore.currentWarband);
 const fighter = computed(() => warband.value?.fighters.find((f) => f.id === props.fighterId));
 
+const canCast = computed(() => (fighter.value ? canFighterCastSpells(fighter.value, warband.value) : false));
+
 const selectedLevel = ref<number | 'Tous'>('Tous');
 const allSpells = computed(() => rulesetStore.currentRuleset.spells);
 
@@ -33,6 +36,7 @@ function isSpellKnown(spellId: string): boolean {
 
 function toggleSpell(spell: Spell) {
   if (!fighter.value) return;
+  if (!isSpellKnown(spell.id) && !canCast.value) return;
   warbandStore.toggleSpell(fighter.value.id, spell.id);
 }
 </script>
@@ -57,6 +61,11 @@ function toggleSpell(spell: Spell) {
         >
           <X class="w-5 h-5" />
         </button>
+      </div>
+
+      <div v-if="!canCast" class="mx-6 mt-4 p-3 bg-crimson-950/40 border border-crimson-800/60 rounded-lg flex items-center gap-2 text-xs text-crimson-300">
+        <AlertCircle class="w-4 h-4 text-crimson-400 shrink-0" />
+        <span>Ce combattant ne possède pas la capacité d'apprendre des sorts (spécialisation Mage requise, ou règle spécifique).</span>
       </div>
 
       <!-- Level Filter -->

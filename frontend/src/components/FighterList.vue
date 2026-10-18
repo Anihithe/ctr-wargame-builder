@@ -5,7 +5,7 @@ import { useRulesetStore } from '@/stores/rulesetStore';
 import type { Fighter, FighterType, FighterStatus, OfficerRole } from '@/types/warband';
 import { THEME } from '@/constants/theme';
 import { FACTION_IDS, ORIGIN_IDS } from '@/constants/rules';
-import { hasFighterMaitrise as checkMaitriseEngine } from '@/domain/rulesEngine';
+import { hasFighterMaitrise as checkMaitriseEngine, cleanEquipmentName } from '@/domain/rulesEngine';
 import {
   UserPlus,
   Crown,
@@ -77,11 +77,6 @@ function recruitOfficer(role: OfficerRole, rank: number, type: FighterType = 'Gu
 }
 
 function getFighterSubline(f: Fighter): string {
-  if (f.specializations && f.specializations.length > 0) {
-    return f.specializations
-      .map((s) => rulesetStore.getSpecialization(s.specializationId)?.name || s.specializationId)
-      .join(', ');
-  }
   if (f.type === 'Guerrier') {
     return 'Guerrier';
   }
@@ -137,12 +132,13 @@ function getFighterWeapons(f: Fighter) {
     const item = rulesetStore.getEquipment(eq.equipmentId);
     if (item?.category === 'Melee' || item?.category === 'Ranged') {
       const existing = counts.get(eq.equipmentId);
+      const cleaned = cleanEquipmentName(item.name || eq.equipmentId, item.level);
       if (existing) {
         existing.count += 1;
       } else {
         counts.set(eq.equipmentId, {
           count: 1,
-          name: item.name || eq.equipmentId,
+          name: cleaned,
         });
       }
     }
@@ -160,12 +156,13 @@ function getFighterShields(f: Fighter) {
     const item = rulesetStore.getEquipment(eq.equipmentId);
     if (item?.category === 'Shield') {
       const existing = counts.get(eq.equipmentId);
+      const cleaned = cleanEquipmentName(item.name || eq.equipmentId, item.level);
       if (existing) {
         existing.count += 1;
       } else {
         counts.set(eq.equipmentId, {
           count: 1,
-          name: item.name || eq.equipmentId,
+          name: cleaned,
         });
       }
     }
@@ -183,10 +180,13 @@ function getFighterArmors(f: Fighter) {
       const item = rulesetStore.getEquipment(eq.equipmentId);
       return item?.category === 'Armor';
     })
-    .map((eq) => ({
-      id: eq.id,
-      name: rulesetStore.getEquipment(eq.equipmentId)?.name || eq.equipmentId,
-    }));
+    .map((eq) => {
+      const item = rulesetStore.getEquipment(eq.equipmentId);
+      return {
+        id: eq.id,
+        name: cleanEquipmentName(item?.name || eq.equipmentId, item?.level),
+      };
+    });
 }
 
 function getFighterMagicItems(f: Fighter) {

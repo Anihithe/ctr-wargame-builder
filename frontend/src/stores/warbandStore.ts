@@ -11,7 +11,7 @@ import {
   ALLEGIANCE_IDS,
   EQUIPMENT_CATEGORIES,
 } from '@/constants/rules';
-import { calculateMaxSlots, calculateEffectiveRank } from '@/domain/rulesEngine';
+import { calculateMaxSlots, calculateEffectiveRank, canFighterCastSpells } from '@/domain/rulesEngine';
 
 const STORAGE_KEY = 'ctr_wargame_warbands_v2';
 const ACTIVE_WARBAND_KEY = 'ctr_wargame_active_id';
@@ -415,6 +415,39 @@ export const useWarbandStore = defineStore('warband', () => {
           message: `${f.name} porte ${armorCount} armures (maximum 1 seule armure autorisée).`,
           severity: 'Error',
         });
+      }
+
+      // Spell capability validation
+      if (f.knownSpellIds && f.knownSpellIds.length > 0) {
+        if (!canFighterCastSpells(f, wb)) {
+          errors.push({
+            fighterId: f.id,
+            fighterName: f.name,
+            code: VALIDATION_CODES.SpellsCannotBeCast,
+            message: `${f.name} ne possède pas la capacité d'apprendre ou de lancer des sorts.`,
+            severity: 'Error',
+          });
+        } else {
+          let totalSpellLevels = 0;
+          for (const spId of f.knownSpellIds) {
+            const spDef = rulesetStore.getSpell(spId);
+            if (spDef) totalSpellLevels += spDef.level;
+          }
+          let maxSpellLevelAllowed = f.rank;
+          const mageSpec = f.specializations.find((s) => s.specializationId === SPEC_IDS.Mage);
+          if (mageSpec && mageSpec.acquiredTalentIds.includes(TALENT_IDS.ConnaissancesApprofondies)) {
+            maxSpellLevelAllowed += f.rank;
+          }
+          if (totalSpellLevels > maxSpellLevelAllowed) {
+            errors.push({
+              fighterId: f.id,
+              fighterName: f.name,
+              code: VALIDATION_CODES.SpellsLevelExceeded,
+              message: `${f.name} cumule ${totalSpellLevels} niveaux de sorts (maximum autorisé : ${maxSpellLevelAllowed}).`,
+              severity: 'Error',
+            });
+          }
+        }
       }
     }
 

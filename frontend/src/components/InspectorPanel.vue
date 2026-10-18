@@ -111,6 +111,8 @@ import {
   calculateMaxSlots,
   calculateCurrentSlotsUsed,
   hasFighterMaitrise,
+  canFighterCastSpells,
+  cleanEquipmentName,
 } from '@/domain/rulesEngine';
 import { THEME } from '@/constants/theme';
 import { ALLEGIANCE_IDS, SPEC_IDS, TALENT_IDS } from '@/constants/rules';
@@ -138,6 +140,11 @@ const currentSlotsUsed = computed(() => {
 const fighterHasMaitrise = computed(() => {
   if (!fighter.value) return false;
   return hasFighterMaitrise(fighter.value, warband.value, rulesetStore);
+});
+
+const canCastSpells = computed(() => {
+  if (!fighter.value) return false;
+  return canFighterCastSpells(fighter.value, warband.value);
 });
 
 
@@ -858,7 +865,7 @@ function godGiftLabel(stat?: string | null): string {
             <div class="space-y-1">
               <div class="flex items-center gap-2">
                 <span class="text-xs font-bold text-grim-100">
-                  {{ eq.isMagicItem ? rulesetStore.getMagicItem(eq.equipmentId)?.name : rulesetStore.getEquipment(eq.equipmentId)?.name }}
+                  {{ eq.isMagicItem ? rulesetStore.getMagicItem(eq.equipmentId)?.name : cleanEquipmentName(rulesetStore.getEquipment(eq.equipmentId)?.name, rulesetStore.getEquipment(eq.equipmentId)?.level) }}
                 </span>
                 <span
                   v-if="!eq.isMagicItem && rulesetStore.getEquipment(eq.equipmentId)?.category === 'Armor'"
@@ -1034,7 +1041,7 @@ function godGiftLabel(stat?: string | null): string {
       </div>
 
       <!-- Grimoire de Sorts Card -->
-      <div class="trench-card p-5 space-y-4">
+      <div v-if="canCastSpells || (fighter.knownSpellIds && fighter.knownSpellIds.length > 0)" class="trench-card p-5 space-y-4">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
             <BookOpen class="w-4 h-4 text-cyan-400" />
@@ -1044,15 +1051,20 @@ function godGiftLabel(stat?: string | null): string {
           </div>
 
           <button
+            v-if="canCastSpells"
             @click="emit('open-spell', fighter.id)"
-            class="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-cyan-950/80 hover:bg-cyan-900/80 border border-cyan-700 text-cyan-200 rounded transition"
+            class="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-cyan-950/80 hover:bg-cyan-900/80 border border-cyan-700 text-cyan-200 rounded transition shadow cursor-pointer active:scale-95"
           >
             <Plus class="w-3.5 h-3.5" />
             <span>+ Apprendre un sort</span>
           </button>
         </div>
 
-        <div v-if="fighter.knownSpellIds.length === 0" class="text-xs text-grim-400 italic bg-grim-850 p-3 rounded text-center">
+        <div v-if="!canCastSpells" class="p-2.5 bg-crimson-950/40 border border-crimson-800/60 rounded text-xs text-crimson-300">
+          Ce combattant ne possède plus la capacité de lancer des sorts. Veuillez retirer les sorts ci-dessous.
+        </div>
+
+        <div v-else-if="fighter.knownSpellIds.length === 0" class="text-xs text-grim-400 italic bg-grim-850 p-3 rounded text-center">
           Aucun sort appris dans le grimoire.
         </div>
 
