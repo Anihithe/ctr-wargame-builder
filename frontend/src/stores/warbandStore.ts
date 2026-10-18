@@ -185,10 +185,35 @@ export const useWarbandStore = defineStore('warband', () => {
       }
 
       let totalEquippedSlots = 0;
-      let handsUsed = 0;
+      let armorCount = 0;
       const isMage = f.specializations.some((s) => s.specializationId === 'mage');
+      const hasMageDeBataille = f.specializations.some(
+        (s) => s.specializationId === 'mage' && s.acquiredTalentIds.includes('mage_de_bataille'),
+      );
       const isExcellence = wb.factionId === 'excellence';
       const hasGuerrier = f.specializations.some((s) => s.specializationId === 'guerrier');
+      const hasBarbare = f.specializations.some((s) => s.specializationId === 'barbare');
+      const hasGarde = f.specializations.some((s) => s.specializationId === 'garde');
+      const hasRoublard = f.specializations.some((s) => s.specializationId === 'roublard');
+      const hasRanger = f.specializations.some((s) => s.specializationId === 'ranger');
+      const hasDruide = f.specializations.some((s) => s.specializationId === 'druide');
+      const hasIngenieur = f.specializations.some((s) => s.specializationId === 'ingenieur');
+      const hasMaitreArcher = f.specializations.some((s) => s.specializationId === 'maitre_archer');
+      const hasTireurElite = f.specializations.some((s) => s.specializationId === 'tireur_d_elite');
+      const hasCavalier = f.specializations.some((s) => s.specializationId === 'cavalier');
+      const hasCavalerieLourde = f.specializations.some(
+        (s) => s.specializationId === 'cavalier' && s.acquiredTalentIds.includes('cavalerie_lourde'),
+      );
+      const hasMoine = f.specializations.some((s) => s.specializationId === 'moine');
+      const hasEcoleDeLaTerre = f.specializations.some(
+        (s) => s.specializationId === 'moine' && s.acquiredTalentIds.includes('ecole_de_la_terre'),
+      );
+      const hasEcoleDeLOmbre = f.specializations.some(
+        (s) => s.specializationId === 'moine' && s.acquiredTalentIds.includes('ecole_de_l_ombre'),
+      );
+      const hasEcoleDeLEau = f.specializations.some(
+        (s) => s.specializationId === 'moine' && s.acquiredTalentIds.includes('ecole_de_l_eau'),
+      );
       const hasNoblesse = wb.selectedOriginIds?.includes('noblesse');
       const hasGardesRoyaux = wb.selectedOriginIds?.includes('gardes_royaux');
 
@@ -197,13 +222,60 @@ export const useWarbandStore = defineStore('warband', () => {
           const item = rulesetStore.getEquipment(eq.equipmentId);
           if (item) {
             totalEquippedSlots += item.slots ?? 1;
-            handsUsed += item.hands || 0;
+            if (item.category === 'Armor') {
+              armorCount++;
+            }
 
             // Effective rank calculation
             let effectiveRank = f.rank;
             if (item.category === 'Armor' && hasNoblesse) effectiveRank += 1;
             if (item.subCategory === 'Arme intermédiaire' && hasGardesRoyaux) effectiveRank += 1;
-            if (hasGuerrier && (item.category === 'Shield' || item.category === 'Armor' || item.subCategory?.includes('intermédiaire') || item.subCategory?.includes('lourde'))) {
+            if (
+              hasGuerrier &&
+              (item.category === 'Shield' ||
+                item.category === 'Armor' ||
+                item.subCategory?.includes('intermédiaire') ||
+                item.subCategory?.includes('lourde'))
+            ) {
+              effectiveRank += 1;
+            }
+            if (
+              hasBarbare &&
+              (item.subCategory?.includes('lourde') ||
+                item.subCategory?.includes('Pugilat') ||
+                item.id.includes('pugilat'))
+            ) {
+              effectiveRank += 1;
+            }
+            if (hasGarde && item.category === 'Melee' && item.subCategory?.includes('intermédiaire')) {
+              effectiveRank += 1;
+            }
+            if (hasRoublard && item.category === 'Melee' && item.subCategory?.includes('légère')) {
+              effectiveRank += 1;
+            }
+            if (
+              hasRanger &&
+              item.category === 'Ranged' &&
+              (item.subCategory?.includes('Arc') ||
+                item.subCategory?.includes('jet') ||
+                item.id.startsWith('tir_2m_arc') ||
+                item.id.startsWith('tir_1m_jet'))
+            ) {
+              effectiveRank += 1;
+            }
+            if (hasIngenieur && item.category === 'Ranged') {
+              effectiveRank += 1;
+            }
+            if (hasMaitreArcher && (item.subCategory?.includes('Arc') || item.id.startsWith('tir_2m_arc'))) {
+              effectiveRank += 1;
+            }
+            if (
+              hasTireurElite &&
+              (item.subCategory?.includes('Arbalète') ||
+                item.subCategory?.includes('poing') ||
+                item.id.startsWith('tir_2m_arbalete') ||
+                item.id.startsWith('tir_1m_poing'))
+            ) {
               effectiveRank += 1;
             }
 
@@ -217,13 +289,116 @@ export const useWarbandStore = defineStore('warband', () => {
               });
             }
 
-            // Mage restrictions: pas d'armure ni de bouclier
-            if (isMage && (item.category === 'Armor' || item.category === 'Shield')) {
+            // Mage restrictions: pas d'armure ni de bouclier (sauf Mage de bataille)
+            if (isMage && !hasMageDeBataille && (item.category === 'Armor' || item.category === 'Shield')) {
               errors.push({
                 fighterId: f.id,
                 fighterName: f.name,
                 code: 'MAGE_CANNOT_WEAR_ARMOR',
                 message: `La voie du Mage interdit le port d'armure et de bouclier (${item.name} sur ${f.name}).`,
+                severity: 'Error',
+              });
+            }
+
+            // Barbare restrictions: pas d'armure ni bouclier, et armes lourdes/pugilat uniquement
+            if (hasBarbare && (item.category === 'Armor' || item.category === 'Shield')) {
+              errors.push({
+                fighterId: f.id,
+                fighterName: f.name,
+                code: 'BARBARE_CANNOT_WEAR_ARMOR',
+                message: `La voie du Barbare interdit le port d'armure et de bouclier (${item.name} sur ${f.name}).`,
+                severity: 'Error',
+              });
+            }
+            if (
+              hasBarbare &&
+              item.category !== 'Armor' &&
+              item.category !== 'Shield' &&
+              !(
+                item.subCategory?.includes('lourde') ||
+                item.subCategory?.includes('Pugilat') ||
+                item.id.includes('pugilat')
+              )
+            ) {
+              errors.push({
+                fighterId: f.id,
+                fighterName: f.name,
+                code: 'BARBARE_WEAPON_RESTRICTED',
+                message: `Le Barbare ne peut équiper que des armes lourdes ou de pugilat (${item.name} sur ${f.name}).`,
+                severity: 'Error',
+              });
+            }
+
+            // Roublard restrictions: pas d'armure ni de bouclier
+            if (hasRoublard && (item.category === 'Armor' || item.category === 'Shield')) {
+              errors.push({
+                fighterId: f.id,
+                fighterName: f.name,
+                code: 'ROUBLARD_CANNOT_WEAR_ARMOR',
+                message: `La voie du Roublard interdit le port d'armure et de bouclier (${item.name} sur ${f.name}).`,
+                severity: 'Error',
+              });
+            }
+
+            // Ranger restrictions: pas d'armure ni de bouclier
+            if (hasRanger && (item.category === 'Armor' || item.category === 'Shield')) {
+              errors.push({
+                fighterId: f.id,
+                fighterName: f.name,
+                code: 'RANGER_CANNOT_WEAR_ARMOR',
+                message: `La voie du Ranger interdit le port d'armure et de bouclier (${item.name} sur ${f.name}).`,
+                severity: 'Error',
+              });
+            }
+
+            // Druide restrictions: pas d'armure ni de bouclier
+            if (hasDruide && (item.category === 'Armor' || item.category === 'Shield')) {
+              errors.push({
+                fighterId: f.id,
+                fighterName: f.name,
+                code: 'DRUIDE_CANNOT_WEAR_ARMOR',
+                message: `La voie du Druide interdit le port d'armure et de bouclier (${item.name} sur ${f.name}).`,
+                severity: 'Error',
+              });
+            }
+
+            // Cavalier restrictions: armure et bouclier max Niv 1 sauf talent Cavalerie lourde
+            if (
+              hasCavalier &&
+              !hasCavalerieLourde &&
+              (item.category === 'Armor' || item.category === 'Shield') &&
+              item.level > 1
+            ) {
+              errors.push({
+                fighterId: f.id,
+                fighterName: f.name,
+                code: 'CAVALIER_ARMOR_LEVEL_EXCEEDED',
+                message: `Le Cavalier ne peut porter d'armure ou bouclier de niveau supérieur à 1 (${item.name} sur ${f.name}).`,
+                severity: 'Error',
+              });
+            }
+
+            // Moine restrictions: pugilat uniquement (sauf talents Terre / Ombre)
+            if (hasMoine && item.category !== 'Armor' && item.category !== 'Shield') {
+              const isPugilat = item.subCategory?.includes('Pugilat') || item.id.includes('pugilat');
+              const isLightAllowed = hasEcoleDeLaTerre && item.subCategory?.includes('légère');
+              const isRangedAllowed = hasEcoleDeLOmbre && item.category === 'Ranged';
+              if (!isPugilat && !isLightAllowed && !isRangedAllowed) {
+                errors.push({
+                  fighterId: f.id,
+                  fighterName: f.name,
+                  code: 'MOINE_WEAPON_RESTRICTED',
+                  message: `La voie du Moine limite l'équipement aux armes de pugilat (${item.name} sur ${f.name}).`,
+                  severity: 'Error',
+                });
+              }
+            }
+            if (hasMoine && hasEcoleDeLEau && (item.category === 'Armor' || item.category === 'Shield')) {
+              errors.push({
+                fighterId: f.id,
+                fighterName: f.name,
+                code: 'MOINE_CANNOT_WEAR_ARMOR',
+                message: `L'École de l'Eau interdit le port d'armure et de bouclier (${item.name} sur ${f.name}).`,
                 severity: 'Error',
               });
             }
@@ -266,12 +441,12 @@ export const useWarbandStore = defineStore('warband', () => {
         });
       }
 
-      if (handsUsed > 2) {
+      if (armorCount > 1) {
         errors.push({
           fighterId: f.id,
           fighterName: f.name,
-          code: 'HANDS_EXCEEDED',
-          message: `${f.name} utilise ${handsUsed} mains (maximum 2 mains autorisées).`,
+          code: 'MULTIPLE_ARMORS',
+          message: `${f.name} porte ${armorCount} armures (maximum 1 seule armure autorisée).`,
           severity: 'Error',
         });
       }

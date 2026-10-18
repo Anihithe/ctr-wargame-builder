@@ -208,10 +208,39 @@ public class WarbandValidator : IWarbandValidator
             if (eq.Category == "Armor" && hasNoblesseOrigin) effectiveRank += 1;
             if (eq.SubCategory == "Arme intermédiaire" && hasGardesRoyauxOrigin) effectiveRank += 1;
 
-            // Règle du Guerrier (+1 rang pour protections et armes inter/lourdes)
-            if (fighter.Specializations.Any(sp => string.Equals(sp.SpecializationId, "guerrier", StringComparison.OrdinalIgnoreCase)))
+            // Bonus de rang des Spécialisations
+            foreach (var sp in fighter.Specializations)
             {
-                if (eq.Category is "Armor" or "Shield" || eq.SubCategory.Contains("intermédiaire") || eq.SubCategory.Contains("lourde"))
+                var specId = sp.SpecializationId?.ToLowerInvariant();
+                if (specId == "guerrier" && (eq.Category is "Armor" or "Shield" || eq.SubCategory.Contains("intermédiaire") || eq.SubCategory.Contains("lourde")))
+                {
+                    effectiveRank += 1;
+                }
+                else if (specId == "barbare" && (eq.SubCategory.Contains("lourde") || eq.SubCategory.Contains("Pugilat") || eq.Id.Contains("pugilat")))
+                {
+                    effectiveRank += 1;
+                }
+                else if (specId == "garde" && eq.Category == "Melee" && eq.SubCategory.Contains("intermédiaire"))
+                {
+                    effectiveRank += 1;
+                }
+                else if (specId == "roublard" && eq.Category == "Melee" && eq.SubCategory.Contains("légère"))
+                {
+                    effectiveRank += 1;
+                }
+                else if (specId == "ranger" && eq.Category == "Ranged" && (eq.SubCategory.Contains("Arc") || eq.SubCategory.Contains("jet") || eq.Id.StartsWith("tir_2m_arc") || eq.Id.StartsWith("tir_1m_jet")))
+                {
+                    effectiveRank += 1;
+                }
+                else if (specId == "ingenieur" && eq.Category == "Ranged")
+                {
+                    effectiveRank += 1;
+                }
+                else if (specId == "maitre_archer" && (eq.SubCategory.Contains("Arc") || eq.Id.StartsWith("tir_2m_arc")))
+                {
+                    effectiveRank += 1;
+                }
+                else if (specId == "tireur_d_elite" && (eq.SubCategory.Contains("Arbalète") || eq.SubCategory.Contains("poing") || eq.Id.StartsWith("tir_2m_arbalete") || eq.Id.StartsWith("tir_1m_poing")))
                 {
                     effectiveRank += 1;
                 }
@@ -239,11 +268,47 @@ public class WarbandValidator : IWarbandValidator
             result.AddError("MULTIPLE_ARMORS", $"'{name}' porte {armorCount} armures (maximum 1 seule armure autorisée).", fighter.Id);
         }
 
-        // Restrictions d'armure pour la Spécialisation Mage
-        var isMage = fighter.Specializations.Any(sp => string.Equals(sp.SpecializationId, "mage", StringComparison.OrdinalIgnoreCase));
-        if (isMage && (hasArmor || hasShield))
+        // Restrictions d'armure pour la Spécialisation Mage (sauf talent mage_de_bataille)
+        var hasMage = fighter.Specializations.Any(sp => string.Equals(sp.SpecializationId, "mage", StringComparison.OrdinalIgnoreCase));
+        var hasMageDeBataille = fighter.Specializations.Any(sp => string.Equals(sp.SpecializationId, "mage", StringComparison.OrdinalIgnoreCase) && sp.SelectedTalentIds.Contains("mage_de_bataille"));
+        if (hasMage && !hasMageDeBataille && (hasArmor || hasShield))
         {
             result.AddError("MAGE_CANNOT_WEAR_ARMOR", $"La spécialisation Mage interdit le port d'armure et de bouclier sur '{name}'.", fighter.Id);
+        }
+
+        // Restrictions Barbare
+        var hasBarbare = fighter.Specializations.Any(sp => string.Equals(sp.SpecializationId, "barbare", StringComparison.OrdinalIgnoreCase));
+        if (hasBarbare && (hasArmor || hasShield))
+        {
+            result.AddError("BARBARE_CANNOT_WEAR_ARMOR", $"La spécialisation Barbare interdit le port d'armure et de bouclier sur '{name}'.", fighter.Id);
+        }
+        if (hasBarbare)
+        {
+            foreach (var item in fighter.Equipments)
+            {
+                if (equipmentDict.TryGetValue(item.EquipmentId, out var eq) && eq.Category != "Armor" && eq.Category != "Shield")
+                {
+                    var isHeavyOrPugilat = eq.SubCategory.Contains("lourde") || eq.SubCategory.Contains("Pugilat") || eq.Id.Contains("pugilat");
+                    if (!isHeavyOrPugilat)
+                    {
+                        result.AddError("BARBARE_WEAPON_RESTRICTED", $"Le Barbare ne peut équiper que des armes lourdes ou de pugilat ('{eq.Name}' sur '{name}').", fighter.Id);
+                    }
+                }
+            }
+        }
+
+        // Restrictions Roublard / Ranger / Druide
+        if (fighter.Specializations.Any(sp => string.Equals(sp.SpecializationId, "roublard", StringComparison.OrdinalIgnoreCase)) && (hasArmor || hasShield))
+        {
+            result.AddError("ROUBLARD_CANNOT_WEAR_ARMOR", $"La spécialisation Roublard interdit le port d'armure et de bouclier sur '{name}'.", fighter.Id);
+        }
+        if (fighter.Specializations.Any(sp => string.Equals(sp.SpecializationId, "ranger", StringComparison.OrdinalIgnoreCase)) && (hasArmor || hasShield))
+        {
+            result.AddError("RANGER_CANNOT_WEAR_ARMOR", $"La spécialisation Ranger interdit le port d'armure et de bouclier sur '{name}'.", fighter.Id);
+        }
+        if (fighter.Specializations.Any(sp => string.Equals(sp.SpecializationId, "druide", StringComparison.OrdinalIgnoreCase)) && (hasArmor || hasShield))
+        {
+            result.AddError("DRUIDE_CANNOT_WEAR_ARMOR", $"La spécialisation Druide interdit le port d'armure et de bouclier sur '{name}'.", fighter.Id);
         }
 
         // Restrictions d'armure de faction (Ex: L'Excellence)

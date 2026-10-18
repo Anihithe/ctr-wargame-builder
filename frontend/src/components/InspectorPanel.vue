@@ -151,19 +151,69 @@ const fighterStats = computed<StatProfile>(() => {
     }
   }
 
-  // Apply Specialization modifiers: Mage (-1 Combat)
+  // Apply Specialization & Talent modifiers
   const isMage = fighter.value.specializations.some((s) => s.specializationId === 'mage');
-  if (isMage) {
+  const hasMageDeBataille = fighter.value.specializations.some(
+    (s) => s.specializationId === 'mage' && s.acquiredTalentIds.includes('mage_de_bataille'),
+  );
+  if (isMage && !hasMageDeBataille) {
     stats.combat = Math.max(0, stats.combat - 1);
   }
 
-  // Apply Equipment statModifiers (e.g. Armure: -1 Esquive)
+  const isBarbare = fighter.value.specializations.some((s) => s.specializationId === 'barbare');
+  if (isBarbare) {
+    stats.esquive += 1;
+    stats.pv += 1;
+  }
+
+  const isCavalier = fighter.value.specializations.some((s) => s.specializationId === 'cavalier');
+  if (isCavalier) {
+    stats.mouvement = Math.round(stats.mouvement * 1.5);
+  }
+
+  for (const sp of fighter.value.specializations) {
+    if (sp.acquiredTalentIds.includes('constitution')) {
+      stats.pv += 2;
+    }
+    if (sp.acquiredTalentIds.includes('esquive_instinctive') || sp.acquiredTalentIds.includes('esquive_instinctive_ranger')) {
+      stats.esquive += 1;
+    }
+  }
+
+  // Equipment statModifiers & armor penalty mitigations
+  const hasGuerrier = fighter.value.specializations.some((s) => s.specializationId === 'guerrier');
+  const hasCostaud = fighter.value.specializations.some(
+    (s) => s.specializationId === 'guerrier' && s.acquiredTalentIds.includes('costaud'),
+  );
+  const hasArmureAdaptee = fighter.value.specializations.some(
+    (s) => s.specializationId === 'garde' && s.acquiredTalentIds.includes('armure_adaptee'),
+  );
+
   for (const eq of fighter.value.equippedItems) {
     if (!eq.isMagicItem) {
       const item = rulesetStore.getEquipment(eq.equipmentId);
       if (item?.statModifiers) {
-        stats.mouvement += item.statModifiers.mouvement || 0;
-        stats.esquive += item.statModifiers.esquive || 0;
+        let mvtMod = item.statModifiers.mouvement || 0;
+        let esqMod = item.statModifiers.esquive || 0;
+
+        if (item.category === 'Armor') {
+          if (hasGuerrier && mvtMod < 0) {
+            mvtMod = Math.min(0, mvtMod + 1);
+          }
+          if (hasCostaud && esqMod < 0) {
+            esqMod = Math.min(0, esqMod + 1);
+          }
+          if (hasArmureAdaptee) {
+            if (mvtMod < 0) {
+              mvtMod = Math.min(0, mvtMod + 1);
+            } else if (esqMod < 0) {
+              esqMod = Math.min(0, esqMod + 1);
+            }
+          }
+        }
+
+        stats.mouvement += mvtMod;
+        stats.esquive += esqMod;
       }
     }
   }
@@ -218,7 +268,7 @@ const currentSlotsUsed = computed(() => {
   return used;
 });
 
-// Total armor bonus from equipped items
+// Total armor bonus from equipped items and talents
 const totalArmorBonus = computed(() => {
   if (!fighter.value) return 0;
   let bonus = 0;
@@ -227,6 +277,11 @@ const totalArmorBonus = computed(() => {
       const item = rulesetStore.getEquipment(eq.equipmentId);
       if (item) bonus += item.protection || 0;
     }
+  }
+  for (const sp of fighter.value.specializations) {
+    if (sp.acquiredTalentIds.includes('peau_ecailleuse')) bonus += 1;
+    if (sp.acquiredTalentIds.includes('machine_de_metal')) bonus += 2;
+    if (sp.acquiredTalentIds.includes('armure_mecanique')) bonus += 2;
   }
   return bonus;
 });

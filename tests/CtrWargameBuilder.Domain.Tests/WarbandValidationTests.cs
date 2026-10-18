@@ -727,6 +727,87 @@ public class WarbandValidationTests
 
         // Assert
         Assert.True(result.IsValid);
-        Assert.Empty(result.Messages.Where(m => m.Severity == ValidationSeverity.Error));
+        Assert.DoesNotContain(result.Messages, m => m.Severity == ValidationSeverity.Error);
+    }
+
+    [Fact]
+    public void Barbare_Specialization_Forbids_Armor_And_Non_Heavy_Weapons_And_Grants_Heavy_Rank_Bonus()
+    {
+        // Barbare cannot wear armor
+        var warbandWithArmor = new Warband
+        {
+            FactionId = "alliance",
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter
+                {
+                    CustomName = "Barbare Armuré",
+                    Rank = 2,
+                    Role = OfficerRole.Leader,
+                    Specializations = [new FighterSpecialization { SpecializationId = "barbare" }],
+                    Equipments = [new EquippedItem { EquipmentId = "prot_armure_2", SlotsOccupied = 0 }]
+                },
+                new Fighter { CustomName = "Bras droit", Rank = 2, Role = OfficerRole.BrasDroit }
+            ]
+        };
+
+        var resultArmor = _validator.Validate(warbandWithArmor, _ruleset);
+        Assert.False(resultArmor.IsValid);
+        Assert.Contains(resultArmor.Messages, m => m.Code == "BARBARE_CANNOT_WEAR_ARMOR");
+
+        // Barbare Rank 2 CAN equip Level 3 heavy weapon (+1 rank bonus)
+        var warbandValid = new Warband
+        {
+            FactionId = "alliance",
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter
+                {
+                    CustomName = "Barbare Puissant",
+                    Rank = 2,
+                    Role = OfficerRole.Leader,
+                    Specializations = [new FighterSpecialization { SpecializationId = "barbare" }],
+                    Equipments = [new EquippedItem { EquipmentId = "cac_2m_lourde_3", SlotsOccupied = 2 }]
+                },
+                new Fighter { CustomName = "Bras droit", Rank = 2, Role = OfficerRole.BrasDroit }
+            ]
+        };
+
+        var resultValid = _validator.Validate(warbandValid, _ruleset);
+        Assert.True(resultValid.IsValid);
+        Assert.DoesNotContain(resultValid.Messages, m => m.Code == "ITEM_LEVEL_TOO_HIGH");
+    }
+
+    [Fact]
+    public void Monster_With_4_Slots_Can_Equip_Two_2_Slot_Weapons_Without_Error()
+    {
+        var warband = new Warband
+        {
+            FactionId = "monstruosite",
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter { CustomName = "Leader", Rank = 2, Role = OfficerRole.Leader },
+                new Fighter { CustomName = "Bras droit", Rank = 2, Role = OfficerRole.BrasDroit },
+                new Fighter
+                {
+                    CustomName = "Brute Monstre",
+                    Type = FighterType.Monster,
+                    Rank = 2,
+                    Role = OfficerRole.None,
+                    Equipments =
+                    [
+                        new EquippedItem { EquipmentId = "cac_2m_lourde_1", SlotsOccupied = 2 },
+                        new EquippedItem { EquipmentId = "cac_2m_lourde_2", SlotsOccupied = 2 }
+                    ]
+                }
+            ]
+        };
+
+        var result = _validator.Validate(warband, _ruleset);
+        Assert.True(result.IsValid);
+        Assert.DoesNotContain(result.Messages, m => m.Code == "SLOTS_OVERFLOW");
     }
 }
