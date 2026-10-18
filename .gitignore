@@ -26,3 +26,9 @@ GEMINI.md
 frontend/vite.config.js
 frontend/vite.config.d.ts
 
+# Private Rules PDF files (strictly unversioned)
+*.pdf
+**/*.pdf
+docs/rules_pdf/
+rules_pdf/
+
