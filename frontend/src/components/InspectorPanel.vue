@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import { useWarbandStore } from '@/stores/warbandStore';
 import { useRulesetStore } from '@/stores/rulesetStore';
-import type { OfficerRole } from '@/types/warband';
+import type { OfficerRole, FighterStatus } from '@/types/warband';
 import type { StatProfile } from '@/types/ruleset';
 import {
   Shield,
@@ -29,9 +29,10 @@ const warband = computed(() => warbandStore.currentWarband);
 const fighter = computed(() => warbandStore.selectedFighter);
 const faction = computed(() => warband.value ? rulesetStore.getFaction(warband.value.factionId) : null);
 const allegiance = computed(() => warband.value ? rulesetStore.getAllegiance(warband.value.allegianceId) : null);
-const origin = computed(() => {
-  if (!faction.value || !warband.value?.originId) return null;
-  return faction.value.origins.find((o) => o.id === warband.value?.originId) || null;
+const selectedOrigins = computed(() => {
+  if (!faction.value || !warband.value) return [];
+  const ids = warband.value.selectedOriginIds || [];
+  return faction.value.origins.filter((o) => ids.includes(o.id));
 });
 
 // Calculate base stats of selected fighter
@@ -67,13 +68,16 @@ const fighterStats = computed<StatProfile>(() => {
   }
 
   // Apply origin modifiers if warrior
-  if (fighter.value.type === 'Guerrier' && origin.value?.modifiers) {
-    const mods = origin.value.modifiers;
-    stats.mouvement += mods.mouvement || 0;
-    stats.combat += mods.combat || 0;
-    stats.esquive += mods.esquive || 0;
-    stats.volonte += mods.volonte || 0;
-    stats.pv += mods.pv || 0;
+  if (fighter.value.type === 'Guerrier') {
+    for (const orig of selectedOrigins.value) {
+      if (orig.modifiers) {
+        stats.mouvement += orig.modifiers.mouvement || 0;
+        stats.combat += orig.modifiers.combat || 0;
+        stats.esquive += orig.modifiers.esquive || 0;
+        stats.volonte += orig.modifiers.volonte || 0;
+        stats.pv += orig.modifiers.pv || 0;
+      }
+    }
   }
 
   return stats;
@@ -106,9 +110,15 @@ const totalArmorBonus = computed(() => {
 function onOfficerRoleChange(e: Event) {
   const target = e.target as HTMLSelectElement;
   if (fighter.value) {
-    warbandStore.updateFighter(fighter.value.id, {
-      officerRole: target.value as OfficerRole,
-    });
+    warbandStore.setFighterRole(fighter.value.id, target.value as OfficerRole);
+  }
+}
+
+// Fighter status change
+function onFighterStatusChange(e: Event) {
+  const target = e.target as HTMLSelectElement;
+  if (fighter.value) {
+    warbandStore.setFighterStatus(fighter.value.id, target.value as FighterStatus);
   }
 }
 
@@ -155,20 +165,62 @@ function addSpecialization(specId: string) {
           <div class="text-grim-300 text-[11px] leading-relaxed">{{ faction.specialRule.description }}</div>
         </div>
 
-        <!-- Origins Available -->
+        <!-- Origins Available (Clickable multi-select) -->
         <div v-if="faction?.origins && faction.origins.length > 0" class="pt-2 border-t border-grim-800 space-y-2">
-          <div class="text-[11px] font-semibold text-grim-400 uppercase tracking-wider">
-            Origines accessibles ({{ faction.allowedOriginsCount }} max)
+          <div class="flex items-center justify-between">
+            <div class="text-[11px] font-semibold text-grim-400 uppercase tracking-wider">
+              Origines accessibles ({{ faction.allowedOriginsCount }} max)
+            </div>
+            <span class="text-xs font-mono font-semibold" :class="selectedOrigins.length > faction.allowedOriginsCount ? 'text-crimson-400' : 'text-cyan-400'">
+              {{ selectedOrigins.length }} / {{ faction.allowedOriginsCount }} sélectionnée(s)
+            </span>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
             <div
               v-for="orig in faction.origins"
               :key="orig.id"
-              class="bg-grim-850 p-2.5 rounded border border-grim-800 text-xs space-y-1"
-              :class="warband.originId === orig.id ? 'border-cyan-500/70 bg-cyan-950/20' : ''"
+              @click="warbandStore.toggleOrigin(orig.id)"
+              class="p-3 rounded-lg border text-xs space-y-1.5 cursor-pointer transition select-none relative"
+              :class="
+                warband.selectedOriginIds?.includes(orig.id)
+                  ? 'border-cyan-500 bg-cyan-950/30 ring-1 ring-cyan-500/50 shadow-md'
+                  : 'bg-grim-850 border-grim-800 hover:border-grim-700 hover:bg-grim-800/40 text-grim-400'
+              "
             >
-              <div class="font-bold text-cyan-300">{{ orig.name }}</div>
-              <div class="text-grim-300 text-[11px] leading-relaxed">{{ orig.description }}</div>
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-sm" :class="warband.selectedOriginIds?.includes(orig.id) ? 'text-cyan-300' : 'text-grim-200'">
+                  {{ orig.name }}
+                </span>
+                <div
+                  class="w-4 h-4 rounded border flex items-center justify-center transition"
+                  :class="
+                    warband.selectedOriginIds?.includes(orig.id)
+                      ? 'bg-cyan-500 border-cyan-400 text-grim-950'
+                      : 'border-grim-700'
+                  "
+                >
+                  <Check v-if="warband.selectedOriginIds?.includes(orig.id)" class="w-3 h-3 stroke-[3]" />
+                </div>
+              </div>
+              <p class="text-grim-300 text-[11px] leading-relaxed">{{ orig.description }}</p>
+              <div v-if="orig.modifiers" class="flex flex-wrap gap-1.5 pt-1">
+                <span v-if="orig.modifiers.mouvement" class="px-1.5 py-0.2 rounded bg-grim-900 border border-grim-700 text-[10px] font-mono text-cyan-300">
+                  Mouv {{ orig.modifiers.mouvement > 0 ? `+${orig.modifiers.mouvement}` : orig.modifiers.mouvement }}''
+                </span>
+                <span v-if="orig.modifiers.combat" class="px-1.5 py-0.2 rounded bg-grim-900 border border-grim-700 text-[10px] font-mono text-gold-300">
+                  Combat {{ orig.modifiers.combat > 0 ? `+${orig.modifiers.combat}` : orig.modifiers.combat }}D
+                </span>
+                <span v-if="orig.modifiers.esquive" class="px-1.5 py-0.2 rounded bg-grim-900 border border-grim-700 text-[10px] font-mono text-blue-300">
+                  Esquive {{ orig.modifiers.esquive > 0 ? `+${orig.modifiers.esquive}` : orig.modifiers.esquive }}D
+                </span>
+                <span v-if="orig.modifiers.volonte" class="px-1.5 py-0.2 rounded bg-grim-900 border border-grim-700 text-[10px] font-mono text-purple-300">
+                  Volonté {{ orig.modifiers.volonte > 0 ? `+${orig.modifiers.volonte}` : orig.modifiers.volonte }}D
+                </span>
+                <span v-if="orig.modifiers.pv" class="px-1.5 py-0.2 rounded bg-grim-900 border border-grim-700 text-[10px] font-mono text-emerald-300">
+                  PV {{ orig.modifiers.pv > 0 ? `+${orig.modifiers.pv}` : orig.modifiers.pv }}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -261,10 +313,25 @@ function addSpecialization(specId: string) {
               @change="onOfficerRoleChange"
               class="w-full bg-grim-850 border border-grim-700 rounded px-2.5 py-1.5 text-xs font-semibold text-grim-200 focus:border-gold-500 focus:outline-none"
             >
-              <option value="None">Aucun (Troupier)</option>
-              <option value="Officier">Officier (Meneur)</option>
-              <option value="Second">Second en chef</option>
-              <option value="Champion">Champion</option>
+              <option value="None">Combattant standard (Troupier)</option>
+              <option value="Leader">Leader (12 XP)</option>
+              <option value="BrasDroit">Bras droit (6 XP)</option>
+            </select>
+          </div>
+
+          <!-- Fighter Status Selector -->
+          <div class="w-44">
+            <label class="text-[11px] font-semibold text-grim-400 uppercase tracking-wider block mb-1">
+              Statut
+            </label>
+            <select
+              :value="fighter.status"
+              @change="onFighterStatusChange"
+              class="w-full bg-grim-850 border border-grim-700 rounded px-2.5 py-1.5 text-xs font-semibold text-grim-200 focus:border-gold-500 focus:outline-none"
+            >
+              <option value="Active">Sur table (Actif)</option>
+              <option value="Reserve">En réserve (Banc)</option>
+              <option value="Graveyard">Cimetière (Décédé)</option>
             </select>
           </div>
         </div>

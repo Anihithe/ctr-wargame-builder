@@ -1,5 +1,6 @@
 export type FighterType = 'Guerrier' | 'Monstre' | 'Animal';
-export type OfficerRole = 'None' | 'Officier' | 'Second' | 'Champion';
+export type OfficerRole = 'None' | 'Leader' | 'BrasDroit';
+export type FighterStatus = 'Active' | 'Reserve' | 'Graveyard';
 
 export interface EquippedItem {
   id: string;
@@ -23,8 +24,10 @@ export interface Fighter {
   name: string;
   type: FighterType;
   rank: number; // 1, 2, 3 (or 4 for Monstre)
-  subTypeId?: string; // for specific Monster (Tank, Brute, Prédateur) or Animal
+  subTypeId?: string;
   officerRole: OfficerRole;
+  status: FighterStatus;
+  allocatedXp?: number;
   notes?: string;
   equippedItems: EquippedItem[];
   specializations: FighterSpecialization[];
@@ -37,7 +40,7 @@ export interface Warband {
   rulesetVersion: string;
   factionId: string;
   allegianceId?: string;
-  originId?: string;
+  selectedOriginIds: string[];
   startingGoldPo: number;
   currentGoldPo: number;
   allowMagicItemsAtCreation: boolean;
@@ -59,8 +62,11 @@ export interface ValidationResult {
   isValid: boolean;
   totalCostPo: number;
   budgetPo: number;
-  totalFighters: number;
+  totalActiveFighters: number;
+  totalReserveFighters: number;
+  totalGraveyardFighters: number;
   maxFighters: number;
-  officerCount: number;
+  leaderCount: number;
+  brasDroitCount: number;
   errors: ValidationError[];
 }
