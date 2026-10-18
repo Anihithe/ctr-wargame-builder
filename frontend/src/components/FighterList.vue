@@ -3,6 +3,9 @@ import { ref, computed } from 'vue';
 import { useWarbandStore } from '@/stores/warbandStore';
 import { useRulesetStore } from '@/stores/rulesetStore';
 import type { Fighter, FighterType, FighterStatus, OfficerRole } from '@/types/warband';
+import { THEME } from '@/constants/theme';
+import { FACTION_IDS, ORIGIN_IDS } from '@/constants/rules';
+import { hasFighterMaitrise as checkMaitriseEngine } from '@/domain/rulesEngine';
 import {
   UserPlus,
   Crown,
@@ -100,12 +103,11 @@ function getTalentName(specId: string, talentId: string): string {
 
 function getRankBadgeClass(fighter: Fighter): string {
   if (fighter.status === 'Graveyard') return 'bg-slate-900 text-slate-500 border-slate-700';
-  if (fighter.status === 'Reserve') return 'bg-blue-950/50 text-blue-300 border-blue-800';
-  if (fighter.type === 'Monstre') return 'bg-purple-950/80 text-purple-300 border-purple-700';
-  if (fighter.type === 'Animal') return 'bg-emerald-950/80 text-emerald-300 border-emerald-700';
-  if (fighter.rank === 3) return 'bg-amber-950/80 text-amber-300 border-amber-700';
-  if (fighter.rank === 2) return 'bg-blue-950/80 text-blue-300 border-blue-700';
-  return 'bg-slate-800 text-slate-300 border-slate-600';
+  if (fighter.status === 'Reserve') return THEME.status.Reserve;
+  if (fighter.type === 'Monstre') return THEME.ranks.monster;
+  if (fighter.type === 'Animal') return THEME.ranks.animal;
+  const rankKey = fighter.rank.toString() as keyof typeof THEME.ranks;
+  return THEME.ranks[rankKey] || 'bg-slate-800 text-slate-300 border-slate-600';
 }
 
 function getFighterSpecializations(f: Fighter) {
@@ -209,111 +211,7 @@ function getFighterMagicItems(f: Fighter) {
 }
 
 function hasFighterMaitrise(f: Fighter): boolean {
-  if (f.type === 'Animal') return false;
-  let maxSlots = 2;
-  if (f.type === 'Guerrier') {
-    maxSlots = rulesetStore.config.slotsByRank?.[f.rank.toString()] ?? (f.rank >= 3 ? 3 : 2);
-  } else if (f.type === 'Monstre') {
-    maxSlots = 4;
-  }
-  if (f.officerRole !== 'None' && warband.value?.selectedOriginIds?.includes('mutants')) {
-    maxSlots += 1;
-  }
-
-  let usedSlots = 0;
-  for (const eq of f.equippedItems) {
-    if (!eq.isMagicItem) {
-      const item = rulesetStore.getEquipment(eq.equipmentId);
-      usedSlots += item?.slots ?? 1;
-    } else {
-      const mItem = rulesetStore.getMagicItem(eq.equipmentId);
-      usedSlots += mItem?.slots || 0;
-    }
-  }
-
-  // 1. Emplacement libre
-  if (maxSlots - usedSlots > 0) return true;
-
-  // 2. Arme niv <= 3 avec accès effectif > 3
-  for (const eq of f.equippedItems) {
-    if (eq.isMagicItem) continue;
-    const item = rulesetStore.getEquipment(eq.equipmentId);
-    if (!item) continue;
-    if (item.category === 'Melee' || item.category === 'Ranged') {
-      if (item.level <= 3) {
-        let eff = f.rank;
-        const hasGuerrier = f.specializations.some((s) => s.specializationId === 'guerrier');
-        const hasBarbare = f.specializations.some((s) => s.specializationId === 'barbare');
-        const hasGarde = f.specializations.some((s) => s.specializationId === 'garde');
-        const hasRoublard = f.specializations.some((s) => s.specializationId === 'roublard');
-        const hasRanger = f.specializations.some((s) => s.specializationId === 'ranger');
-        const hasIngenieur = f.specializations.some((s) => s.specializationId === 'ingenieur');
-        const hasMaitreArcher = f.specializations.some((s) => s.specializationId === 'maitre_archer');
-        const hasTireurElite = f.specializations.some((s) => s.specializationId === 'tireur_d_elite');
-        const hasGardesRoyaux = warband.value?.selectedOriginIds?.includes('gardes_royaux');
-        const hasDestructeurs = warband.value?.selectedOriginIds?.includes('destructeurs');
-
-        if (item.subCategory === 'Arme intermédiaire' && hasGardesRoyaux) eff += 1;
-        if (
-          hasDestructeurs &&
-          (item.subCategory?.includes('lourde') ||
-            item.subCategory?.includes('Pugilat') ||
-            item.id.includes('pugilat'))
-        ) {
-          eff += 1;
-        }
-        if (
-          hasGuerrier &&
-          (item.subCategory?.includes('intermédiaire') || item.subCategory?.includes('lourde'))
-        ) {
-          eff += 1;
-        }
-        if (
-          hasBarbare &&
-          (item.subCategory?.includes('lourde') ||
-            item.subCategory?.includes('Pugilat') ||
-            item.id.includes('pugilat'))
-        ) {
-          eff += 1;
-        }
-        if (hasGarde && item.category === 'Melee' && item.subCategory?.includes('intermédiaire')) {
-          eff += 1;
-        }
-        if (hasRoublard && item.category === 'Melee' && item.subCategory?.includes('légère')) {
-          eff += 1;
-        }
-        if (
-          hasRanger &&
-          item.category === 'Ranged' &&
-          (item.subCategory?.includes('Arc') ||
-            item.subCategory?.includes('jet') ||
-            item.id.startsWith('tir_2m_arc') ||
-            item.id.startsWith('tir_1m_jet'))
-        ) {
-          eff += 1;
-        }
-        if (hasIngenieur && item.category === 'Ranged') {
-          eff += 1;
-        }
-        if (hasMaitreArcher && (item.subCategory?.includes('Arc') || item.id.startsWith('tir_2m_arc'))) {
-          eff += 1;
-        }
-        if (
-          hasTireurElite &&
-          (item.subCategory?.includes('Arbalète') ||
-            item.subCategory?.includes('poing') ||
-            item.id.startsWith('tir_2m_arbalete') ||
-            item.id.startsWith('tir_1m_poing'))
-        ) {
-          eff += 1;
-        }
-
-        if (eff > 3) return true;
-      }
-    }
-  }
-
-  return false;
+  return checkMaitriseEngine(f, warband.value, rulesetStore);
 }
 
 function hasFighterBadges(f: Fighter): boolean {
@@ -322,8 +220,8 @@ function hasFighterBadges(f: Fighter): boolean {
 
 const canRecruitRank1 = computed(() => {
   if (!warband.value) return true;
-  if (warband.value.factionId === 'monstruosite') {
-    return warband.value.selectedOriginIds?.includes('esclavagistes') ?? false;
+  if (warband.value.factionId === FACTION_IDS.Monstruosite) {
+    return warband.value.selectedOriginIds?.includes(ORIGIN_IDS.Esclavagistes) ?? false;
   }
   return true;
 });

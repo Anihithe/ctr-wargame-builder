@@ -2,6 +2,16 @@ import { defineStore } from 'pinia';
 import { ref, computed, watch } from 'vue';
 import type { Warband, Fighter, EquippedItem, FighterType, OfficerRole, FighterStatus, ValidationResult, ValidationError } from '@/types/warband';
 import { useRulesetStore } from './rulesetStore';
+import {
+  VALIDATION_CODES,
+  FACTION_IDS,
+  ORIGIN_IDS,
+  SPEC_IDS,
+  TALENT_IDS,
+  ALLEGIANCE_IDS,
+  EQUIPMENT_CATEGORIES,
+} from '@/constants/rules';
+import { calculateMaxSlots, calculateEffectiveRank } from '@/domain/rulesEngine';
 
 const STORAGE_KEY = 'ctr_wargame_warbands_v2';
 const ACTIVE_WARBAND_KEY = 'ctr_wargame_active_id';
@@ -152,7 +162,7 @@ export const useWarbandStore = defineStore('warband', () => {
           errors.push({
             fighterId: f.id,
             fighterName: f.name,
-            code: 'MONSTER_CANNOT_BE_OFFICER',
+            code: VALIDATION_CODES.MonsterCannotBeOfficer,
             message: `Le monstre "${f.name}" ne peut pas être un Leader pour cette faction.`,
             severity: 'Error',
           });
@@ -163,70 +173,50 @@ export const useWarbandStore = defineStore('warband', () => {
           errors.push({
             fighterId: f.id,
             fighterName: f.name,
-            code: 'MONSTER_CANNOT_BE_OFFICER',
+            code: VALIDATION_CODES.MonsterCannotBeOfficer,
             message: `Le monstre "${f.name}" ne peut pas être un Bras droit pour cette faction.`,
             severity: 'Error',
           });
         }
       }
 
-      // Equipment slots limit check
-      let maxSlots = 2;
-      if (f.type === 'Guerrier') {
-        maxSlots = slotsConfig[f.rank.toString()] ?? (f.rank >= 3 ? 3 : 2);
-      } else if (f.type === 'Monstre') {
-        maxSlots = slotsConfig['4'] ?? 4;
-      } else if (f.type === 'Animal') {
-        maxSlots = 0;
-      }
-
-      if (f.officerRole !== 'None' && wb.selectedOriginIds?.includes('mutants')) {
-        maxSlots += 1;
-      }
+      // Equipment slots limit check using rulesEngine
+      const maxSlots = calculateMaxSlots(f, wb, slotsConfig);
 
       let totalEquippedSlots = 0;
       let armorCount = 0;
-      const isMage = f.specializations.some((s) => s.specializationId === 'mage');
+      const isMage = f.specializations.some((s) => s.specializationId === SPEC_IDS.Mage);
       const hasMageDeBataille = f.specializations.some(
-        (s) => s.specializationId === 'mage' && s.acquiredTalentIds.includes('mage_de_bataille'),
+        (s) => s.specializationId === SPEC_IDS.Mage && s.acquiredTalentIds.includes(TALENT_IDS.MageDeBataille),
       );
-      const isExcellence = wb.factionId === 'excellence';
-      const hasGuerrier = f.specializations.some((s) => s.specializationId === 'guerrier');
-      const hasBarbare = f.specializations.some((s) => s.specializationId === 'barbare');
-      const hasGarde = f.specializations.some((s) => s.specializationId === 'garde');
-      const hasRoublard = f.specializations.some((s) => s.specializationId === 'roublard');
-      const hasRanger = f.specializations.some((s) => s.specializationId === 'ranger');
-      const hasDruide = f.specializations.some((s) => s.specializationId === 'druide');
-      const hasIngenieur = f.specializations.some((s) => s.specializationId === 'ingenieur');
-      const hasMaitreArcher = f.specializations.some((s) => s.specializationId === 'maitre_archer');
-      const hasTireurElite = f.specializations.some((s) => s.specializationId === 'tireur_d_elite');
-      const hasCavalier = f.specializations.some((s) => s.specializationId === 'cavalier');
+      const isExcellence = wb.factionId === FACTION_IDS.Excellence;
+      const hasBarbare = f.specializations.some((s) => s.specializationId === SPEC_IDS.Barbare);
+      const hasRoublard = f.specializations.some((s) => s.specializationId === SPEC_IDS.Roublard);
+      const hasRanger = f.specializations.some((s) => s.specializationId === SPEC_IDS.Ranger);
+      const hasDruide = f.specializations.some((s) => s.specializationId === SPEC_IDS.Druide);
+      const hasCavalier = f.specializations.some((s) => s.specializationId === SPEC_IDS.Cavalier);
       const hasCavalerieLourde = f.specializations.some(
-        (s) => s.specializationId === 'cavalier' && s.acquiredTalentIds.includes('cavalerie_lourde'),
+        (s) => s.specializationId === SPEC_IDS.Cavalier && s.acquiredTalentIds.includes(TALENT_IDS.CavalerieLourde),
       );
-      const hasMoine = f.specializations.some((s) => s.specializationId === 'moine');
+      const hasMoine = f.specializations.some((s) => s.specializationId === SPEC_IDS.Moine);
       const hasEcoleDeLaTerre = f.specializations.some(
-        (s) => s.specializationId === 'moine' && s.acquiredTalentIds.includes('ecole_de_la_terre'),
+        (s) => s.specializationId === SPEC_IDS.Moine && s.acquiredTalentIds.includes(TALENT_IDS.EcoleDeLaTerre),
       );
       const hasEcoleDeLOmbre = f.specializations.some(
-        (s) => s.specializationId === 'moine' && s.acquiredTalentIds.includes('ecole_de_l_ombre'),
+        (s) => s.specializationId === SPEC_IDS.Moine && s.acquiredTalentIds.includes(TALENT_IDS.EcoleDeLOmbre),
       );
       const hasEcoleDeLEau = f.specializations.some(
-        (s) => s.specializationId === 'moine' && s.acquiredTalentIds.includes('ecole_de_l_eau'),
+        (s) => s.specializationId === SPEC_IDS.Moine && s.acquiredTalentIds.includes(TALENT_IDS.EcoleDeLEau),
       );
-      const hasNoblesse = wb.selectedOriginIds?.includes('noblesse');
-      const hasChevaliersNoirs = wb.selectedOriginIds?.includes('chevaliers_noirs');
-      const hasCompagnieDeFer = wb.selectedOriginIds?.includes('compagnie_de_fer');
-      const hasGardesRoyaux = wb.selectedOriginIds?.includes('gardes_royaux');
-      const hasDestructeurs = wb.selectedOriginIds?.includes('destructeurs');
-      const hasGoules = wb.selectedOriginIds?.includes('goules');
-      const hasEsclavagistes = wb.selectedOriginIds?.includes('esclavagistes');
+      const hasGardesRoyaux = wb.selectedOriginIds?.includes(ORIGIN_IDS.GardesRoyaux);
+      const hasGoules = wb.selectedOriginIds?.includes(ORIGIN_IDS.Goules);
+      const hasEsclavagistes = wb.selectedOriginIds?.includes(ORIGIN_IDS.Esclavagistes);
 
-      if (f.type === 'Guerrier' && f.rank === 1 && wb.factionId === 'monstruosite' && !hasEsclavagistes) {
+      if (f.type === 'Guerrier' && f.rank === 1 && wb.factionId === FACTION_IDS.Monstruosite && !hasEsclavagistes) {
         errors.push({
           fighterId: f.id,
           fighterName: f.name,
-          code: 'MONSTRUOSITE_RANK_1_REQUIRES_ESCLAVAGISTES',
+          code: VALIDATION_CODES.MonstruositeRank1RequiresEsclavagistes,
           message: `La faction Monstruosité ne peut pas recruter de Combattant de Rang 1 sans l'origine Esclavagistes (${f.name}).`,
           severity: 'Error',
         });
@@ -237,108 +227,48 @@ export const useWarbandStore = defineStore('warband', () => {
           const item = rulesetStore.getEquipment(eq.equipmentId);
           if (item) {
             totalEquippedSlots += item.slots ?? 1;
-            if (item.category === 'Armor') {
+            if (item.category === EQUIPMENT_CATEGORIES.Armor) {
               armorCount++;
             }
 
-            // Effective rank calculation
-            let effectiveRank = f.rank;
-            if (item.category === 'Armor' && (hasNoblesse || hasChevaliersNoirs || hasCompagnieDeFer)) {
-              effectiveRank += 1;
-            }
-            if (item.subCategory === 'Arme intermédiaire' && hasGardesRoyaux) effectiveRank += 1;
-            if (
-              hasDestructeurs &&
-              (item.subCategory?.includes('lourde') ||
-                item.subCategory?.includes('Pugilat') ||
-                item.id.includes('pugilat'))
-            ) {
-              effectiveRank += 1;
-            }
-            if (
-              hasGuerrier &&
-              (item.category === 'Shield' ||
-                item.category === 'Armor' ||
-                item.subCategory?.includes('intermédiaire') ||
-                item.subCategory?.includes('lourde'))
-            ) {
-              effectiveRank += 1;
-            }
-            if (
-              hasBarbare &&
-              (item.subCategory?.includes('lourde') ||
-                item.subCategory?.includes('Pugilat') ||
-                item.id.includes('pugilat'))
-            ) {
-              effectiveRank += 1;
-            }
-            if (hasGarde && item.category === 'Melee' && item.subCategory?.includes('intermédiaire')) {
-              effectiveRank += 1;
-            }
-            if (hasRoublard && item.category === 'Melee' && item.subCategory?.includes('légère')) {
-              effectiveRank += 1;
-            }
-            if (
-              hasRanger &&
-              item.category === 'Ranged' &&
-              (item.subCategory?.includes('Arc') ||
-                item.subCategory?.includes('jet') ||
-                item.id.startsWith('tir_2m_arc') ||
-                item.id.startsWith('tir_1m_jet'))
-            ) {
-              effectiveRank += 1;
-            }
-            if (hasIngenieur && item.category === 'Ranged') {
-              effectiveRank += 1;
-            }
-            if (hasMaitreArcher && (item.subCategory?.includes('Arc') || item.id.startsWith('tir_2m_arc'))) {
-              effectiveRank += 1;
-            }
-            if (
-              hasTireurElite &&
-              (item.subCategory?.includes('Arbalète') ||
-                item.subCategory?.includes('poing') ||
-                item.id.startsWith('tir_2m_arbalete') ||
-                item.id.startsWith('tir_1m_poing'))
-            ) {
-              effectiveRank += 1;
-            }
+            // Effective rank calculation via rulesEngine
+            const effectiveRank = calculateEffectiveRank(f, item, wb);
 
             if (item.level > effectiveRank) {
               errors.push({
                 fighterId: f.id,
                 fighterName: f.name,
-                code: 'ITEM_RANK_TOO_HIGH',
+                code: VALIDATION_CODES.ItemRankTooHigh,
                 message: `${item.name} est de niveau ${item.level}, mais ${f.name} a un rang effectif de ${effectiveRank}.`,
                 severity: 'Error',
               });
             }
 
             // Mage restrictions: pas d'armure ni de bouclier (sauf Mage de bataille)
-            if (isMage && !hasMageDeBataille && (item.category === 'Armor' || item.category === 'Shield')) {
+            if (isMage && !hasMageDeBataille && (item.category === EQUIPMENT_CATEGORIES.Armor || item.category === EQUIPMENT_CATEGORIES.Shield)) {
               errors.push({
                 fighterId: f.id,
                 fighterName: f.name,
-                code: 'MAGE_CANNOT_WEAR_ARMOR',
+                code: VALIDATION_CODES.MageCannotWearArmor,
                 message: `La voie du Mage interdit le port d'armure et de bouclier (${item.name} sur ${f.name}).`,
                 severity: 'Error',
               });
             }
 
             // Barbare restrictions: pas d'armure ni bouclier, et armes lourdes/pugilat uniquement
-            if (hasBarbare && (item.category === 'Armor' || item.category === 'Shield')) {
+            if (hasBarbare && (item.category === EQUIPMENT_CATEGORIES.Armor || item.category === EQUIPMENT_CATEGORIES.Shield)) {
               errors.push({
                 fighterId: f.id,
                 fighterName: f.name,
-                code: 'BARBARE_CANNOT_WEAR_ARMOR',
+                code: VALIDATION_CODES.BarbareCannotWearArmor,
                 message: `La voie du Barbare interdit le port d'armure et de bouclier (${item.name} sur ${f.name}).`,
                 severity: 'Error',
               });
             }
             if (
               hasBarbare &&
-              item.category !== 'Armor' &&
-              item.category !== 'Shield' &&
+              item.category !== EQUIPMENT_CATEGORIES.Armor &&
+              item.category !== EQUIPMENT_CATEGORIES.Shield &&
               !(
                 item.subCategory?.includes('lourde') ||
                 item.subCategory?.includes('Pugilat') ||
@@ -348,40 +278,40 @@ export const useWarbandStore = defineStore('warband', () => {
               errors.push({
                 fighterId: f.id,
                 fighterName: f.name,
-                code: 'BARBARE_WEAPON_RESTRICTED',
+                code: VALIDATION_CODES.BarbareWeaponRestricted,
                 message: `Le Barbare ne peut équiper que des armes lourdes ou de pugilat (${item.name} sur ${f.name}).`,
                 severity: 'Error',
               });
             }
 
             // Roublard restrictions: pas d'armure ni de bouclier
-            if (hasRoublard && (item.category === 'Armor' || item.category === 'Shield')) {
+            if (hasRoublard && (item.category === EQUIPMENT_CATEGORIES.Armor || item.category === EQUIPMENT_CATEGORIES.Shield)) {
               errors.push({
                 fighterId: f.id,
                 fighterName: f.name,
-                code: 'ROUBLARD_CANNOT_WEAR_ARMOR',
+                code: VALIDATION_CODES.RoublardCannotWearArmor,
                 message: `La voie du Roublard interdit le port d'armure et de bouclier (${item.name} sur ${f.name}).`,
                 severity: 'Error',
               });
             }
 
             // Ranger restrictions: pas d'armure ni de bouclier
-            if (hasRanger && (item.category === 'Armor' || item.category === 'Shield')) {
+            if (hasRanger && (item.category === EQUIPMENT_CATEGORIES.Armor || item.category === EQUIPMENT_CATEGORIES.Shield)) {
               errors.push({
                 fighterId: f.id,
                 fighterName: f.name,
-                code: 'RANGER_CANNOT_WEAR_ARMOR',
+                code: VALIDATION_CODES.RangerCannotWearArmor,
                 message: `La voie du Ranger interdit le port d'armure et de bouclier (${item.name} sur ${f.name}).`,
                 severity: 'Error',
               });
             }
 
             // Druide restrictions: pas d'armure ni de bouclier
-            if (hasDruide && (item.category === 'Armor' || item.category === 'Shield')) {
+            if (hasDruide && (item.category === EQUIPMENT_CATEGORIES.Armor || item.category === EQUIPMENT_CATEGORIES.Shield)) {
               errors.push({
                 fighterId: f.id,
                 fighterName: f.name,
-                code: 'DRUIDE_CANNOT_WEAR_ARMOR',
+                code: VALIDATION_CODES.DruideCannotWearArmor,
                 message: `La voie du Druide interdit le port d'armure et de bouclier (${item.name} sur ${f.name}).`,
                 severity: 'Error',
               });
@@ -391,60 +321,60 @@ export const useWarbandStore = defineStore('warband', () => {
             if (
               hasCavalier &&
               !hasCavalerieLourde &&
-              (item.category === 'Armor' || item.category === 'Shield') &&
+              (item.category === EQUIPMENT_CATEGORIES.Armor || item.category === EQUIPMENT_CATEGORIES.Shield) &&
               item.level > 1
             ) {
               errors.push({
                 fighterId: f.id,
                 fighterName: f.name,
-                code: 'CAVALIER_ARMOR_LEVEL_EXCEEDED',
+                code: VALIDATION_CODES.CavalierArmorLevelExceeded,
                 message: `Le Cavalier ne peut porter d'armure ou bouclier de niveau supérieur à 1 (${item.name} sur ${f.name}).`,
                 severity: 'Error',
               });
             }
 
             // Moine restrictions: pugilat uniquement (sauf talents Terre / Ombre)
-            if (hasMoine && item.category !== 'Armor' && item.category !== 'Shield') {
+            if (hasMoine && item.category !== EQUIPMENT_CATEGORIES.Armor && item.category !== EQUIPMENT_CATEGORIES.Shield) {
               const isPugilat = item.subCategory?.includes('Pugilat') || item.id.includes('pugilat');
               const isLightAllowed = hasEcoleDeLaTerre && item.subCategory?.includes('légère');
-              const isRangedAllowed = hasEcoleDeLOmbre && item.category === 'Ranged';
+              const isRangedAllowed = hasEcoleDeLOmbre && item.category === EQUIPMENT_CATEGORIES.Ranged;
               if (!isPugilat && !isLightAllowed && !isRangedAllowed) {
                 errors.push({
                   fighterId: f.id,
                   fighterName: f.name,
-                  code: 'MOINE_WEAPON_RESTRICTED',
+                  code: VALIDATION_CODES.MoineWeaponRestricted,
                   message: `La voie du Moine limite l'équipement aux armes de pugilat (${item.name} sur ${f.name}).`,
                   severity: 'Error',
                 });
               }
             }
-            if (hasMoine && hasEcoleDeLEau && (item.category === 'Armor' || item.category === 'Shield')) {
+            if (hasMoine && hasEcoleDeLEau && (item.category === EQUIPMENT_CATEGORIES.Armor || item.category === EQUIPMENT_CATEGORIES.Shield)) {
               errors.push({
                 fighterId: f.id,
                 fighterName: f.name,
-                code: 'MOINE_CANNOT_WEAR_ARMOR',
+                code: VALIDATION_CODES.MoineCannotWearArmor,
                 message: `L'École de l'Eau interdit le port d'armure et de bouclier (${item.name} sur ${f.name}).`,
                 severity: 'Error',
               });
             }
 
             // Excellence restrictions: pas d'armure ni bouclier (sauf Gardes royaux)
-            if (isExcellence && (item.category === 'Armor' || item.category === 'Shield') && !hasGardesRoyaux) {
+            if (isExcellence && (item.category === EQUIPMENT_CATEGORIES.Armor || item.category === EQUIPMENT_CATEGORIES.Shield) && !hasGardesRoyaux) {
               errors.push({
                 fighterId: f.id,
                 fighterName: f.name,
-                code: 'EXCELLENCE_CANNOT_WEAR_ARMOR',
+                code: VALIDATION_CODES.ExcellenceCannotWearArmor,
                 message: `L'Excellence interdit le port d'armure et de bouclier (${item.name} sur ${f.name}).`,
                 severity: 'Error',
               });
             }
 
             // Goules restrictions: Combattants de Rang 1 ne peuvent pas porter de Protection
-            if (hasGoules && f.rank === 1 && (item.category === 'Armor' || item.category === 'Shield')) {
+            if (hasGoules && f.rank === 1 && (item.category === EQUIPMENT_CATEGORIES.Armor || item.category === EQUIPMENT_CATEGORIES.Shield)) {
               errors.push({
                 fighterId: f.id,
                 fighterName: f.name,
-                code: 'GOULES_CANNOT_WEAR_ARMOR',
+                code: VALIDATION_CODES.GoulesCannotWearArmor,
                 message: `L'origine Goules interdit le port d'armure et de bouclier aux combattants de Rang 1 (${item.name} sur ${f.name}).`,
                 severity: 'Error',
               });
@@ -459,7 +389,7 @@ export const useWarbandStore = defineStore('warband', () => {
             errors.push({
               fighterId: f.id,
               fighterName: f.name,
-              code: 'MAGIC_ITEM_AT_CREATION_LOCKED',
+              code: VALIDATION_CODES.MagicItemLocked,
               message: `Objet magique équipé sur ${f.name} sans déblocage explicite de campagne.`,
               severity: 'Error',
             });
@@ -471,7 +401,7 @@ export const useWarbandStore = defineStore('warband', () => {
         errors.push({
           fighterId: f.id,
           fighterName: f.name,
-          code: 'SLOTS_EXCEEDED',
+          code: VALIDATION_CODES.SlotsExceeded,
           message: `${f.name} utilise ${totalEquippedSlots} emplacements sur un maximum de ${maxSlots}.`,
           severity: 'Error',
         });
@@ -481,7 +411,7 @@ export const useWarbandStore = defineStore('warband', () => {
         errors.push({
           fighterId: f.id,
           fighterName: f.name,
-          code: 'MULTIPLE_ARMORS',
+          code: VALIDATION_CODES.MultipleArmors,
           message: `${f.name} porte ${armorCount} armures (maximum 1 seule armure autorisée).`,
           severity: 'Error',
         });
@@ -491,7 +421,7 @@ export const useWarbandStore = defineStore('warband', () => {
     // Budget check
     if (totalCost > wb.startingGoldPo) {
       errors.push({
-        code: 'BUDGET_EXCEEDED',
+        code: VALIDATION_CODES.BudgetExceeded,
         message: `Coût total de la bande (${totalCost} PO) supérieur au budget alloué (${wb.startingGoldPo} PO).`,
         severity: 'Error',
       });
@@ -500,7 +430,7 @@ export const useWarbandStore = defineStore('warband', () => {
     // Max active members check
     if (activeFighters.length > maxMembers) {
       errors.push({
-        code: 'MAX_FIGHTERS_EXCEEDED',
+        code: VALIDATION_CODES.WarbandSizeExceeded,
         message: `La bande active compte ${activeFighters.length} combattants sur table (maximum autorisé: ${maxMembers}).`,
         severity: 'Error',
       });
@@ -509,13 +439,13 @@ export const useWarbandStore = defineStore('warband', () => {
     // Officers constraints: Exactly 1 Leader, Exactly 1 Bras Droit
     if (leaderCount > 1) {
       errors.push({
-        code: 'LEADER_LIMIT_EXCEEDED',
+        code: VALIDATION_CODES.LeaderLimitExceeded,
         message: `La bande compte ${leaderCount} Leaders actifs (maximum 1 seul Leader autorisé).`,
         severity: 'Error',
       });
     } else if (leaderCount === 0) {
       errors.push({
-        code: 'LEADER_REQUIRED',
+        code: VALIDATION_CODES.LeaderRequired,
         message: 'La bande doit comporter un Leader actif désigné.',
         severity: 'Error',
       });
@@ -523,13 +453,13 @@ export const useWarbandStore = defineStore('warband', () => {
 
     if (brasDroitCount > 1) {
       errors.push({
-        code: 'BRAS_DROIT_LIMIT_EXCEEDED',
+        code: VALIDATION_CODES.BrasDroitLimitExceeded,
         message: `La bande compte ${brasDroitCount} Bras droits actifs (maximum 1 seul Bras droit autorisé).`,
         severity: 'Error',
       });
     } else if (brasDroitCount === 0) {
       errors.push({
-        code: 'BRAS_DROIT_REQUIRED',
+        code: VALIDATION_CODES.BrasDroitRequired,
         message: 'La bande doit comporter un Bras droit actif désigné.',
         severity: 'Error',
       });
@@ -538,7 +468,7 @@ export const useWarbandStore = defineStore('warband', () => {
     // Quotas
     if (rank3Count > 2) {
       errors.push({
-        code: 'RANK3_QUOTA_EXCEEDED',
+        code: VALIDATION_CODES.Rank3QuotaExceeded,
         message: `La bande compte ${rank3Count} combattants de Rang 3 actifs (maximum standard: 2).`,
         severity: 'Error',
       });
@@ -546,7 +476,7 @@ export const useWarbandStore = defineStore('warband', () => {
 
     if (monsterCount > 1 && !faction?.unlimitedMonsters) {
       errors.push({
-        code: 'MONSTER_QUOTA_EXCEEDED',
+        code: VALIDATION_CODES.MonsterQuotaExceeded,
         message: `La bande compte ${monsterCount} monstres actifs (maximum standard: 1).`,
         severity: 'Error',
       });
@@ -556,7 +486,7 @@ export const useWarbandStore = defineStore('warband', () => {
     const maxOrigins = faction?.allowedOriginsCount || 2;
     if (wb.selectedOriginIds && wb.selectedOriginIds.length > maxOrigins) {
       errors.push({
-        code: 'ORIGINS_LIMIT_EXCEEDED',
+        code: VALIDATION_CODES.OriginsLimitExceeded,
         message: `La faction ${faction?.name} autorise au maximum ${maxOrigins} Origines (${wb.selectedOriginIds.length} sélectionnées).`,
         severity: 'Error',
       });
@@ -645,12 +575,12 @@ export const useWarbandStore = defineStore('warband', () => {
   }
 
   function applyAllegianceBonuses(wb: Warband) {
-    if (wb.allegianceId === 'conclave_des_mages' && wb.selectedAllegianceRuleName === 'Érudits') {
+    if (wb.allegianceId === ALLEGIANCE_IDS.ConclaveDesMages && wb.selectedAllegianceRuleName === 'Érudits') {
       for (const f of wb.fighters) {
         if (f.officerRole !== 'None') {
-          const mageSpec = f.specializations.find((s) => s.specializationId === 'mage');
-          if (mageSpec && !mageSpec.acquiredTalentIds.includes('incantation_maitrisee')) {
-            mageSpec.acquiredTalentIds.push('incantation_maitrisee');
+          const mageSpec = f.specializations.find((s) => s.specializationId === SPEC_IDS.Mage);
+          if (mageSpec && !mageSpec.acquiredTalentIds.includes(TALENT_IDS.IncantationMaitrisee)) {
+            mageSpec.acquiredTalentIds.push(TALENT_IDS.IncantationMaitrisee);
           }
         }
       }
@@ -662,11 +592,11 @@ export const useWarbandStore = defineStore('warband', () => {
     const oldRule = currentWarband.value.selectedAllegianceRuleName;
     if (oldRule === ruleName) return;
 
-    if (currentWarband.value.allegianceId === 'conclave_des_mages' && oldRule === 'Érudits') {
+    if (currentWarband.value.allegianceId === ALLEGIANCE_IDS.ConclaveDesMages && oldRule === 'Érudits') {
       for (const f of currentWarband.value.fighters) {
-        const mageSpec = f.specializations.find((s) => s.specializationId === 'mage');
+        const mageSpec = f.specializations.find((s) => s.specializationId === SPEC_IDS.Mage);
         if (mageSpec) {
-          mageSpec.acquiredTalentIds = mageSpec.acquiredTalentIds.filter((id) => id !== 'incantation_maitrisee');
+          mageSpec.acquiredTalentIds = mageSpec.acquiredTalentIds.filter((id) => id !== TALENT_IDS.IncantationMaitrisee);
         }
       }
     }
@@ -681,11 +611,11 @@ export const useWarbandStore = defineStore('warband', () => {
     if (!currentWarband.value) return;
     const oldRule = currentWarband.value.selectedAllegianceRuleName;
 
-    if (currentWarband.value.allegianceId === 'conclave_des_mages' && oldRule === 'Érudits') {
+    if (currentWarband.value.allegianceId === ALLEGIANCE_IDS.ConclaveDesMages && oldRule === 'Érudits') {
       for (const f of currentWarband.value.fighters) {
-        const mageSpec = f.specializations.find((s) => s.specializationId === 'mage');
+        const mageSpec = f.specializations.find((s) => s.specializationId === SPEC_IDS.Mage);
         if (mageSpec) {
-          mageSpec.acquiredTalentIds = mageSpec.acquiredTalentIds.filter((id) => id !== 'incantation_maitrisee');
+          mageSpec.acquiredTalentIds = mageSpec.acquiredTalentIds.filter((id) => id !== TALENT_IDS.IncantationMaitrisee);
         }
       }
     }
@@ -905,25 +835,25 @@ export const useWarbandStore = defineStore('warband', () => {
         acquiredTalentIds: [],
       };
       if (
-        currentWarband.value.allegianceId === 'conclave_des_mages' &&
+        currentWarband.value.allegianceId === ALLEGIANCE_IDS.ConclaveDesMages &&
         currentWarband.value.selectedAllegianceRuleName === 'Érudits' &&
         fighter.officerRole !== 'None' &&
-        specializationId === 'mage'
+        specializationId === SPEC_IDS.Mage
       ) {
-        fSpec.acquiredTalentIds.push('incantation_maitrisee');
+        fSpec.acquiredTalentIds.push(TALENT_IDS.IncantationMaitrisee);
       }
       fighter.specializations.push(fSpec);
     }
 
     if (talentId) {
       if (
-        currentWarband.value.allegianceId === 'conclave_des_mages' &&
+        currentWarband.value.allegianceId === ALLEGIANCE_IDS.ConclaveDesMages &&
         currentWarband.value.selectedAllegianceRuleName === 'Érudits' &&
         fighter.officerRole !== 'None' &&
-        talentId === 'incantation_maitrisee'
+        talentId === TALENT_IDS.IncantationMaitrisee
       ) {
-        if (!fSpec.acquiredTalentIds.includes('incantation_maitrisee')) {
-          fSpec.acquiredTalentIds.push('incantation_maitrisee');
+        if (!fSpec.acquiredTalentIds.includes(TALENT_IDS.IncantationMaitrisee)) {
+          fSpec.acquiredTalentIds.push(TALENT_IDS.IncantationMaitrisee);
         }
       } else {
         const tIdx = fSpec.acquiredTalentIds.indexOf(talentId);
