@@ -516,9 +516,43 @@ public class WarbandValidationTests
     }
 
     [Fact]
-    public void Hands_Exceeded_ShouldFail_Validation()
+    public void Monster_With_4_Slots_Can_Equip_Two_2H_Weapons()
     {
-        // Arrange : Combattant équipe une arme 2 mains + un bouclier (1 main) = 3 mains
+        // Arrange : Monstre (4 emplacements) équipe 2 armes à 2 mains (2 slots chacune = 4 slots occupés)
+        var warband = new Warband
+        {
+            FactionId = "alliance",
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter { CustomName = "Leader", Rank = 2, Role = OfficerRole.Leader },
+                new Fighter { CustomName = "Bras droit", Rank = 2, Role = OfficerRole.BrasDroit },
+                new Fighter
+                {
+                    CustomName = "Ogre",
+                    Type = FighterType.Monster,
+                    Rank = 1,
+                    Equipments =
+                    [
+                        new EquippedItem { EquipmentId = "cac_2m_legere_1", SlotsOccupied = 2 },
+                        new EquippedItem { EquipmentId = "cac_2m_lourde_1", SlotsOccupied = 2 }
+                    ]
+                }
+            ]
+        };
+
+        // Act
+        var result = _validator.Validate(warband, _ruleset);
+
+        // Assert
+        Assert.DoesNotContain(result.Messages, m => m.Code == "SLOTS_OVERFLOW");
+        Assert.DoesNotContain(result.Messages, m => m.Code == "HANDS_EXCEEDED");
+    }
+
+    [Fact]
+    public void Multiple_Armors_ShouldFail_Validation()
+    {
+        // Arrange : Combattant équipe 2 armures
         var warband = new Warband
         {
             FactionId = "alliance",
@@ -528,12 +562,12 @@ public class WarbandValidationTests
                 new Fighter
                 {
                     CustomName = "Leader",
-                    Rank = 2,
+                    Rank = 3,
                     Role = OfficerRole.Leader,
                     Equipments =
                     [
-                        new EquippedItem { EquipmentId = "cac_2m_legere_2", SlotsOccupied = 2 },
-                        new EquippedItem { EquipmentId = "prot_bouclier_1", SlotsOccupied = 1 }
+                        new EquippedItem { EquipmentId = "prot_armure_2", SlotsOccupied = 0 },
+                        new EquippedItem { EquipmentId = "prot_armure_3", SlotsOccupied = 0 }
                     ]
                 },
                 new Fighter { CustomName = "Bras droit", Rank = 2, Role = OfficerRole.BrasDroit }
@@ -545,7 +579,7 @@ public class WarbandValidationTests
 
         // Assert
         Assert.False(result.IsValid);
-        Assert.Contains(result.Messages, m => m.Code == "HANDS_EXCEEDED");
+        Assert.Contains(result.Messages, m => m.Code == "MULTIPLE_ARMORS");
     }
 
     [Fact]

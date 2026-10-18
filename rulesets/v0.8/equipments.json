@@ -555,7 +555,7 @@
     "subCategory": "Armure",
     "level": 2,
     "hands": 0,
-    "slots": 1,
+    "slots": 0,
     "protection": 2,
     "statModifiers": {
       "esquive": -1
@@ -570,7 +570,7 @@
     "subCategory": "Armure",
     "level": 3,
     "hands": 0,
-    "slots": 1,
+    "slots": 0,
     "protection": 3,
     "statModifiers": {
       "esquive": -1

@@ -182,7 +182,7 @@ public class WarbandValidator : IWarbandValidator
         if (fighter.Role != OfficerRole.None && hasMutantsOrigin) baseSlots += 1;
 
         var slotsUsed = 0;
-        var handsUsed = 0;
+        var armorCount = 0;
         var hasArmor = false;
         var hasShield = false;
 
@@ -195,9 +195,12 @@ public class WarbandValidator : IWarbandValidator
             }
 
             slotsUsed += eq.Slots;
-            handsUsed += eq.Hands;
 
-            if (eq.Category == "Armor") hasArmor = true;
+            if (eq.Category == "Armor")
+            {
+                hasArmor = true;
+                armorCount++;
+            }
             if (eq.Category == "Shield") hasShield = true;
 
             // Niveau équipement <= Rang effectif
@@ -231,9 +234,9 @@ public class WarbandValidator : IWarbandValidator
             result.AddError("SLOTS_OVERFLOW", $"'{name}' dépasse sa capacité d'emplacements ({slotsUsed}/{baseSlots} slots occupés).", fighter.Id);
         }
 
-        if (handsUsed > 2)
+        if (armorCount > 1)
         {
-            result.AddError("HANDS_EXCEEDED", $"'{name}' utilise {handsUsed} mains (maximum 2 mains autorisées).", fighter.Id);
+            result.AddError("MULTIPLE_ARMORS", $"'{name}' porte {armorCount} armures (maximum 1 seule armure autorisée).", fighter.Id);
         }
 
         // Restrictions d'armure pour la Spécialisation Mage
