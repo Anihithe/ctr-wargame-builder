@@ -40,6 +40,7 @@ export interface Warband {
   rulesetVersion: string;
   factionId: string;
   allegianceId?: string;
+  selectedAllegianceRuleName?: string;
   selectedOriginIds: string[];
   startingGoldPo: number;
   currentGoldPo: number;

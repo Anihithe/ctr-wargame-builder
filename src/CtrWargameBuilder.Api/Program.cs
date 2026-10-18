@@ -147,6 +147,7 @@ app.MapPut("/api/warbands/{id:guid}", async (Guid id, Warband input, WarbandDbCo
     existing.RulesetVersion = input.RulesetVersion;
     existing.FactionId = input.FactionId;
     existing.AllegianceId = input.AllegianceId;
+    existing.SelectedAllegianceRuleName = input.SelectedAllegianceRuleName;
     existing.SelectedOriginIds = input.SelectedOriginIds;
     existing.StartingGold = input.StartingGold;
     existing.CurrentGold = input.CurrentGold;
