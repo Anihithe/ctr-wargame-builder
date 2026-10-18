@@ -7,6 +7,7 @@ import {
   UserPlus,
   Crown,
   Shield,
+  Sword,
   Trash2,
   Copy,
   ChevronRight,
@@ -105,6 +106,78 @@ function getRankBadgeClass(fighter: Fighter): string {
   if (fighter.rank === 2) return 'bg-blue-950/80 text-blue-300 border-blue-700';
   return 'bg-slate-800 text-slate-300 border-slate-600';
 }
+
+function getFighterSpecializations(f: Fighter) {
+  return f.specializations.map((sp) => ({
+    id: sp.id,
+    name: rulesetStore.getSpecialization(sp.specializationId)?.name || sp.specializationId,
+  }));
+}
+
+function getFighterTalents(f: Fighter) {
+  const talents: { id: string; name: string }[] = [];
+  for (const sp of f.specializations) {
+    for (const tid of sp.acquiredTalentIds) {
+      talents.push({
+        id: `${sp.id}_${tid}`,
+        name: getTalentName(sp.specializationId, tid),
+      });
+    }
+  }
+  return talents;
+}
+
+function getFighterWeapons(f: Fighter) {
+  return f.equippedItems
+    .filter((eq) => {
+      if (eq.isMagicItem) return false;
+      const item = rulesetStore.getEquipment(eq.equipmentId);
+      return item?.category === 'Melee' || item?.category === 'Ranged';
+    })
+    .map((eq) => ({
+      id: eq.id,
+      name: rulesetStore.getEquipment(eq.equipmentId)?.name || eq.equipmentId,
+    }));
+}
+
+function getFighterShields(f: Fighter) {
+  return f.equippedItems
+    .filter((eq) => {
+      if (eq.isMagicItem) return false;
+      const item = rulesetStore.getEquipment(eq.equipmentId);
+      return item?.category === 'Shield';
+    })
+    .map((eq) => ({
+      id: eq.id,
+      name: rulesetStore.getEquipment(eq.equipmentId)?.name || eq.equipmentId,
+    }));
+}
+
+function getFighterArmors(f: Fighter) {
+  return f.equippedItems
+    .filter((eq) => {
+      if (eq.isMagicItem) return false;
+      const item = rulesetStore.getEquipment(eq.equipmentId);
+      return item?.category === 'Armor';
+    })
+    .map((eq) => ({
+      id: eq.id,
+      name: rulesetStore.getEquipment(eq.equipmentId)?.name || eq.equipmentId,
+    }));
+}
+
+function getFighterMagicItems(f: Fighter) {
+  return f.equippedItems
+    .filter((eq) => eq.isMagicItem)
+    .map((eq) => ({
+      id: eq.id,
+      name: rulesetStore.getMagicItem(eq.equipmentId)?.name || eq.equipmentId,
+    }));
+}
+
+function hasFighterBadges(f: Fighter): boolean {
+  return f.specializations.length > 0 || f.equippedItems.length > 0;
+}
 </script>
 
 <template>
@@ -164,12 +237,6 @@ function getRankBadgeClass(fighter: Fighter): string {
         </div>
 
         <div class="flex items-center gap-1.5 shrink-0 pt-0.5">
-          <span
-            v-if="warbandStore.selectedFighterId === null"
-            class="text-[10px] font-semibold text-gold-400 bg-gold-500/10 border border-gold-500/30 px-2 py-0.5 rounded-full"
-          >
-            Vue active
-          </span>
           <ChevronRight
             class="w-4 h-4 transition"
             :class="warbandStore.selectedFighterId === null ? 'text-gold-400' : 'text-grim-500 group-hover:text-gold-400'"
@@ -252,34 +319,68 @@ function getRankBadgeClass(fighter: Fighter): string {
             </div>
           </div>
 
-          <!-- Equipment & Talents Mini-chips -->
+          <!-- Equipment & Talents Mini-chips in order: Spécialisations, Talents, Armes, Bouclier, Armure -->
           <div
-            v-if="leaderFighter.equippedItems.length > 0 || leaderFighter.specializations.length > 0"
+            v-if="hasFighterBadges(leaderFighter)"
             class="mt-2 flex flex-wrap gap-1 pt-1.5 border-t border-grim-800/60"
           >
+            <!-- 1. Spécialisation(s) -->
             <span
-              v-for="eq in leaderFighter.equippedItems"
-              :key="eq.id"
-              class="text-[10px] px-1.5 py-0.5 rounded bg-grim-950 border border-grim-800 text-grim-300 flex items-center gap-1"
+              v-for="sp in getFighterSpecializations(leaderFighter)"
+              :key="sp.id"
+              class="text-[10px] px-1.5 py-0.5 rounded bg-purple-950/60 border border-purple-800/60 text-purple-300 font-medium"
             >
-              <component :is="eq.isMagicItem ? Sparkles : Shield" class="w-2.5 h-2.5 text-gold-400" />
-              {{ eq.isMagicItem ? rulesetStore.getMagicItem(eq.equipmentId)?.name || eq.equipmentId : rulesetStore.getEquipment(eq.equipmentId)?.name || eq.equipmentId }}
+              {{ sp.name }}
             </span>
-            <template v-for="sp in leaderFighter.specializations" :key="sp.id">
-              <span
-                v-if="sp.acquiredTalentIds.length === 0"
-                class="text-[10px] px-1.5 py-0.5 rounded bg-blue-950/40 border border-blue-800/40 text-blue-400 italic"
-              >
-                {{ rulesetStore.getSpecialization(sp.specializationId)?.name || sp.specializationId }}
-              </span>
-              <span
-                v-for="talentId in sp.acquiredTalentIds"
-                :key="talentId"
-                class="text-[10px] px-1.5 py-0.5 rounded bg-blue-950/60 border border-blue-800/60 text-blue-300"
-              >
-                {{ getTalentName(sp.specializationId, talentId) }}
-              </span>
-            </template>
+
+            <!-- 2. Talent(s) -->
+            <span
+              v-for="t in getFighterTalents(leaderFighter)"
+              :key="t.id"
+              class="text-[10px] px-1.5 py-0.5 rounded bg-blue-950/60 border border-blue-800/60 text-blue-300"
+            >
+              {{ t.name }}
+            </span>
+
+            <!-- 3. Armes -->
+            <span
+              v-for="w in getFighterWeapons(leaderFighter)"
+              :key="w.id"
+              class="text-[10px] px-1.5 py-0.5 rounded bg-grim-950 border border-grim-700 text-grim-300 flex items-center gap-1 font-mono"
+            >
+              <Sword class="w-2.5 h-2.5 text-gold-400" />
+              {{ w.name }}
+            </span>
+
+            <!-- 4. Bouclier -->
+            <span
+              v-for="sh in getFighterShields(leaderFighter)"
+              :key="sh.id"
+              class="text-[10px] px-1.5 py-0.5 rounded bg-amber-950/40 border border-amber-800/50 text-amber-300 flex items-center gap-1 font-mono"
+            >
+              <Shield class="w-2.5 h-2.5 text-amber-400" />
+              {{ sh.name }}
+            </span>
+
+            <!-- 5. Armure -->
+            <span
+              v-for="ar in getFighterArmors(leaderFighter)"
+              :key="ar.id"
+              class="text-[10px] px-1.5 py-0.5 rounded bg-cyan-950/50 border border-cyan-800/60 text-cyan-300 flex items-center gap-1 font-mono"
+            >
+              <Shield class="w-2.5 h-2.5 text-cyan-400" />
+              {{ ar.name }}
+            </span>
+
+            <!-- Objets magiques si existants -->
+            <span
+              v-for="mi in getFighterMagicItems(leaderFighter)"
+              :key="mi.id"
+              class="text-[10px] px-1.5 py-0.5 rounded bg-gold-950/50 border border-gold-800/60 text-gold-300 flex items-center gap-1 font-mono"
+            >
+              <Sparkles class="w-2.5 h-2.5 text-gold-400" />
+              {{ mi.name }}
+            </span>
           </div>
         </div>
 
@@ -410,34 +511,68 @@ function getRankBadgeClass(fighter: Fighter): string {
             </div>
           </div>
 
-          <!-- Equipment & Talents Mini-chips -->
+          <!-- Equipment & Talents Mini-chips in order: Spécialisations, Talents, Armes, Bouclier, Armure -->
           <div
-            v-if="brasDroitFighter.equippedItems.length > 0 || brasDroitFighter.specializations.length > 0"
+            v-if="hasFighterBadges(brasDroitFighter)"
             class="mt-2 flex flex-wrap gap-1 pt-1.5 border-t border-grim-800/60"
           >
+            <!-- 1. Spécialisation(s) -->
             <span
-              v-for="eq in brasDroitFighter.equippedItems"
-              :key="eq.id"
-              class="text-[10px] px-1.5 py-0.5 rounded bg-grim-950 border border-grim-800 text-grim-300 flex items-center gap-1"
+              v-for="sp in getFighterSpecializations(brasDroitFighter)"
+              :key="sp.id"
+              class="text-[10px] px-1.5 py-0.5 rounded bg-purple-950/60 border border-purple-800/60 text-purple-300 font-medium"
             >
-              <component :is="eq.isMagicItem ? Sparkles : Shield" class="w-2.5 h-2.5 text-gold-400" />
-              {{ eq.isMagicItem ? rulesetStore.getMagicItem(eq.equipmentId)?.name || eq.equipmentId : rulesetStore.getEquipment(eq.equipmentId)?.name || eq.equipmentId }}
+              {{ sp.name }}
             </span>
-            <template v-for="sp in brasDroitFighter.specializations" :key="sp.id">
-              <span
-                v-if="sp.acquiredTalentIds.length === 0"
-                class="text-[10px] px-1.5 py-0.5 rounded bg-blue-950/40 border border-blue-800/40 text-blue-400 italic"
-              >
-                {{ rulesetStore.getSpecialization(sp.specializationId)?.name || sp.specializationId }}
-              </span>
-              <span
-                v-for="talentId in sp.acquiredTalentIds"
-                :key="talentId"
-                class="text-[10px] px-1.5 py-0.5 rounded bg-blue-950/60 border border-blue-800/60 text-blue-300"
-              >
-                {{ getTalentName(sp.specializationId, talentId) }}
-              </span>
-            </template>
+
+            <!-- 2. Talent(s) -->
+            <span
+              v-for="t in getFighterTalents(brasDroitFighter)"
+              :key="t.id"
+              class="text-[10px] px-1.5 py-0.5 rounded bg-blue-950/60 border border-blue-800/60 text-blue-300"
+            >
+              {{ t.name }}
+            </span>
+
+            <!-- 3. Armes -->
+            <span
+              v-for="w in getFighterWeapons(brasDroitFighter)"
+              :key="w.id"
+              class="text-[10px] px-1.5 py-0.5 rounded bg-grim-950 border border-grim-700 text-grim-300 flex items-center gap-1 font-mono"
+            >
+              <Sword class="w-2.5 h-2.5 text-gold-400" />
+              {{ w.name }}
+            </span>
+
+            <!-- 4. Bouclier -->
+            <span
+              v-for="sh in getFighterShields(brasDroitFighter)"
+              :key="sh.id"
+              class="text-[10px] px-1.5 py-0.5 rounded bg-amber-950/40 border border-amber-800/50 text-amber-300 flex items-center gap-1 font-mono"
+            >
+              <Shield class="w-2.5 h-2.5 text-amber-400" />
+              {{ sh.name }}
+            </span>
+
+            <!-- 5. Armure -->
+            <span
+              v-for="ar in getFighterArmors(brasDroitFighter)"
+              :key="ar.id"
+              class="text-[10px] px-1.5 py-0.5 rounded bg-cyan-950/50 border border-cyan-800/60 text-cyan-300 flex items-center gap-1 font-mono"
+            >
+              <Shield class="w-2.5 h-2.5 text-cyan-400" />
+              {{ ar.name }}
+            </span>
+
+            <!-- Objets magiques si existants -->
+            <span
+              v-for="mi in getFighterMagicItems(brasDroitFighter)"
+              :key="mi.id"
+              class="text-[10px] px-1.5 py-0.5 rounded bg-gold-950/50 border border-gold-800/60 text-gold-300 flex items-center gap-1 font-mono"
+            >
+              <Sparkles class="w-2.5 h-2.5 text-gold-400" />
+              {{ mi.name }}
+            </span>
           </div>
         </div>
 
@@ -660,34 +795,68 @@ function getRankBadgeClass(fighter: Fighter): string {
             </div>
           </div>
 
-          <!-- Equipment & Talents Mini-chips -->
+          <!-- Equipment & Talents Mini-chips in order: Spécialisations, Talents, Armes, Bouclier, Armure -->
           <div
-            v-if="f.equippedItems.length > 0 || f.specializations.length > 0"
+            v-if="hasFighterBadges(f)"
             class="mt-2 flex flex-wrap gap-1 pt-1.5 border-t border-grim-800/60"
           >
+            <!-- 1. Spécialisation(s) -->
             <span
-              v-for="eq in f.equippedItems"
-              :key="eq.id"
-              class="text-[10px] px-1.5 py-0.5 rounded bg-grim-950 border border-grim-800 text-grim-300 flex items-center gap-1"
+              v-for="sp in getFighterSpecializations(f)"
+              :key="sp.id"
+              class="text-[10px] px-1.5 py-0.5 rounded bg-purple-950/60 border border-purple-800/60 text-purple-300 font-medium"
             >
-              <component :is="eq.isMagicItem ? Sparkles : Shield" class="w-2.5 h-2.5 text-gold-400" />
-              {{ eq.isMagicItem ? rulesetStore.getMagicItem(eq.equipmentId)?.name || eq.equipmentId : rulesetStore.getEquipment(eq.equipmentId)?.name || eq.equipmentId }}
+              {{ sp.name }}
             </span>
-            <template v-for="sp in f.specializations" :key="sp.id">
-              <span
-                v-if="sp.acquiredTalentIds.length === 0"
-                class="text-[10px] px-1.5 py-0.5 rounded bg-blue-950/40 border border-blue-800/40 text-blue-400 italic"
-              >
-                {{ rulesetStore.getSpecialization(sp.specializationId)?.name || sp.specializationId }}
-              </span>
-              <span
-                v-for="talentId in sp.acquiredTalentIds"
-                :key="talentId"
-                class="text-[10px] px-1.5 py-0.5 rounded bg-blue-950/60 border border-blue-800/60 text-blue-300"
-              >
-                {{ getTalentName(sp.specializationId, talentId) }}
-              </span>
-            </template>
+
+            <!-- 2. Talent(s) -->
+            <span
+              v-for="t in getFighterTalents(f)"
+              :key="t.id"
+              class="text-[10px] px-1.5 py-0.5 rounded bg-blue-950/60 border border-blue-800/60 text-blue-300"
+            >
+              {{ t.name }}
+            </span>
+
+            <!-- 3. Armes -->
+            <span
+              v-for="w in getFighterWeapons(f)"
+              :key="w.id"
+              class="text-[10px] px-1.5 py-0.5 rounded bg-grim-950 border border-grim-700 text-grim-300 flex items-center gap-1 font-mono"
+            >
+              <Sword class="w-2.5 h-2.5 text-gold-400" />
+              {{ w.name }}
+            </span>
+
+            <!-- 4. Bouclier -->
+            <span
+              v-for="sh in getFighterShields(f)"
+              :key="sh.id"
+              class="text-[10px] px-1.5 py-0.5 rounded bg-amber-950/40 border border-amber-800/50 text-amber-300 flex items-center gap-1 font-mono"
+            >
+              <Shield class="w-2.5 h-2.5 text-amber-400" />
+              {{ sh.name }}
+            </span>
+
+            <!-- 5. Armure -->
+            <span
+              v-for="ar in getFighterArmors(f)"
+              :key="ar.id"
+              class="text-[10px] px-1.5 py-0.5 rounded bg-cyan-950/50 border border-cyan-800/60 text-cyan-300 flex items-center gap-1 font-mono"
+            >
+              <Shield class="w-2.5 h-2.5 text-cyan-400" />
+              {{ ar.name }}
+            </span>
+
+            <!-- Objets magiques si existants -->
+            <span
+              v-for="mi in getFighterMagicItems(f)"
+              :key="mi.id"
+              class="text-[10px] px-1.5 py-0.5 rounded bg-gold-950/50 border border-gold-800/60 text-gold-300 flex items-center gap-1 font-mono"
+            >
+              <Sparkles class="w-2.5 h-2.5 text-gold-400" />
+              {{ mi.name }}
+            </span>
           </div>
         </div>
       </div>
