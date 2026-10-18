@@ -433,9 +433,23 @@ export const useWarbandStore = defineStore('warband', () => {
     return copy;
   }
 
+  function applyAllegianceBonuses(wb: Warband) {
+    if (wb.allegianceId === 'conclave_des_mages') {
+      for (const f of wb.fighters) {
+        if (f.officerRole !== 'None') {
+          const mageSpec = f.specializations.find((s) => s.specializationId === 'mage');
+          if (mageSpec && !mageSpec.acquiredTalentIds.includes('incantation_maitrisee')) {
+            mageSpec.acquiredTalentIds.push('incantation_maitrisee');
+          }
+        }
+      }
+    }
+  }
+
   function updateWarband(patch: Partial<Warband>) {
     if (!currentWarband.value) return;
     Object.assign(currentWarband.value, patch);
+    applyAllegianceBonuses(currentWarband.value);
     currentWarband.value.updatedAt = new Date().toISOString();
     syncWarbandWithBackend(currentWarband.value);
   }
@@ -532,6 +546,7 @@ export const useWarbandStore = defineStore('warband', () => {
       } else if (role === 'BrasDroit' && (!fighter.allocatedXp || fighter.allocatedXp < 6)) {
         fighter.allocatedXp = 6;
       }
+      applyAllegianceBonuses(currentWarband.value);
       currentWarband.value.updatedAt = new Date().toISOString();
       syncWarbandWithBackend(currentWarband.value);
     }
@@ -636,18 +651,36 @@ export const useWarbandStore = defineStore('warband', () => {
         specializationId,
         acquiredTalentIds: [],
       };
+      if (
+        currentWarband.value.allegianceId === 'conclave_des_mages' &&
+        fighter.officerRole !== 'None' &&
+        specializationId === 'mage'
+      ) {
+        fSpec.acquiredTalentIds.push('incantation_maitrisee');
+      }
       fighter.specializations.push(fSpec);
     }
 
     if (talentId) {
-      const tIdx = fSpec.acquiredTalentIds.indexOf(talentId);
-      if (tIdx === -1) {
-        fSpec.acquiredTalentIds.push(talentId);
+      if (
+        currentWarband.value.allegianceId === 'conclave_des_mages' &&
+        fighter.officerRole !== 'None' &&
+        talentId === 'incantation_maitrisee'
+      ) {
+        if (!fSpec.acquiredTalentIds.includes('incantation_maitrisee')) {
+          fSpec.acquiredTalentIds.push('incantation_maitrisee');
+        }
       } else {
-        fSpec.acquiredTalentIds.splice(tIdx, 1);
+        const tIdx = fSpec.acquiredTalentIds.indexOf(talentId);
+        if (tIdx === -1) {
+          fSpec.acquiredTalentIds.push(talentId);
+        } else {
+          fSpec.acquiredTalentIds.splice(tIdx, 1);
+        }
       }
     }
 
+    applyAllegianceBonuses(currentWarband.value);
     currentWarband.value.updatedAt = new Date().toISOString();
     syncWarbandWithBackend(currentWarband.value);
   }

@@ -547,4 +547,79 @@ public class WarbandValidationTests
         Assert.False(result.IsValid);
         Assert.Contains(result.Messages, m => m.Code == "HANDS_EXCEEDED");
     }
+
+    [Fact]
+    public void Conclave_Des_Mages_Gives_Free_Incantation_Maitrisee_To_Officer()
+    {
+        // Arrange : Leader (12 XP de base) choisit Mage (6 XP) + Connaissances approfondies (6 XP) + Incantation maîtrisée (0 XP grâce à Conclave) = 12 XP
+        var warband = new Warband
+        {
+            FactionId = "alliance",
+            AllegianceId = "conclave_des_mages",
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter
+                {
+                    CustomName = "Archimage Leader",
+                    Rank = 2,
+                    Role = OfficerRole.Leader,
+                    AllocatedXp = 12,
+                    Specializations =
+                    [
+                        new FighterSpecialization
+                        {
+                            SpecializationId = "mage",
+                            SelectedTalentIds = ["connaissances_approfondies", "incantation_maitrisee"]
+                        }
+                    ]
+                },
+                new Fighter { CustomName = "Bras droit", Rank = 2, Role = OfficerRole.BrasDroit }
+            ]
+        };
+
+        // Act
+        var result = _validator.Validate(warband, _ruleset);
+
+        // Assert
+        Assert.DoesNotContain(result.Messages, m => m.Code == "XP_LIMIT_EXCEEDED");
+    }
+
+    [Fact]
+    public void Conclave_Des_Mages_Waives_Duplicate_Penalty_For_Second_Mage()
+    {
+        // Arrange : Leader prend Mage (6 XP) et Bras Droit (6 XP) prend Mage aussi.
+        // Sous Conclave des Mages, le 2ème Mage n'a pas de surcoût (6 XP au lieu de 12 XP).
+        var warband = new Warband
+        {
+            FactionId = "alliance",
+            AllegianceId = "conclave_des_mages",
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter
+                {
+                    CustomName = "Leader Mage",
+                    Rank = 2,
+                    Role = OfficerRole.Leader,
+                    AllocatedXp = 12,
+                    Specializations = [new FighterSpecialization { SpecializationId = "mage" }]
+                },
+                new Fighter
+                {
+                    CustomName = "Bras Droit Mage",
+                    Rank = 2,
+                    Role = OfficerRole.BrasDroit,
+                    AllocatedXp = 6,
+                    Specializations = [new FighterSpecialization { SpecializationId = "mage" }]
+                }
+            ]
+        };
+
+        // Act
+        var result = _validator.Validate(warband, _ruleset);
+
+        // Assert
+        Assert.DoesNotContain(result.Messages, m => m.Code == "XP_LIMIT_EXCEEDED");
+    }
 }

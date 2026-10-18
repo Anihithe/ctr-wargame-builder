@@ -224,11 +224,25 @@ function toggleMagicItemsUnlock() {
   }
 }
 
+function isConclaveFreeTalent(talentId: string): boolean {
+  if (!fighter.value || fighter.value.officerRole === 'None') return false;
+  if (warband.value?.allegianceId !== 'conclave_des_mages') return false;
+  return talentId === 'incantation_maitrisee';
+}
+
 const fighterSpentXp = computed(() => {
   if (!fighter.value) return 0;
   let total = fighter.value.specializations.length * 6;
+  const isOfficer = fighter.value.officerRole !== 'None';
+  const hasConclave = warband.value?.allegianceId === 'conclave_des_mages';
+
   for (const s of fighter.value.specializations) {
-    total += s.acquiredTalentIds.length * 6;
+    for (const tId of s.acquiredTalentIds) {
+      if (isOfficer && hasConclave && tId === 'incantation_maitrisee') {
+        continue; // Gratuit (0 XP)
+      }
+      total += 6;
+    }
   }
   return total;
 });
@@ -240,6 +254,10 @@ const fighterAvailableXp = computed(() => {
 
 function onToggleTalent(specId: string, talentId: string) {
   if (!fighter.value) return;
+  if (isConclaveFreeTalent(talentId)) {
+    // Gratuit et conféré par l'allégeance Conclave des Mages
+    return;
+  }
   const fSpec = fighter.value.specializations.find((s) => s.specializationId === specId);
   const isAcquired = fSpec?.acquiredTalentIds.includes(talentId);
   if (!isAcquired && fighterAvailableXp.value < 6) {
@@ -845,7 +863,13 @@ function onSetXp(val: number) {
                 </div>
 
                 <div class="flex items-center gap-2 shrink-0 mt-0.5">
-                  <span class="font-mono font-bold text-xs text-amber-400">6 XP</span>
+                  <span
+                    v-if="isConclaveFreeTalent(t.id)"
+                    class="font-mono font-bold text-[10px] text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800"
+                  >
+                    Gratuit (Conclave)
+                  </span>
+                  <span v-else class="font-mono font-bold text-xs text-amber-400">6 XP</span>
                   <div
                     class="w-4 h-4 rounded border flex items-center justify-center transition"
                     :class="fSpec.acquiredTalentIds.includes(t.id) ? 'bg-amber-500 border-amber-400 text-grim-950' : 'border-grim-700'"

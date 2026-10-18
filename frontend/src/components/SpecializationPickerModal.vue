@@ -22,11 +22,25 @@ const fighter = computed(() => warband.value?.fighters.find((f) => f.id === prop
 const allSpecializations = computed(() => rulesetStore.currentRuleset.specializations || []);
 
 // XP Calculation
+function isConclaveFreeTalent(talentId: string): boolean {
+  if (!fighter.value || fighter.value.officerRole === 'None') return false;
+  if (warband.value?.allegianceId !== 'conclave_des_mages') return false;
+  return talentId === 'incantation_maitrisee';
+}
+
 const spentXp = computed(() => {
   if (!fighter.value) return 0;
   let total = fighter.value.specializations.length * 6;
+  const isOfficer = fighter.value.officerRole !== 'None';
+  const hasConclave = warband.value?.allegianceId === 'conclave_des_mages';
+
   for (const s of fighter.value.specializations) {
-    total += s.acquiredTalentIds.length * 6;
+    for (const tId of s.acquiredTalentIds) {
+      if (isOfficer && hasConclave && tId === 'incantation_maitrisee') {
+        continue;
+      }
+      total += 6;
+    }
   }
   return total;
 });
@@ -184,7 +198,12 @@ function unchooseSpecialization(specId: string) {
                 :key="t.id"
                 class="bg-grim-900/60 p-2 rounded border border-grim-800/60 text-xs space-y-0.5"
               >
-                <div class="font-bold text-grim-200 text-[11px]">{{ t.name }}</div>
+                <div class="font-bold text-grim-200 text-[11px] flex items-center justify-between">
+                  <span>{{ t.name }}</span>
+                  <span v-if="isConclaveFreeTalent(t.id)" class="text-[10px] text-emerald-400 font-normal">
+                    Gratuit (Conclave)
+                  </span>
+                </div>
                 <div class="text-[10px] text-grim-400 leading-snug line-clamp-2">{{ t.description }}</div>
               </div>
             </div>
