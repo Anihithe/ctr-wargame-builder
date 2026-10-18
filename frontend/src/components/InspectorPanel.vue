@@ -106,272 +106,40 @@ function onUnselectAllegianceRule() {
   showAllAllegianceRules.value = true;
 }
 
-// Calculate base stats of selected fighter
+import {
+  calculateFighterStats,
+  calculateMaxSlots,
+  calculateCurrentSlotsUsed,
+  hasFighterMaitrise,
+} from '@/domain/rulesEngine';
+import { THEME } from '@/constants/theme';
+import { ALLEGIANCE_IDS, SPEC_IDS, TALENT_IDS } from '@/constants/rules';
+
+// Calculate stats of selected fighter using rulesEngine
 const fighterStats = computed<StatProfile>(() => {
   if (!fighter.value) {
     return { mouvement: 6, combat: 4, esquive: 3, volonte: 4, pv: 6 };
   }
-
-  let stats: StatProfile = { mouvement: 6, combat: 4, esquive: 3, volonte: 4, pv: 6 };
-
-  if (fighter.value.type === 'Guerrier' && faction.value) {
-    const rankKey = fighter.value.rank.toString();
-    const base = faction.value.profiles[rankKey];
-    if (base) {
-      stats = { ...base };
-    }
-  } else if (fighter.value.type === 'Monstre') {
-    const m = rulesetStore.getMonster(fighter.value.subTypeId || '');
-    if (m) {
-      stats = {
-        mouvement: m.mouvement,
-        combat: m.combat,
-        esquive: m.esquive,
-        volonte: m.volonte,
-        pv: m.pv,
-      };
-    }
-  } else if (fighter.value.type === 'Animal') {
-    const a = rulesetStore.getAnimalProfile(fighter.value.rank);
-    if (a) {
-      stats = { ...a };
-    }
-  }
-
-  // Apply origin modifiers if warrior
-  if (fighter.value.type === 'Guerrier') {
-    for (const orig of selectedOrigins.value) {
-      if (orig.modifiers) {
-        stats.mouvement += orig.modifiers.mouvement || 0;
-        stats.combat += orig.modifiers.combat || 0;
-        stats.esquive += orig.modifiers.esquive || 0;
-        stats.volonte += orig.modifiers.volonte || 0;
-        stats.pv += orig.modifiers.pv || 0;
-      }
-    }
-  }
-
-  // Dynamic origin rules
-  if (warband.value?.selectedOriginIds?.includes('goules') && fighter.value.rank === 1) {
-    stats.mouvement += 1;
-  }
-  if (warband.value?.selectedOriginIds?.includes('tueurs')) {
-    const hasArmorOrShield = fighter.value.equippedItems.some((eq) => {
-      if (eq.isMagicItem) return false;
-      const item = rulesetStore.getEquipment(eq.equipmentId);
-      return item?.category === 'Armor' || item?.category === 'Shield';
-    });
-    if (!hasArmorOrShield) {
-      stats.mouvement += 1;
-    }
-  }
-  if (warband.value?.selectedOriginIds?.includes('betes_feroces') && fighter.value.type === 'Animal') {
-    stats.pv += 1;
-  }
-
-  // Apply Specialization & Talent modifiers
-  const isMage = fighter.value.specializations.some((s) => s.specializationId === 'mage');
-  const hasMageDeBataille = fighter.value.specializations.some(
-    (s) => s.specializationId === 'mage' && s.acquiredTalentIds.includes('mage_de_bataille'),
-  );
-  if (isMage && !hasMageDeBataille) {
-    stats.combat = Math.max(0, stats.combat - 1);
-  }
-
-  const isBarbare = fighter.value.specializations.some((s) => s.specializationId === 'barbare');
-  if (isBarbare) {
-    stats.esquive += 1;
-    stats.pv += 1;
-  }
-
-  const isCavalier = fighter.value.specializations.some((s) => s.specializationId === 'cavalier');
-  if (isCavalier) {
-    stats.mouvement = Math.round(stats.mouvement * 1.5);
-  }
-
-  for (const sp of fighter.value.specializations) {
-    if (sp.acquiredTalentIds.includes('constitution')) {
-      stats.pv += 2;
-    }
-    if (sp.acquiredTalentIds.includes('esquive_instinctive') || sp.acquiredTalentIds.includes('esquive_instinctive_ranger')) {
-      stats.esquive += 1;
-    }
-  }
-
-  // Equipment statModifiers & armor penalty mitigations
-  const hasGuerrier = fighter.value.specializations.some((s) => s.specializationId === 'guerrier');
-  const hasCostaud = fighter.value.specializations.some(
-    (s) => s.specializationId === 'guerrier' && s.acquiredTalentIds.includes('costaud'),
-  );
-  const hasArmureAdaptee = fighter.value.specializations.some(
-    (s) => s.specializationId === 'garde' && s.acquiredTalentIds.includes('armure_adaptee'),
-  );
-
-  for (const eq of fighter.value.equippedItems) {
-    if (!eq.isMagicItem) {
-      const item = rulesetStore.getEquipment(eq.equipmentId);
-      if (item?.statModifiers) {
-        let mvtMod = item.statModifiers.mouvement || 0;
-        let esqMod = item.statModifiers.esquive || 0;
-
-        if (item.category === 'Armor') {
-          if (hasGuerrier && mvtMod < 0) {
-            mvtMod = Math.min(0, mvtMod + 1);
-          }
-          if (hasCostaud && esqMod < 0) {
-            esqMod = Math.min(0, esqMod + 1);
-          }
-          if (hasArmureAdaptee) {
-            if (mvtMod < 0) {
-              mvtMod = Math.min(0, mvtMod + 1);
-            } else if (esqMod < 0) {
-              esqMod = Math.min(0, esqMod + 1);
-            }
-          }
-        }
-
-        stats.mouvement += mvtMod;
-        stats.esquive += esqMod;
-      }
-    }
-  }
-
-  // Apply Don des Dieux bonus (Ordre du Temple)
-  if (
-    warband.value?.allegianceId === 'ordre_du_temple' &&
-    warband.value?.selectedAllegianceRuleName === 'Don des Dieux' &&
-    fighter.value.godGiftStat
-  ) {
-    const s = fighter.value.godGiftStat;
-    if (s === 'mouvement') stats.mouvement += 1;
-    else if (s === 'combat') stats.combat += 1;
-    else if (s === 'esquive') stats.esquive += 1;
-    else if (s === 'volonte') stats.volonte += 1;
-    else if (s === 'pv') stats.pv += 1;
-  }
-
-  return stats;
+  return calculateFighterStats(fighter.value, warband.value, rulesetStore);
 });
 
 // Max equipment slots for fighter
 const maxSlots = computed(() => {
   if (!fighter.value) return 2;
-  let slots = 2;
-  if (fighter.value.type === 'Guerrier') {
-    slots = rulesetStore.config.slotsByRank?.[fighter.value.rank.toString()] ?? (fighter.value.rank >= 3 ? 3 : 2);
-  } else if (fighter.value.type === 'Monstre') {
-    slots = 4;
-  } else if (fighter.value.type === 'Animal') {
-    return 0; // Animal has 0 equipment slots
-  }
-  if (fighter.value.officerRole !== 'None' && warband.value?.selectedOriginIds?.includes('mutants')) {
-    slots += 1;
-  }
-  return slots;
+  return calculateMaxSlots(fighter.value, warband.value, rulesetStore.config?.slotsByRank);
 });
 
 // Current slots used (accounting for 2-slot weapons, pavois, etc.)
 const currentSlotsUsed = computed(() => {
   if (!fighter.value) return 0;
-  let used = 0;
-  for (const eq of fighter.value.equippedItems) {
-    if (!eq.isMagicItem) {
-      const item = rulesetStore.getEquipment(eq.equipmentId);
-      used += item?.slots ?? 1;
-    } else {
-      const mItem = rulesetStore.getMagicItem(eq.equipmentId);
-      used += mItem?.slots || 0;
-    }
-  }
-  return used;
+  return calculateCurrentSlotsUsed(fighter.value, rulesetStore);
 });
 
 const fighterHasMaitrise = computed(() => {
-  if (!fighter.value || fighter.value.type === 'Animal') return false;
-  // 1. Emplacement libre
-  if (maxSlots.value - currentSlotsUsed.value > 0) return true;
-
-  // 2. Arme niv <= 3 avec accès effectif > 3
-  for (const eq of fighter.value.equippedItems) {
-    if (eq.isMagicItem) continue;
-    const item = rulesetStore.getEquipment(eq.equipmentId);
-    if (!item) continue;
-    if (item.category === 'Melee' || item.category === 'Ranged') {
-      if (item.level <= 3) {
-        let eff = fighter.value.rank;
-        const hasGuerrier = fighter.value.specializations.some((s) => s.specializationId === 'guerrier');
-        const hasBarbare = fighter.value.specializations.some((s) => s.specializationId === 'barbare');
-        const hasGarde = fighter.value.specializations.some((s) => s.specializationId === 'garde');
-        const hasRoublard = fighter.value.specializations.some((s) => s.specializationId === 'roublard');
-        const hasRanger = fighter.value.specializations.some((s) => s.specializationId === 'ranger');
-        const hasIngenieur = fighter.value.specializations.some((s) => s.specializationId === 'ingenieur');
-        const hasMaitreArcher = fighter.value.specializations.some((s) => s.specializationId === 'maitre_archer');
-        const hasTireurElite = fighter.value.specializations.some((s) => s.specializationId === 'tireur_d_elite');
-        const hasGardesRoyaux = warband.value?.selectedOriginIds?.includes('gardes_royaux');
-        const hasDestructeurs = warband.value?.selectedOriginIds?.includes('destructeurs');
-
-        if (item.subCategory === 'Arme intermédiaire' && hasGardesRoyaux) eff += 1;
-        if (
-          hasDestructeurs &&
-          (item.subCategory?.includes('lourde') ||
-            item.subCategory?.includes('Pugilat') ||
-            item.id.includes('pugilat'))
-        ) {
-          eff += 1;
-        }
-        if (
-          hasGuerrier &&
-          (item.subCategory?.includes('intermédiaire') || item.subCategory?.includes('lourde'))
-        ) {
-          eff += 1;
-        }
-        if (
-          hasBarbare &&
-          (item.subCategory?.includes('lourde') ||
-            item.subCategory?.includes('Pugilat') ||
-            item.id.includes('pugilat'))
-        ) {
-          eff += 1;
-        }
-        if (hasGarde && item.category === 'Melee' && item.subCategory?.includes('intermédiaire')) {
-          eff += 1;
-        }
-        if (hasRoublard && item.category === 'Melee' && item.subCategory?.includes('légère')) {
-          eff += 1;
-        }
-        if (
-          hasRanger &&
-          item.category === 'Ranged' &&
-          (item.subCategory?.includes('Arc') ||
-            item.subCategory?.includes('jet') ||
-            item.id.startsWith('tir_2m_arc') ||
-            item.id.startsWith('tir_1m_jet'))
-        ) {
-          eff += 1;
-        }
-        if (hasIngenieur && item.category === 'Ranged') {
-          eff += 1;
-        }
-        if (hasMaitreArcher && (item.subCategory?.includes('Arc') || item.id.startsWith('tir_2m_arc'))) {
-          eff += 1;
-        }
-        if (
-          hasTireurElite &&
-          (item.subCategory?.includes('Arbalète') ||
-            item.subCategory?.includes('poing') ||
-            item.id.startsWith('tir_2m_arbalete') ||
-            item.id.startsWith('tir_1m_poing'))
-        ) {
-          eff += 1;
-        }
-
-        if (eff > 3) return true;
-      }
-    }
-  }
-
-  return false;
+  if (!fighter.value) return false;
+  return hasFighterMaitrise(fighter.value, warband.value, rulesetStore);
 });
+
 
 // Total armor bonus from equipped items and talents
 const totalArmorBonus = computed(() => {
@@ -1101,7 +869,7 @@ function godGiftLabel(stat?: string | null): string {
                 <span
                   v-else-if="!eq.isMagicItem && (rulesetStore.getEquipment(eq.equipmentId)?.slots || 0) > 0"
                   class="text-[10px] px-1.5 py-0.2 rounded font-mono font-bold"
-                  :class="(rulesetStore.getEquipment(eq.equipmentId)?.slots || 0) > 1 ? 'bg-amber-950 text-amber-300 border border-amber-800' : 'bg-grim-950 text-grim-400 border border-grim-800'"
+                  :class="(rulesetStore.getEquipment(eq.equipmentId)?.slots || 0) > 1 ? THEME.slots.multiSlotBadge : THEME.slots.singleSlotBadge"
                 >
                   {{ rulesetStore.getEquipment(eq.equipmentId)?.slots }} slot{{ (rulesetStore.getEquipment(eq.equipmentId)?.slots || 0) > 1 ? 's' : '' }}
                 </span>

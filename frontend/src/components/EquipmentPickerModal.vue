@@ -3,6 +3,14 @@ import { ref, computed } from 'vue';
 import { useWarbandStore } from '@/stores/warbandStore';
 import { useRulesetStore } from '@/stores/rulesetStore';
 import type { Equipment } from '@/types/ruleset';
+import { FACTION_IDS, ORIGIN_IDS, SPEC_IDS, EQUIPMENT_CATEGORIES } from '@/constants/rules';
+import {
+  calculateEffectiveRank,
+  getEquipmentEquipError,
+  canEquipEquipment,
+  calculateMaxSlots,
+  calculateCurrentSlotsUsed,
+} from '@/domain/rulesEngine';
 import { Sword, Shield, X, Check, Plus, Minus, AlertCircle, Lock } from 'lucide-vue-next';
 
 const props = defineProps<{
@@ -24,106 +32,40 @@ const categories = ['Toutes', 'Corps à corps', 'Tir / Distance', 'Protections &
 type CategoryTab = (typeof categories)[number];
 const selectedCategory = ref<CategoryTab>('Toutes');
 
-// Fighter traits & bonuses
-const isMage = computed(() => fighter.value?.specializations.some((s) => s.specializationId === 'mage') || false);
-const hasMageDeBataille = computed(
-  () =>
-    fighter.value?.specializations.some(
-      (s) => s.specializationId === 'mage' && s.acquiredTalentIds.includes('mage_de_bataille'),
-    ) || false,
-);
-const isExcellence = computed(() => warband.value?.factionId === 'excellence');
-const hasGardesRoyaux = computed(() => warband.value?.selectedOriginIds?.includes('gardes_royaux') || false);
-const hasNoblesse = computed(() => warband.value?.selectedOriginIds?.includes('noblesse') || false);
-const hasChevaliersNoirs = computed(() => warband.value?.selectedOriginIds?.includes('chevaliers_noirs') || false);
-const hasCompagnieDeFer = computed(() => warband.value?.selectedOriginIds?.includes('compagnie_de_fer') || false);
-const hasDestructeurs = computed(() => warband.value?.selectedOriginIds?.includes('destructeurs') || false);
-const hasGoules = computed(() => warband.value?.selectedOriginIds?.includes('goules') || false);
-
-const hasGuerrierSpec = computed(() => fighter.value?.specializations.some((s) => s.specializationId === 'guerrier') || false);
-const hasBarbareSpec = computed(() => fighter.value?.specializations.some((s) => s.specializationId === 'barbare') || false);
-const hasGardeSpec = computed(() => fighter.value?.specializations.some((s) => s.specializationId === 'garde') || false);
-const hasRoublardSpec = computed(() => fighter.value?.specializations.some((s) => s.specializationId === 'roublard') || false);
-const hasRangerSpec = computed(() => fighter.value?.specializations.some((s) => s.specializationId === 'ranger') || false);
-const hasDruideSpec = computed(() => fighter.value?.specializations.some((s) => s.specializationId === 'druide') || false);
-const hasIngenieurSpec = computed(() => fighter.value?.specializations.some((s) => s.specializationId === 'ingenieur') || false);
-const hasMaitreArcherSpec = computed(() => fighter.value?.specializations.some((s) => s.specializationId === 'maitre_archer') || false);
-const hasTireurEliteSpec = computed(() => fighter.value?.specializations.some((s) => s.specializationId === 'tireur_d_elite') || false);
-const hasCavalierSpec = computed(() => fighter.value?.specializations.some((s) => s.specializationId === 'cavalier') || false);
-const hasCavalerieLourde = computed(
-  () =>
-    fighter.value?.specializations.some(
-      (s) => s.specializationId === 'cavalier' && s.acquiredTalentIds.includes('cavalerie_lourde'),
-    ) || false,
-);
-const hasMoineSpec = computed(() => fighter.value?.specializations.some((s) => s.specializationId === 'moine') || false);
-const hasEcoleDeLaTerre = computed(
-  () =>
-    fighter.value?.specializations.some(
-      (s) => s.specializationId === 'moine' && s.acquiredTalentIds.includes('ecole_de_la_terre'),
-    ) || false,
-);
-const hasEcoleDeLOmbre = computed(
-  () =>
-    fighter.value?.specializations.some(
-      (s) => s.specializationId === 'moine' && s.acquiredTalentIds.includes('ecole_de_l_ombre'),
-    ) || false,
-);
-const hasEcoleDeLEau = computed(
-  () =>
-    fighter.value?.specializations.some(
-      (s) => s.specializationId === 'moine' && s.acquiredTalentIds.includes('ecole_de_l_eau'),
-    ) || false,
-);
+const isExcellence = computed(() => warband.value?.factionId === FACTION_IDS.Excellence);
+const hasGardesRoyaux = computed(() => warband.value?.selectedOriginIds?.includes(ORIGIN_IDS.GardesRoyaux) || false);
 
 const activeRankBonusSummary = computed(() => {
+  if (!fighter.value) return '';
   const parts: string[] = [];
-  if (hasGuerrierSpec.value) parts.push('+1 Guerrier (armes lourdes/inter et protections)');
-  if (hasBarbareSpec.value) parts.push('+1 Barbare (armes lourdes et pugilat)');
-  if (hasGardeSpec.value) parts.push('+1 Garde (armes CàC inter)');
-  if (hasRoublardSpec.value) parts.push('+1 Roublard (armes CàC légères)');
-  if (hasRangerSpec.value) parts.push('+1 Ranger (arcs et jet)');
-  if (hasIngenieurSpec.value) parts.push('+1 Ingénieur (tir)');
-  if (hasMaitreArcherSpec.value) parts.push('+1 Maître archer (arcs)');
-  if (hasTireurEliteSpec.value) parts.push("+1 Tireur d'élite (arbalètes et poing)");
-  if (hasNoblesse.value) parts.push('+1 Noblesse (armures)');
-  if (hasChevaliersNoirs.value) parts.push('+1 Chevaliers noirs (armures)');
-  if (hasCompagnieDeFer.value) parts.push('+1 Compagnie de Fer (armures)');
-  if (hasGardesRoyaux.value) parts.push('+1 Gardes royaux (armes inter)');
-  if (hasDestructeurs.value) parts.push('+1 Destructeurs (armes lourdes et pugilat)');
+  const origins = warband.value?.selectedOriginIds || [];
+  const hasSpec = (id: string) => fighter.value?.specializations.some((s) => s.specializationId === id);
+
+  if (hasSpec(SPEC_IDS.Guerrier)) parts.push('+1 Guerrier (armes lourdes/inter et protections)');
+  if (hasSpec(SPEC_IDS.Barbare)) parts.push('+1 Barbare (armes lourdes et pugilat)');
+  if (hasSpec(SPEC_IDS.Garde)) parts.push('+1 Garde (armes CàC inter)');
+  if (hasSpec(SPEC_IDS.Roublard)) parts.push('+1 Roublard (armes CàC légères)');
+  if (hasSpec(SPEC_IDS.Ranger)) parts.push('+1 Ranger (arcs et jet)');
+  if (hasSpec(SPEC_IDS.Ingenieur)) parts.push('+1 Ingénieur (tir)');
+  if (hasSpec(SPEC_IDS.MaitreArcher)) parts.push('+1 Maître archer (arcs)');
+  if (hasSpec(SPEC_IDS.TireurDElite)) parts.push("+1 Tireur d'élite (arbalètes et poing)");
+  if (origins.includes(ORIGIN_IDS.Noblesse)) parts.push('+1 Noblesse (armures)');
+  if (origins.includes(ORIGIN_IDS.ChevaliersNoirs)) parts.push('+1 Chevaliers noirs (armures)');
+  if (origins.includes(ORIGIN_IDS.CompagnieDeFer)) parts.push('+1 Compagnie de Fer (armures)');
+  if (origins.includes(ORIGIN_IDS.GardesRoyaux)) parts.push('+1 Gardes royaux (armes inter)');
+  if (origins.includes(ORIGIN_IDS.Destructeurs)) parts.push('+1 Destructeurs (armes lourdes et pugilat)');
   return parts.join(' | ');
 });
 
 // Slots
 const maxSlots = computed(() => {
   if (!fighter.value) return 2;
-  let slots = 2;
-  if (fighter.value.type === 'Guerrier') {
-    slots = rulesetStore.config.slotsByRank?.[fighter.value.rank.toString()] ?? (fighter.value.rank >= 3 ? 3 : 2);
-  } else if (fighter.value.type === 'Monstre') {
-    slots = 4;
-  } else if (fighter.value.type === 'Animal') {
-    return 0;
-  }
-  if (fighter.value.officerRole !== 'None' && warband.value?.selectedOriginIds?.includes('mutants')) {
-    slots += 1;
-  }
-  return slots;
+  return calculateMaxSlots(fighter.value, warband.value, rulesetStore.config?.slotsByRank);
 });
 
 const currentSlotsUsed = computed(() => {
   if (!fighter.value) return 0;
-  let used = 0;
-  for (const eq of fighter.value.equippedItems) {
-    if (!eq.isMagicItem) {
-      const item = rulesetStore.getEquipment(eq.equipmentId);
-      used += item?.slots ?? 1;
-    } else {
-      const mItem = rulesetStore.getMagicItem(eq.equipmentId);
-      used += mItem?.slots || 0;
-    }
-  }
-  return used;
+  return calculateCurrentSlotsUsed(fighter.value, rulesetStore);
 });
 
 const remainingSlots = computed(() => Math.max(0, maxSlots.value - currentSlotsUsed.value));
@@ -133,7 +75,7 @@ const equippedArmor = computed(() => {
   for (const eq of fighter.value.equippedItems) {
     if (!eq.isMagicItem) {
       const item = rulesetStore.getEquipment(eq.equipmentId);
-      if (item?.category === 'Armor') return item;
+      if (item?.category === EQUIPMENT_CATEGORIES.Armor) return item;
     }
   }
   return null;
@@ -141,70 +83,7 @@ const equippedArmor = computed(() => {
 
 function getEffectiveRank(eq: Equipment): number {
   if (!fighter.value) return 1;
-  let rank = fighter.value.rank;
-  if (eq.category === 'Armor' && (hasNoblesse.value || hasChevaliersNoirs.value || hasCompagnieDeFer.value)) {
-    rank += 1;
-  }
-  if (eq.subCategory === 'Arme intermédiaire' && hasGardesRoyaux.value) {
-    rank += 1;
-  }
-  if (
-    hasDestructeurs.value &&
-    (eq.subCategory?.includes('lourde') ||
-      eq.subCategory?.includes('Pugilat') ||
-      eq.id.includes('pugilat'))
-  ) {
-    rank += 1;
-  }
-  if (
-    hasGuerrierSpec.value &&
-    (eq.category === 'Shield' ||
-      eq.category === 'Armor' ||
-      eq.subCategory?.includes('intermédiaire') ||
-      eq.subCategory?.includes('lourde'))
-  ) {
-    rank += 1;
-  }
-  if (
-    hasBarbareSpec.value &&
-    (eq.subCategory?.includes('lourde') ||
-      eq.subCategory?.includes('Pugilat') ||
-      eq.id.includes('pugilat'))
-  ) {
-    rank += 1;
-  }
-  if (hasGardeSpec.value && eq.category === 'Melee' && eq.subCategory?.includes('intermédiaire')) {
-    rank += 1;
-  }
-  if (hasRoublardSpec.value && eq.category === 'Melee' && eq.subCategory?.includes('légère')) {
-    rank += 1;
-  }
-  if (
-    hasRangerSpec.value &&
-    eq.category === 'Ranged' &&
-    (eq.subCategory?.includes('Arc') ||
-      eq.subCategory?.includes('jet') ||
-      eq.id.startsWith('tir_2m_arc') ||
-      eq.id.startsWith('tir_1m_jet'))
-  ) {
-    rank += 1;
-  }
-  if (hasIngenieurSpec.value && eq.category === 'Ranged') {
-    rank += 1;
-  }
-  if (hasMaitreArcherSpec.value && (eq.subCategory?.includes('Arc') || eq.id.startsWith('tir_2m_arc'))) {
-    rank += 1;
-  }
-  if (
-    hasTireurEliteSpec.value &&
-    (eq.subCategory?.includes('Arbalète') ||
-      eq.subCategory?.includes('poing') ||
-      eq.id.startsWith('tir_2m_arbalete') ||
-      eq.id.startsWith('tir_1m_poing'))
-  ) {
-    rank += 1;
-  }
-  return rank;
+  return calculateEffectiveRank(fighter.value, eq, warband.value);
 }
 
 function isRankValid(eq: Equipment): boolean {
@@ -212,79 +91,13 @@ function isRankValid(eq: Equipment): boolean {
 }
 
 function getEquipError(eq: Equipment): string | null {
-  if (!isRankValid(eq)) {
-    const eff = getEffectiveRank(eq);
-    return `Rang insuffisant (Niveau ${eq.level} requis, rang effectif ${eff})`;
-  }
-  if (isMage.value && !hasMageDeBataille.value && (eq.category === 'Armor' || eq.category === 'Shield')) {
-    return `Interdit pour un Mage (pas d'armure ni de bouclier)`;
-  }
-  if (hasBarbareSpec.value && (eq.category === 'Armor' || eq.category === 'Shield')) {
-    return `Interdit pour un Barbare (pas d'armure ni de bouclier)`;
-  }
-  if (
-    hasBarbareSpec.value &&
-    eq.category !== 'Armor' &&
-    eq.category !== 'Shield' &&
-    !(
-      eq.subCategory?.includes('lourde') ||
-      eq.subCategory?.includes('Pugilat') ||
-      eq.id.includes('pugilat')
-    )
-  ) {
-    return `Interdit pour un Barbare (armes lourdes et pugilat uniquement)`;
-  }
-  if (hasRoublardSpec.value && (eq.category === 'Armor' || eq.category === 'Shield')) {
-    return `Interdit pour un Roublard (pas d'armure ni de bouclier)`;
-  }
-  if (hasRangerSpec.value && (eq.category === 'Armor' || eq.category === 'Shield')) {
-    return `Interdit pour un Ranger (pas d'armure ni de bouclier)`;
-  }
-  if (hasDruideSpec.value && (eq.category === 'Armor' || eq.category === 'Shield')) {
-    return `Interdit pour un Druide (pas d'armure ni de bouclier)`;
-  }
-  if (
-    hasCavalierSpec.value &&
-    !hasCavalerieLourde.value &&
-    (eq.category === 'Armor' || eq.category === 'Shield') &&
-    eq.level > 1
-  ) {
-    return `Cavalier : armure et bouclier limités au Niveau 1 (sauf talent Cavalerie lourde)`;
-  }
-  if (hasMoineSpec.value && eq.category !== 'Armor' && eq.category !== 'Shield') {
-    const isPugilat = eq.subCategory?.includes('Pugilat') || eq.id.includes('pugilat');
-    const isLightAllowed = hasEcoleDeLaTerre.value && eq.subCategory?.includes('légère');
-    const isRangedAllowed = hasEcoleDeLOmbre.value && eq.category === 'Ranged';
-    if (!isPugilat && !isLightAllowed && !isRangedAllowed) {
-      return `Moine : réservé aux armes de pugilat (sauf École de la Terre ou Ombre)`;
-    }
-  }
-  if (hasMoineSpec.value && hasEcoleDeLEau.value && (eq.category === 'Armor' || eq.category === 'Shield')) {
-    return `École de l'Eau : interdit le port d'armure et de bouclier`;
-  }
-  if (isExcellence.value && (eq.category === 'Armor' || eq.category === 'Shield') && !hasGardesRoyaux.value) {
-    return `Interdit pour L'Excellence (Réflexes surhumains : pas d'armure ni bouclier)`;
-  }
-  if (hasGoules.value && fighter.value?.rank === 1 && (eq.category === 'Armor' || eq.category === 'Shield')) {
-    return `Goules : les Combattants de Rang 1 ne peuvent pas porter de Protection`;
-  }
-  if (eq.category === 'Armor') {
-    if (equippedArmor.value && equippedArmor.value.id !== eq.id) {
-      return `Une seule armure autorisée (${equippedArmor.value.name} déjà portée)`;
-    }
-    if (equippedArmor.value && equippedArmor.value.id === eq.id) {
-      return `Armure déjà portée`;
-    }
-  } else {
-    if (eq.slots > remainingSlots.value) {
-      return `Emplacements insuffisants (${eq.slots} requis, ${remainingSlots.value} restant(s))`;
-    }
-  }
-  return null;
+  if (!fighter.value) return null;
+  return getEquipmentEquipError(fighter.value, eq, warband.value, equippedArmor.value, remainingSlots.value);
 }
 
 function canEquip(eq: Equipment): boolean {
-  return getEquipError(eq) === null;
+  if (!fighter.value) return false;
+  return canEquipEquipment(fighter.value, eq, warband.value, equippedArmor.value, remainingSlots.value);
 }
 
 // Equipment Family definition
@@ -527,6 +340,21 @@ function unequipOne(equipmentId: string) {
         >
           {{ cat }}
         </button>
+      </div>
+
+      <!-- Excellence Protections Restriction Banner -->
+      <div
+        v-if="(selectedCategory === 'Protections & Armures' || selectedCategory === 'Toutes') && isExcellence && !hasGardesRoyaux"
+        class="mx-6 mt-4 p-3 bg-amber-950/40 border border-amber-800/60 rounded-lg flex items-start gap-2.5 text-xs text-amber-300"
+      >
+        <AlertCircle class="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+        <div>
+          <span class="font-bold text-amber-200">Règle de faction L'Excellence (Réflexes surhumains) :</span>
+          <p class="text-amber-300/90 mt-0.5">
+            Vos combattants ne peuvent porter ni armure ni bouclier (sauf avec l'origine <em>Gardes royaux</em>).
+            Tant qu'ils ne portent aucune protection, ils bénéficient d'un bonus passif de <strong>+1 en Esquive</strong> au corps à corps.
+          </p>
+        </div>
       </div>
 
       <!-- Family Cards Grid -->

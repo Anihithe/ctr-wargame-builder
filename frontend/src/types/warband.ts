@@ -25,6 +25,7 @@ export interface Fighter {
   type: FighterType;
   rank: number; // 1, 2, 3 (or 4 for Monstre)
   subTypeId?: string;
+  animalSpeciesBonusId?: string;
   officerRole: OfficerRole;
   status: FighterStatus;
   allocatedXp?: number;
