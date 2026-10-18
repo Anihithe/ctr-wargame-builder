@@ -573,3 +573,28 @@ export function cleanEquipmentName(name?: string, level?: number): string {
   return cleaned;
 }
 
+/**
+ * Formats a special rule name for display under an equipment item.
+ * For parameterized rules like "Perce-armure (x)", it replaces (x) with the equipment's actual value
+ * (e.g. "Perce-armure (1)").
+ * If equipment or value is not available, falls back to the generic rule name.
+ */
+export function formatSpecialRuleName(
+  ruleId: string,
+  ruleName?: string,
+  equipment?: Equipment | null,
+): string {
+  const baseName = ruleName || ruleId;
+  if (ruleId === 'perce_armure' || baseName.toLowerCase().startsWith('perce-armure')) {
+    const val = equipment?.perceArmure;
+    if (val !== undefined && val !== null) {
+      if (baseName.includes('(x)')) {
+        return baseName.replace('(x)', `(${val})`);
+      }
+      return `Perce-armure (${val})`;
+    }
+  }
+  return baseName;
+}
+
+

@@ -113,6 +113,7 @@ import {
   hasFighterMaitrise,
   canFighterCastSpells,
   cleanEquipmentName,
+  formatSpecialRuleName,
 } from '@/domain/rulesEngine';
 import { THEME } from '@/constants/theme';
 import { ALLEGIANCE_IDS, SPEC_IDS, TALENT_IDS } from '@/constants/rules';
@@ -900,7 +901,7 @@ function godGiftLabel(stat?: string | null): string {
                     class="inline-block px-1.5 py-0.2 text-[10px] rounded bg-grim-800 text-gold-300 border border-grim-700 font-medium cursor-help"
                     :title="rulesetStore.getSpecialRule(rid)?.description || rid"
                   >
-                    {{ rulesetStore.getSpecialRule(rid)?.name || rid }}
+                    {{ formatSpecialRuleName(rid, rulesetStore.getSpecialRule(rid)?.name, rulesetStore.getEquipment(eq.equipmentId)) }}
                   </span>
                 </div>
               </p>

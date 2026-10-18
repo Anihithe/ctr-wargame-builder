@@ -117,6 +117,7 @@ export interface Equipment {
     mouvement?: number;
   };
   specialRuleIds: string[];
+  perceArmure?: number;
   costInGold: number;
 }
 

@@ -22,7 +22,8 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
   - Règle de validation autoritaire C# rejetant l'attribution de sorts à des non-lanceurs (`ValidationCodes.NotASpellcaster`).
 
 ### 🎨 Épuration Visuelle & Ergonomie des Cartes de Combattants
-- **Cartes de Combattant (`FighterList.vue` & `InspectorPanel.vue`)** :
+- **Cartes de Combattant & Sélecteur d'Équipement** :
+  - Résolution de l'affichage du tag *Perce-armure* : affiche désormais la valeur réelle de l'équipement (ex: *Perce-armure (1)*, *(2)*, *(3)*) tout en conservant l'infobulle d'explication générique avec `x`.
   - Suppression de la mention textuelle redondante de la spécialisation sous le nom de l'unité (mise en valeur via les tags).
   - Élimination des parenthèses superflues d'exemples d'armes dans les badges.
   - Regroupement des armes identiques avec indicateur de quantité `x2`.

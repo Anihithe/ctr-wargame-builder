@@ -10,6 +10,7 @@ import {
   canEquipEquipment,
   calculateMaxSlots,
   calculateCurrentSlotsUsed,
+  formatSpecialRuleName,
 } from '@/domain/rulesEngine';
 import { Sword, Shield, X, Check, Plus, Minus, AlertCircle, Lock } from 'lucide-vue-next';
 
@@ -458,7 +459,7 @@ function unequipOne(equipmentId: string) {
                   class="text-[11px] px-2 py-0.5 rounded bg-grim-850 border border-grim-700 text-gold-300 font-medium cursor-help"
                   :title="rulesetStore.getSpecialRule(rule)?.description || rule"
                 >
-                  {{ rulesetStore.getSpecialRule(rule)?.name || rule }}
+                  {{ formatSpecialRuleName(rule, rulesetStore.getSpecialRule(rule)?.name, getActiveEquipment(fam)) }}
                 </span>
               </div>
 
