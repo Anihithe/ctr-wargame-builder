@@ -1074,5 +1074,100 @@ public class WarbandValidationTests
         Assert.False(result.IsValid);
         Assert.Contains(result.Messages, m => m.Code == ValidationCodes.MonstersLimitExceeded);
     }
+
+    [Fact]
+    public void Animal_Cannot_Equip_Items()
+    {
+        var warband = new Warband
+        {
+            FactionId = "alliance",
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter { CustomName = "Leader", Rank = 2, Role = OfficerRole.Leader },
+                new Fighter { CustomName = "Bras droit", Rank = 2, Role = OfficerRole.BrasDroit },
+                new Fighter
+                {
+                    CustomName = "Loup Équipé",
+                    Type = FighterType.Animal,
+                    Rank = 2,
+                    Equipments = [new EquippedItem { EquipmentId = "cac_1m_legere_1", SlotsOccupied = 1 }]
+                }
+            ]
+        };
+        var result = _validator.Validate(warband, _ruleset);
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Messages, m => m.Code == ValidationCodes.AnimalCannotEquipItems);
+    }
+
+    [Fact]
+    public void Animal_Cannot_Have_Specializations()
+    {
+        var warband = new Warband
+        {
+            FactionId = "alliance",
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter { CustomName = "Leader", Rank = 2, Role = OfficerRole.Leader },
+                new Fighter { CustomName = "Bras droit", Rank = 2, Role = OfficerRole.BrasDroit },
+                new Fighter
+                {
+                    CustomName = "Ours Spécialisé",
+                    Type = FighterType.Animal,
+                    Rank = 3,
+                    Specializations = [new FighterSpecialization { SpecializationId = "guerrier" }]
+                }
+            ]
+        };
+        var result = _validator.Validate(warband, _ruleset);
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Messages, m => m.Code == ValidationCodes.AnimalCannotHaveSpecialization);
+    }
+
+    [Fact]
+    public void Animal_Quota_Max_2_Standard_Allows_3_With_Druide()
+    {
+        // 1. Sans druide : 3 animaux -> dépassement du quota max 2
+        var wbWithoutDruid = new Warband
+        {
+            FactionId = "alliance",
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter { CustomName = "Leader", Rank = 2, Role = OfficerRole.Leader },
+                new Fighter { CustomName = "Bras droit", Rank = 2, Role = OfficerRole.BrasDroit },
+                new Fighter { CustomName = "Animal 1", Type = FighterType.Animal, Rank = 1 },
+                new Fighter { CustomName = "Animal 2", Type = FighterType.Animal, Rank = 1 },
+                new Fighter { CustomName = "Animal 3", Type = FighterType.Animal, Rank = 1 }
+            ]
+        };
+        var resWithout = _validator.Validate(wbWithoutDruid, _ruleset);
+        Assert.False(resWithout.IsValid);
+        Assert.Contains(resWithout.Messages, m => m.Code == ValidationCodes.AnimalsLimitExceeded);
+
+        // 2. Avec Druide : 3 animaux autorisés (+1 animal et +1 monstre)
+        var wbWithDruid = new Warband
+        {
+            FactionId = "alliance",
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter
+                {
+                    CustomName = "Leader Druide",
+                    Rank = 2,
+                    Role = OfficerRole.Leader,
+                    Specializations = [new FighterSpecialization { SpecializationId = "druide" }]
+                },
+                new Fighter { CustomName = "Bras droit", Rank = 2, Role = OfficerRole.BrasDroit },
+                new Fighter { CustomName = "Animal 1", Type = FighterType.Animal, Rank = 1 },
+                new Fighter { CustomName = "Animal 2", Type = FighterType.Animal, Rank = 1 },
+                new Fighter { CustomName = "Animal 3", Type = FighterType.Animal, Rank = 1 }
+            ]
+        };
+        var resWith = _validator.Validate(wbWithDruid, _ruleset);
+        Assert.True(resWith.IsValid, string.Join("; ", resWith.Messages.Select(m => m.Message)));
+    }
 }
 

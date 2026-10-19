@@ -32,6 +32,7 @@ export const ORIGIN_IDS = {
   Veterans: 'veterans',
   Tueurs: 'tueurs',
   BetesFeroces: 'betes_feroces',
+  MaitreDesBetes: 'maitre_des_betes',
   Sylvains: 'sylvains',
 } as const;
 
@@ -49,6 +50,7 @@ export const SPEC_IDS = {
   Druide: 'druide',
   Mage: 'mage',
   Bete: 'bete',
+  MaitreDesBetes: 'maitre_des_betes',
 } as const;
 
 export const TALENT_IDS = {
@@ -95,6 +97,9 @@ export const VALIDATION_CODES = {
   // Quotas
   Rank3QuotaExceeded: 'RANK3_QUOTA_EXCEEDED',
   MonsterQuotaExceeded: 'MONSTER_QUOTA_EXCEEDED',
+  AnimalsLimitExceeded: 'ANIMALS_LIMIT_EXCEEDED',
+  AnimalCannotHaveSpecialization: 'ANIMAL_CANNOT_HAVE_SPECIALIZATION',
+  AnimalCannotEquipItems: 'ANIMAL_CANNOT_EQUIP_ITEMS',
 
   // Equipment & slots
   SlotsExceeded: 'SLOTS_EXCEEDED',

@@ -158,7 +158,15 @@ export const useWarbandStore = defineStore('warband', () => {
 
       if (f.officerRole === 'Leader') {
         leaderCount++;
-        if (f.type === 'Monstre' && !faction?.canHaveMonstersAsOfficers) {
+        if (f.type === 'Animal') {
+          errors.push({
+            fighterId: f.id,
+            fighterName: f.name,
+            code: VALIDATION_CODES.AnimalCannotBeOfficer,
+            message: `L'animal "${f.name}" ne peut pas être un Leader.`,
+            severity: 'Error',
+          });
+        } else if (f.type === 'Monstre' && !faction?.canHaveMonstersAsOfficers) {
           errors.push({
             fighterId: f.id,
             fighterName: f.name,
@@ -169,7 +177,15 @@ export const useWarbandStore = defineStore('warband', () => {
         }
       } else if (f.officerRole === 'BrasDroit') {
         brasDroitCount++;
-        if (f.type === 'Monstre' && !faction?.canHaveMonstersAsOfficers) {
+        if (f.type === 'Animal') {
+          errors.push({
+            fighterId: f.id,
+            fighterName: f.name,
+            code: VALIDATION_CODES.AnimalCannotBeOfficer,
+            message: `L'animal "${f.name}" ne peut pas être un Bras droit.`,
+            severity: 'Error',
+          });
+        } else if (f.type === 'Monstre' && !faction?.canHaveMonstersAsOfficers) {
           errors.push({
             fighterId: f.id,
             fighterName: f.name,
@@ -220,6 +236,28 @@ export const useWarbandStore = defineStore('warband', () => {
           message: `La faction Monstruosité ne peut pas recruter de Combattant de Rang 1 sans l'origine Esclavagistes (${f.name}).`,
           severity: 'Error',
         });
+      }
+
+      // Animal restrictions: no specializations, no equipments
+      if (f.type === 'Animal') {
+        if (f.specializations.length > 0) {
+          errors.push({
+            fighterId: f.id,
+            fighterName: f.name,
+            code: VALIDATION_CODES.AnimalCannotHaveSpecialization,
+            message: `L'animal "${f.name}" ne peut pas avoir de spécialisation.`,
+            severity: 'Error',
+          });
+        }
+        if (f.equippedItems.length > 0) {
+          errors.push({
+            fighterId: f.id,
+            fighterName: f.name,
+            code: VALIDATION_CODES.AnimalCannotEquipItems,
+            message: `L'animal "${f.name}" ne peut pas porter d'équipement.`,
+            severity: 'Error',
+          });
+        }
       }
 
       // Monster specialization restriction: only Voie de la Bête allowed outside Monstruosite faction
@@ -560,11 +598,26 @@ export const useWarbandStore = defineStore('warband', () => {
       });
     }
 
+    const hasDruideOrMaitre = wb.fighters.some((f) =>
+      f.specializations.some((s) => s.specializationId === SPEC_IDS.Druide || s.specializationId === SPEC_IDS.MaitreDesBetes)
+    );
+
     const totalMonsters = wb.fighters.filter((f) => f.type === 'Monstre').length;
-    if (totalMonsters > 1 && !faction?.unlimitedMonsters) {
+    const maxMonsters = faction?.unlimitedMonsters ? Infinity : (rulesetStore.config?.maxMonsters || 1) + (hasDruideOrMaitre ? 1 : 0);
+    if (totalMonsters > maxMonsters) {
       errors.push({
         code: VALIDATION_CODES.MonsterQuotaExceeded,
-        message: `La bande compte ${totalMonsters} monstres dans la liste (maximum autorisé hors faction Monstruosité: 1).`,
+        message: `La bande compte ${totalMonsters} monstres dans la liste (maximum autorisé: ${maxMonsters}).`,
+        severity: 'Error',
+      });
+    }
+
+    const totalAnimals = wb.fighters.filter((f) => f.type === 'Animal').length;
+    const maxAnimals = (rulesetStore.config?.maxAnimals || 2) + (hasDruideOrMaitre ? 1 : 0);
+    if (totalAnimals > maxAnimals) {
+      errors.push({
+        code: VALIDATION_CODES.AnimalsLimitExceeded,
+        message: `La bande compte ${totalAnimals} animaux dans la liste (maximum autorisé: ${maxAnimals}).`,
         severity: 'Error',
       });
     }
@@ -873,6 +926,10 @@ export const useWarbandStore = defineStore('warband', () => {
     updateFighter(fighterId, { godGiftStat: stat });
   }
 
+  function setFighterAnimalSpeciesBonus(fighterId: string, bonusId: string | undefined) {
+    updateFighter(fighterId, { animalSpeciesBonusId: bonusId });
+  }
+
   // Equipment actions
   function equipItem(fighterId: string, itemId: string, isMagicItem = false) {
     if (!currentWarband.value) return;
@@ -1065,6 +1122,7 @@ export const useWarbandStore = defineStore('warband', () => {
     duplicateFighter,
     updateFighter,
     setFighterGodGift,
+    setFighterAnimalSpeciesBonus,
     equipItem,
     unequipItem,
     toggleTalent,

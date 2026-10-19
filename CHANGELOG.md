@@ -3,6 +3,27 @@
 Toutes les modifications notables apportées à ce projet sont documentées dans ce fichier.
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet adhère à [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [0.5.3-beta] - 2026-10-19
+
+### 🐾 Règles Complètes des Animaux, Bonus d'Espèce & Armes Naturelles
+- **Règles Spécifiques des Animaux (Backend .NET & Frontend Vue 3)** :
+  - **Quota strict dans la liste** : limitation à **2 Animaux maximum dans la liste** (sur table et réserve confondues), extensible à 3 si un combattant de la bande possède la spécialisation **Druide** (+1 Monstre et +1 Animal).
+  - **Restrictions d'officiers** : interdiction absolue pour un Animal d'être désigné comme Officier (Leader ou Bras droit).
+  - **Restrictions d'équipement & XP** : un Animal possède 0 emplacement d'équipement. Il ne peut porter aucun équipement (armes, armures, boucliers, objets magiques), ne peut acquérir aucune spécialisation ni apprendre de sorts, et ne dépense pas d'XP.
+  - **Armes Naturelles** : un Animal est équipé nativement de **deux armes naturelles de Pugilat (Griffes & Crocs x2)** :
+    - Bonus Origine *Bêtes féroces* : ajout de `Perce-armure (1)` aux armes et +1 PV au profil de base.
+    - Bonus Origine *Maître des Bêtes* : ajout de la règle spéciale `Acérée` aux armes et activation gratuite par les Officiers.
+  - **Bonus d'Espèce interactif** : sélection d'un bonus d'espèce parmi les 4 options réglementaires :
+    - `+2 Mouvement` (`mouvement_plus_2`) : bonus direct au profil de déplacement.
+    - `+1 Mouvement et +1 Protection` (`mvt_prot_plus_1`) : bonus de déplacement et +1 Protection totale.
+    - `Vol/bond` (`vol_bond`) : franchissement et déplacement vertical.
+    - `Bonus de charge : +2 dés d'attaque` (`bonus_charge_2_des`) : bonus d'attaque en charge.
+  - **Suite de tests xUnit** : extension de 36 à **39 tests automatisés (100% verts)** couvrant l'ensemble des règles relatives aux Animaux.
+- **Interface Utilisateur & Expérience Joueur** :
+  - **Panneau Inspecteur (`InspectorPanel.vue`)** : masquage de la carte XP/Évolution et des Spécialisations pour les Animaux, remplacement par une fiche dédiée **"Espèce & Armes Naturelles"** avec sélecteur de bonus d'espèce et aperçu dynamique des armes naturelles avec badges de règles actives.
+  - **Liste des Combattants (`FighterList.vue`)** : gestion des quotas dynamiques d'Animaux et de Monstres (affichage `Max X atteint` et désactivation des boutons de recrutement au plafond), et affichage du badge `🐾 [Bonus d'Espèce]` sur les cartes de troupes.
+  - **Exports Texte, Discord & Cartes Imprimables (`exportEngine.ts` & `ExportWarbandModal.vue`)** : intégration automatique de `Pugilat (Griffes & Crocs) x2` avec traits d'origines et descriptif du bonus d'espèce dans toutes les sorties d'exportation.
+
 ## [0.5.2-beta] - 2026-10-19
 
 ### 🐉 Règles Spécifiques des Monstres & Précision Finale de la Maîtrise

@@ -72,17 +72,22 @@ public class WarbandValidator : IWarbandValidator
         }
 
         // 6. Quotas Spéciaux (Monstres et Animaux)
+        var hasDruideOrMaitre = warband.Fighters.Any(f => f.Specializations.Any(s =>
+            string.Equals(s.SpecializationId, RuleConstants.Specializations.Druide, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(s.SpecializationId, RuleConstants.Specializations.MaitreDesBetes, StringComparison.OrdinalIgnoreCase)));
+
         var monsterCount = warband.Fighters.Count(f => f.Type == FighterType.Monster);
-        var maxMonsters = faction.UnlimitedMonsters ? int.MaxValue : ruleset.Config.MaxMonsters;
+        var maxMonsters = faction.UnlimitedMonsters ? int.MaxValue : (ruleset.Config.MaxMonsters + (hasDruideOrMaitre ? 1 : 0));
         if (monsterCount > maxMonsters)
         {
-            result.AddError(ValidationCodes.MonstersLimitExceeded, $"La bande ne peut recruter que {ruleset.Config.MaxMonsters} Monstre au maximum dans la liste (actuel : {monsterCount}).");
+            result.AddError(ValidationCodes.MonstersLimitExceeded, $"La bande ne peut recruter que {maxMonsters} Monstre{(maxMonsters > 1 ? "s" : "")} au maximum dans la liste (actuel : {monsterCount}).");
         }
 
-        var animalCount = activeFighters.Count(f => f.Type == FighterType.Animal);
-        if (animalCount > ruleset.Config.MaxAnimals)
+        var animalCount = warband.Fighters.Count(f => f.Type == FighterType.Animal);
+        var maxAnimals = ruleset.Config.MaxAnimals + (hasDruideOrMaitre ? 1 : 0);
+        if (animalCount > maxAnimals)
         {
-            result.AddError(ValidationCodes.AnimalsLimitExceeded, $"La bande ne peut recruter que {ruleset.Config.MaxAnimals} Animaux au maximum sur table (actuel : {animalCount}).");
+            result.AddError(ValidationCodes.AnimalsLimitExceeded, $"La bande ne peut recruter que {maxAnimals} Animaux au maximum dans la liste (actuel : {animalCount}).");
         }
 
         // 7. Validation par Combattant
@@ -194,6 +199,19 @@ public class WarbandValidator : IWarbandValidator
             else if (fighter.Type == FighterType.Monster && !faction.CanHaveMonstersAsOfficers)
             {
                 result.AddError(ValidationCodes.MonsterCannotBeOfficer, $"Le monstre '{name}' ne peut pas être Officier pour la faction {faction.Name}.", fighter.Id);
+            }
+        }
+
+        // Restrictions Animal
+        if (fighter.Type == FighterType.Animal)
+        {
+            if (fighter.Specializations.Count > 0)
+            {
+                result.AddError(ValidationCodes.AnimalCannotHaveSpecialization, $"L'animal '{name}' ne peut pas avoir de spécialisation.", fighter.Id);
+            }
+            if (fighter.Equipments.Count > 0)
+            {
+                result.AddError(ValidationCodes.AnimalCannotEquipItems, $"L'animal '{name}' ne peut pas porter d'équipement.", fighter.Id);
             }
         }
 

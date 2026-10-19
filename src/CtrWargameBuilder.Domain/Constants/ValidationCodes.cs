@@ -15,6 +15,8 @@ public static class ValidationCodes
     public const string BrasDroitRequired = "BRAS_DROIT_REQUIRED";
     public const string BrasDroitLimitExceeded = "BRAS_DROIT_LIMIT_EXCEEDED";
     public const string AnimalCannotBeOfficer = "ANIMAL_CANNOT_BE_OFFICER";
+    public const string AnimalCannotHaveSpecialization = "ANIMAL_CANNOT_HAVE_SPECIALIZATION";
+    public const string AnimalCannotEquipItems = "ANIMAL_CANNOT_EQUIP_ITEMS";
     public const string MonsterCannotBeOfficer = "MONSTER_CANNOT_BE_OFFICER";
 
     // Quotas
