@@ -13,6 +13,8 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
   - Aligné sur une grille 3 colonnes identique aux combattants de base.
 - **Correction du Rang des Monstres** :
   - Attribution correcte du Rang 4 (au lieu de 3) lors du recrutement de monstres comme troupes ou officiers.
+- **Nettoyage des Labels de Boutons** :
+  - Suppression du caractère `+` redondant dans les libellés de boutons de la fiche combattant : "Ajouter potion/relique" et "Voie / Spécialisation" (qui possèdent déjà leur icône Plus dédiée).
 - **Validation Monstruosité & Troupes Rang 1** :
   - Maintien et contrôle de la restriction de faction : le Rang 1 Guerrier reste verrouillé pour la Monstruosité sauf si l'origine *Esclavagistes* est active, et les officiers de la Monstruosité restent interdits au Rang 1.
 

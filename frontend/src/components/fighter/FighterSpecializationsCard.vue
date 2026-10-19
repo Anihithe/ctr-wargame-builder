@@ -80,12 +80,12 @@ function onRemoveSpecialization(specId: string) {
         :title="fighter.specializations.length >= 2 ? 'Maximum 2 spécialisations atteint' : fighterAvailableXp < 6 ? 'XP disponible insuffisant pour choisir une voie' : 'Choisir une nouvelle voie'"
       >
         <Plus class="w-3.5 h-3.5" />
-        <span>+ Voie / Spécialisation</span>
+        <span>Voie / Spécialisation</span>
       </button>
     </div>
 
     <div v-if="fighter.specializations.length === 0" class="text-xs text-grim-400 italic bg-grim-850 p-4 rounded text-center border border-dashed border-grim-800">
-      Aucune spécialisation choisie. Cliquez sur "+ Voie / Spécialisation" pour adopter une discipline martiale ou magique.
+      Aucune spécialisation choisie. Cliquez sur "Voie / Spécialisation" pour adopter une discipline martiale ou magique.
     </div>
 
     <div v-else class="space-y-4">

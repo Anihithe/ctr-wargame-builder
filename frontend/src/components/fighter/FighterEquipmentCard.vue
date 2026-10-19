@@ -139,7 +139,7 @@ const currentSlotsUsed = computed(() => {
         class="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-purple-950/80 hover:bg-purple-900/80 border border-purple-700 text-purple-200 rounded transition cursor-pointer active:scale-95"
       >
         <Plus class="w-3.5 h-3.5" />
-        <span>+ Ajouter potion/relique</span>
+        <span>Ajouter potion/relique</span>
       </button>
     </div>
   </div>
