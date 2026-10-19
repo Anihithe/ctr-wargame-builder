@@ -7,6 +7,7 @@ import {
   calculateFighterGoldCost,
   doesWeaponHaveMaitrise,
 } from '@/domain/rulesEngine';
+import { ORIGIN_IDS } from '@/constants/rules';
 
 export interface ExportOptions {
   listType: 'regular' | 'compact' | 'minimal';
@@ -103,6 +104,31 @@ export function generateTextExport(
 
     // Specializations & Talents
     const talentNames: string[] = [];
+    if (f.type === 'Animal') {
+      let natWeapon = 'Pugilat (Griffes & Crocs) x2';
+      const traits: string[] = [];
+      if (warband.selectedOriginIds?.includes(ORIGIN_IDS.BetesFeroces)) {
+        traits.push('PA(1)');
+      }
+      if (warband.selectedOriginIds?.includes(ORIGIN_IDS.MaitreDesBetes)) {
+        traits.push('Acérée');
+      }
+      if (traits.length > 0) {
+        natWeapon += ` [${traits.join(', ')}]`;
+      }
+      formattedWeapons.push(natWeapon);
+
+      if (f.animalSpeciesBonusId) {
+        const sp = rulesetStore.getAnimalSpeciesBonus(f.animalSpeciesBonusId);
+        if (sp) {
+          talentNames.push(`Espèce : ${sp.name}`);
+        }
+      }
+      if (warband.selectedOriginIds?.includes(ORIGIN_IDS.MaitreDesBetes)) {
+        talentNames.push('Activation gratuite (Officiers)');
+      }
+    }
+
     for (const sp of f.specializations) {
       const specDef = rulesetStore.getSpecialization(sp.specializationId);
       for (const tid of sp.acquiredTalentIds) {

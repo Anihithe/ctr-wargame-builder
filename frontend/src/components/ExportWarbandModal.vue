@@ -18,6 +18,7 @@ import {
   calculateMaxSlots,
   calculateCurrentSlotsUsed,
 } from '@/domain/rulesEngine';
+import { ORIGIN_IDS } from '@/constants/rules';
 import {
   X,
   Copy,
@@ -124,6 +125,26 @@ const printableFighters = computed(() => {
 
 // Helper for card weapons
 function getFighterWeaponsForCard(f: Fighter) {
+  if (f.type === 'Animal') {
+    const rulesFormatted: string[] = ['Pugilat'];
+    if (warband.value?.selectedOriginIds?.includes(ORIGIN_IDS.BetesFeroces)) {
+      rulesFormatted.push('Perce-armure (1)');
+    }
+    if (warband.value?.selectedOriginIds?.includes(ORIGIN_IDS.MaitreDesBetes)) {
+      rulesFormatted.push('Acérée');
+    }
+    return [
+      {
+        item: { name: 'Pugilat (Griffes & Crocs)' } as any,
+        name: 'Pugilat (Griffes & Crocs) x 2',
+        range: 'CàC',
+        puissance: '0',
+        precision: '0',
+        specialRules: rulesFormatted,
+      },
+    ];
+  }
+
   const list: {
     item: Equipment;
     name: string;
@@ -168,6 +189,23 @@ function getFighterWeaponsForCard(f: Fighter) {
 // Helper for fighter talents & abilities
 function getFighterAbilities(f: Fighter) {
   const abilities: { name: string; description: string }[] = [];
+
+  // Animal Species Bonus & traits
+  if (f.type === 'Animal' && f.animalSpeciesBonusId) {
+    const sp = rulesetStore.getAnimalSpeciesBonus(f.animalSpeciesBonusId);
+    if (sp) {
+      abilities.push({
+        name: `Bonus d'Espèce : ${sp.name}`,
+        description: sp.description || (sp.modifiers ? Object.entries(sp.modifiers).map(([k, v]) => `+${v} ${k}`).join(', ') : sp.name),
+      });
+    }
+  }
+  if (f.type === 'Animal' && warband.value?.selectedOriginIds?.includes(ORIGIN_IDS.MaitreDesBetes)) {
+    abilities.push({
+      name: 'Activation Gratuite (Maître des Bêtes)',
+      description: 'Peut être activé gratuitement par vos Officiers.',
+    });
+  }
 
   // Talents
   for (const sp of f.specializations) {

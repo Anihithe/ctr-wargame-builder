@@ -693,5 +693,36 @@ export function calculateFighterGoldCost(
   return cost;
 }
 
+/**
+ * Calculates total armor/protection bonus for a fighter from equipment, talents, and animal species bonuses.
+ */
+export function calculateTotalArmorBonus(
+  fighter: Fighter,
+  rulesetStore: {
+    getEquipment?: (id: string) => any;
+    getAnimalSpeciesBonus?: (id: string) => any;
+  },
+): number {
+  let bonus = 0;
+  for (const eq of fighter.equippedItems) {
+    if (!eq.isMagicItem && rulesetStore.getEquipment) {
+      const item = rulesetStore.getEquipment(eq.equipmentId);
+      if (item) bonus += item.protection || 0;
+    }
+  }
+  for (const sp of fighter.specializations) {
+    if (sp.acquiredTalentIds.includes('peau_ecailleuse')) bonus += 1;
+    if (sp.acquiredTalentIds.includes('machine_de_metal')) bonus += 2;
+    if (sp.acquiredTalentIds.includes('armure_mecanique')) bonus += 2;
+  }
+  if (fighter.animalSpeciesBonusId && rulesetStore.getAnimalSpeciesBonus) {
+    const spBonus = rulesetStore.getAnimalSpeciesBonus(fighter.animalSpeciesBonusId);
+    if (spBonus?.modifiers?.protection) {
+      bonus += spBonus.modifiers.protection;
+    }
+  }
+  return bonus;
+}
+
 
 

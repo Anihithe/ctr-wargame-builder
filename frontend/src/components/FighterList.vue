@@ -4,7 +4,7 @@ import { useWarbandStore } from '@/stores/warbandStore';
 import { useRulesetStore } from '@/stores/rulesetStore';
 import type { Fighter, FighterType, FighterStatus, OfficerRole } from '@/types/warband';
 import { THEME } from '@/constants/theme';
-import { FACTION_IDS, ORIGIN_IDS } from '@/constants/rules';
+import { FACTION_IDS, ORIGIN_IDS, SPEC_IDS } from '@/constants/rules';
 import { hasFighterMaitrise as checkMaitriseEngine, cleanEquipmentName } from '@/domain/rulesEngine';
 import {
   UserPlus,
@@ -126,6 +126,21 @@ function getFighterTalents(f: Fighter) {
 }
 
 function getFighterWeapons(f: Fighter) {
+  if (f.type === 'Animal') {
+    let label = 'Pugilat (Griffes & Crocs) x2';
+    const traits: string[] = [];
+    if (warband.value?.selectedOriginIds?.includes(ORIGIN_IDS.BetesFeroces)) {
+      traits.push('PA(1)');
+    }
+    if (warband.value?.selectedOriginIds?.includes(ORIGIN_IDS.MaitreDesBetes)) {
+      traits.push('Acérée');
+    }
+    if (traits.length > 0) {
+      label += ` [${traits.join(', ')}]`;
+    }
+    return [{ id: 'animal-pugilat', name: label }];
+  }
+
   const counts = new Map<string, { count: number; name: string }>();
   for (const eq of f.equippedItems) {
     if (eq.isMagicItem) continue;
@@ -226,15 +241,41 @@ const canRecruitRank1 = computed(() => {
   return true;
 });
 
+const hasDruideOrMaitre = computed(() => {
+  if (!warband.value) return false;
+  return warband.value.fighters.some((f) =>
+    f.specializations.some((s) => s.specializationId === SPEC_IDS.Druide || s.specializationId === SPEC_IDS.MaitreDesBetes)
+  );
+});
+
 const totalMonstersInWarband = computed(() => {
   if (!warband.value) return 0;
   return warband.value.fighters.filter((f) => f.type === 'Monstre').length;
 });
 
+const maxMonstersInWarband = computed(() => {
+  if (!warband.value) return 1;
+  if (warband.value.factionId === FACTION_IDS.Monstruosite) return Infinity;
+  return (rulesetStore.config?.maxMonsters || 1) + (hasDruideOrMaitre.value ? 1 : 0);
+});
+
 const canRecruitMonster = computed(() => {
   if (!warband.value) return true;
-  if (warband.value.factionId === FACTION_IDS.Monstruosite) return true;
-  return totalMonstersInWarband.value === 0;
+  return totalMonstersInWarband.value < maxMonstersInWarband.value;
+});
+
+const totalAnimalsInWarband = computed(() => {
+  if (!warband.value) return 0;
+  return warband.value.fighters.filter((f) => f.type === 'Animal').length;
+});
+
+const maxAnimalsInWarband = computed(() => {
+  return (rulesetStore.config?.maxAnimals || 2) + (hasDruideOrMaitre.value ? 1 : 0);
+});
+
+const canRecruitAnimal = computed(() => {
+  if (!warband.value) return true;
+  return totalAnimalsInWarband.value < maxAnimalsInWarband.value;
 });
 </script>
 
@@ -787,8 +828,8 @@ const canRecruitMonster = computed(() => {
             </button>
 
             <div class="border-t border-grim-800 pt-1.5 text-[11px] font-semibold text-grim-400 uppercase tracking-wider px-2 flex items-center justify-between">
-              <span>Monstres (Max 1)</span>
-              <span v-if="!canRecruitMonster" class="text-[10px] text-crimson-400 font-normal">Max 1 atteint</span>
+              <span>Monstres (Max {{ maxMonstersInWarband === Infinity ? '∞' : maxMonstersInWarband }})</span>
+              <span v-if="!canRecruitMonster" class="text-[10px] text-crimson-400 font-normal">Max {{ maxMonstersInWarband }} atteint</span>
             </div>
             <button
               v-for="m in rulesetStore.currentRuleset.monsters"
@@ -797,7 +838,7 @@ const canRecruitMonster = computed(() => {
               @click="recruitTroop('Monstre', 4, m.id)"
               class="w-full flex items-center justify-between px-3 py-1.5 text-xs rounded transition"
               :class="canRecruitMonster ? 'hover:bg-grim-800 text-purple-200' : 'opacity-40 cursor-not-allowed text-grim-500'"
-              :title="canRecruitMonster ? '' : 'Maximum 1 Monstre dans la liste pour cette faction'"
+              :title="canRecruitMonster ? '' : `Maximum ${maxMonstersInWarband} Monstre dans la liste`"
             >
               <div class="flex items-center gap-2">
                 <span class="px-1.5 py-0.5 rounded bg-purple-950 text-purple-300 text-[10px] font-bold">M</span>
@@ -806,14 +847,18 @@ const canRecruitMonster = computed(() => {
               <span class="font-mono text-gold-400 font-bold">4 PO</span>
             </button>
 
-            <div class="border-t border-grim-800 pt-1.5 text-[11px] font-semibold text-grim-400 uppercase tracking-wider px-2">
-              Animaux
+            <div class="border-t border-grim-800 pt-1.5 text-[11px] font-semibold text-grim-400 uppercase tracking-wider px-2 flex items-center justify-between">
+              <span>Animaux (Max {{ maxAnimalsInWarband }})</span>
+              <span v-if="!canRecruitAnimal" class="text-[10px] text-crimson-400 font-normal">Max {{ maxAnimalsInWarband }} atteint</span>
             </div>
             <button
               v-for="r in [1, 2, 3]"
               :key="r"
+              :disabled="!canRecruitAnimal"
               @click="recruitTroop('Animal', r, `animal-r${r}`)"
-              class="w-full flex items-center justify-between px-3 py-1.5 text-xs rounded hover:bg-grim-800 text-emerald-200 transition"
+              class="w-full flex items-center justify-between px-3 py-1.5 text-xs rounded transition"
+              :class="canRecruitAnimal ? 'hover:bg-grim-800 text-emerald-200' : 'opacity-40 cursor-not-allowed text-grim-500'"
+              :title="canRecruitAnimal ? '' : `Maximum ${maxAnimalsInWarband} Animaux dans la liste`"
             >
               <div class="flex items-center gap-2">
                 <span class="px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 text-[10px] font-bold">A{{ r }}</span>
@@ -908,6 +953,14 @@ const canRecruitMonster = computed(() => {
               class="text-[10px] px-1.5 py-0.5 rounded bg-blue-950/60 border border-blue-800/60 text-blue-300"
             >
               {{ t.name }}
+            </span>
+
+            <!-- Bonus d'espèce (Animaux) -->
+            <span
+              v-if="f.type === 'Animal' && f.animalSpeciesBonusId"
+              class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950/70 border border-emerald-600/70 text-emerald-200 flex items-center gap-1 font-mono"
+            >
+              🐾 {{ rulesetStore.getAnimalSpeciesBonus(f.animalSpeciesBonusId)?.name || f.animalSpeciesBonusId }}
             </span>
 
             <!-- 3. Armes -->
