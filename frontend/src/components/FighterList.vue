@@ -225,6 +225,17 @@ const canRecruitRank1 = computed(() => {
   }
   return true;
 });
+
+const totalMonstersInWarband = computed(() => {
+  if (!warband.value) return 0;
+  return warband.value.fighters.filter((f) => f.type === 'Monstre').length;
+});
+
+const canRecruitMonster = computed(() => {
+  if (!warband.value) return true;
+  if (warband.value.factionId === FACTION_IDS.Monstruosite) return true;
+  return totalMonstersInWarband.value === 0;
+});
 </script>
 
 <template>
@@ -775,14 +786,18 @@ const canRecruitRank1 = computed(() => {
               <span class="font-mono text-gold-400 font-bold">3 PO</span>
             </button>
 
-            <div class="border-t border-grim-800 pt-1.5 text-[11px] font-semibold text-grim-400 uppercase tracking-wider px-2">
-              Monstres (Max 1)
+            <div class="border-t border-grim-800 pt-1.5 text-[11px] font-semibold text-grim-400 uppercase tracking-wider px-2 flex items-center justify-between">
+              <span>Monstres (Max 1)</span>
+              <span v-if="!canRecruitMonster" class="text-[10px] text-crimson-400 font-normal">Max 1 atteint</span>
             </div>
             <button
               v-for="m in rulesetStore.currentRuleset.monsters"
               :key="m.id"
+              :disabled="!canRecruitMonster"
               @click="recruitTroop('Monstre', 4, m.id)"
-              class="w-full flex items-center justify-between px-3 py-1.5 text-xs rounded hover:bg-grim-800 text-purple-200 transition"
+              class="w-full flex items-center justify-between px-3 py-1.5 text-xs rounded transition"
+              :class="canRecruitMonster ? 'hover:bg-grim-800 text-purple-200' : 'opacity-40 cursor-not-allowed text-grim-500'"
+              :title="canRecruitMonster ? '' : 'Maximum 1 Monstre dans la liste pour cette faction'"
             >
               <div class="flex items-center gap-2">
                 <span class="px-1.5 py-0.5 rounded bg-purple-950 text-purple-300 text-[10px] font-bold">M</span>

@@ -3,7 +3,8 @@ import { ref, computed } from 'vue';
 import { useWarbandStore } from '@/stores/warbandStore';
 import { useRulesetStore } from '@/stores/rulesetStore';
 import type { Specialization } from '@/types/ruleset';
-import { Flame, X, Check, AlertCircle, Trash2, Sparkles, Dices } from 'lucide-vue-next';
+import { Flame, X, Check, AlertCircle, Trash2, Sparkles, Dices, PawPrint } from 'lucide-vue-next';
+import { SPEC_IDS, FACTION_IDS } from '@/constants/rules';
 
 const props = defineProps<{
   fighterId: string;
@@ -19,7 +20,26 @@ const rulesetStore = useRulesetStore();
 const warband = computed(() => warbandStore.currentWarband);
 const fighter = computed(() => warband.value?.fighters.find((f) => f.id === props.fighterId));
 
-const allSpecializations = computed(() => rulesetStore.currentRuleset.specializations || []);
+const isMonster = computed(() => fighter.value?.type === 'Monstre');
+const isMonstruositeFaction = computed(() => warband.value?.factionId === FACTION_IDS.Monstruosite);
+
+const filteredSpecializations = computed(() => {
+  const specs = rulesetStore.currentRuleset.specializations || [];
+  if (!fighter.value) return [];
+
+  // Case 1: Monster outside Monstruosite faction -> only Voie de la Bête
+  if (isMonster.value && !isMonstruositeFaction.value) {
+    return specs.filter((s) => s.id === SPEC_IDS.Bete);
+  }
+
+  // Case 2: Non-Monster fighter -> all specializations EXCEPT Voie de la Bête (reserved for Monsters)
+  if (!isMonster.value) {
+    return specs.filter((s) => s.id !== SPEC_IDS.Bete);
+  }
+
+  // Case 3: Monster in Monstruosite faction -> all specializations accessible (rule Peuple de Colosses)
+  return specs;
+});
 
 // Don des Dieux (Ordre du Temple)
 const hasGodGiftActive = computed(
@@ -272,10 +292,21 @@ function unchooseSpecialization(specId: string) {
         </div>
       </div>
 
+      <!-- Monster Voie de la Bête restriction banner -->
+      <div v-if="isMonster && !isMonstruositeFaction" class="px-5 py-3 border-b border-purple-900/40 bg-purple-950/30 flex items-start gap-2.5 text-xs text-purple-200">
+        <PawPrint class="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+        <div>
+          <span class="font-bold text-purple-300">Règle de limitation des Monstres :</span>
+          <p class="text-purple-200/90 mt-0.5">
+            Hors faction <em>La Monstruosité</em>, un Monstre n'a accès qu'à la <strong>Voie de la Bête</strong>.
+          </p>
+        </div>
+      </div>
+
       <!-- Specializations Grid -->
       <div class="p-5 overflow-y-auto max-h-[calc(90vh-180px)] space-y-3">
         <div
-          v-for="spec in allSpecializations"
+          v-for="spec in filteredSpecializations"
           :key="spec.id"
           class="p-4 rounded-lg border transition space-y-3 select-none"
           :class="
