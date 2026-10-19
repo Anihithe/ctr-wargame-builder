@@ -152,6 +152,12 @@ export function calculateEffectiveRank(
     rank += 1;
   }
 
+  // Monster weapon level caps (Heavy weapons max level 3, other weapons / protections max level 2, unless Veterans origin)
+  if (fighter.type === 'Monstre' && !origins.includes(ORIGIN_IDS.Veterans)) {
+    const isHeavy = eq.subCategory?.includes('lourde');
+    rank = Math.min(rank, isHeavy ? 3 : 2);
+  }
+
   return rank;
 }
 
@@ -172,7 +178,18 @@ export function getEquipmentEquipError(
     return "Un Animal ne peut pas porter d'équipement (armes de pugilat naturelles)";
   }
 
-  // 2. Excellence Faction Restriction (Réflexes surhumains)
+  // 2. Monster Equipment Restrictions (unless Veterans origin)
+  if (fighter.type === 'Monstre' && !origins.includes(ORIGIN_IDS.Veterans)) {
+    const isHeavy = eq.subCategory?.includes('lourde');
+    if (isHeavy && eq.level > 3) {
+      return 'Monstre : les armes lourdes sont limitées au niveau 3 maximum';
+    }
+    if (!isHeavy && eq.level > 2) {
+      return 'Monstre : les armes, armures et boucliers sont limités au niveau 2 maximum';
+    }
+  }
+
+  // 3. Excellence Faction Restriction (Réflexes surhumains)
   const isExcellence = warband?.factionId === FACTION_IDS.Excellence;
   const hasGardesRoyaux = origins.includes(ORIGIN_IDS.GardesRoyaux);
   if (isExcellence && (eq.category === EQUIPMENT_CATEGORIES.Armor || eq.category === EQUIPMENT_CATEGORIES.Shield) && !hasGardesRoyaux) {
@@ -283,8 +300,11 @@ export function canEquipEquipment(
 
 /**
  * Checks whether a specific weapon qualifies for the Maîtrise rule:
- * 1. If the fighter has at least 1 free slot: all equipped weapons qualify for Maîtrise.
- * 2. If the fighter has 0 free slots: only weapons of level <= 3 where the fighter has effective rank > 3 qualify.
+ * - Must be Melee or Ranged weapon.
+ * - Fighter MUST have access to Rank 4 (effective rank >= 4) for this weapon's category.
+ * - AND either:
+ *   1. Fighter has at least 1 free slot (1 main libre).
+ *   2. OR the weapon is of level <= 3.
  */
 export function doesWeaponHaveMaitrise(
   fighter: Fighter,
@@ -301,19 +321,22 @@ export function doesWeaponHaveMaitrise(
     return false;
   }
 
-  // 1. If fighter has at least 1 free slot, Maîtrise applies to all weapon attacks
+  // Fighter MUST have access to Rank 4 (effRank >= 4) for this weapon
+  const effRank = calculateEffectiveRank(fighter, weapon, warband);
+  if (effRank < 4) {
+    return false;
+  }
+
+  // 1. If fighter has at least 1 free slot (main libre), Maîtrise applies to this eligible weapon
   const maxSlots = calculateMaxSlots(fighter, warband, rulesetStore?.config?.slotsByRank);
   const usedSlots = rulesetStore && rulesetStore.getEquipment ? calculateCurrentSlotsUsed(fighter, rulesetStore as any) : 0;
   if (maxSlots - usedSlots > 0) {
     return true;
   }
 
-  // 2. Second case (0 free slots): weapon level <= 3 AND access to level > 3 (effective rank > 3)
+  // 2. If slots are full (0 free slots), only weapons of level <= 3 qualify
   if (weapon.level <= 3) {
-    const effRank = calculateEffectiveRank(fighter, weapon, warband);
-    if (effRank > 3) {
-      return true;
-    }
+    return true;
   }
 
   return false;
@@ -321,8 +344,8 @@ export function doesWeaponHaveMaitrise(
 
 /**
  * Checks if a fighter qualifies for the Maîtrise rule:
- * - Has at least 1 free slot (all attacks qualify)
- * - OR equips at least one weapon of level <= 3 in a category where they have access to level > 3.
+ * Must have at least one equipped weapon that qualifies for Maîtrise.
+ * A fighter with no equipped weapon cannot have Maîtrise.
  */
 export function hasFighterMaitrise(
   fighter: Fighter,
@@ -334,25 +357,7 @@ export function hasFighterMaitrise(
   },
 ): boolean {
   if (fighter.type === 'Animal') return false;
-
-  // 1. Free slot
-  const maxSlots = calculateMaxSlots(fighter, warband, rulesetStore?.config?.slotsByRank);
-  const usedSlots = rulesetStore && rulesetStore.getEquipment ? calculateCurrentSlotsUsed(fighter, rulesetStore as any) : 0;
-  if (maxSlots - usedSlots > 0) return true;
-
-  // 2. Equipped weapon <= 3 with effective rank > 3
-  if (rulesetStore && rulesetStore.getEquipment) {
-    for (const eq of fighter.equippedItems) {
-      if (eq.isMagicItem) continue;
-      const item = rulesetStore.getEquipment(eq.equipmentId);
-      if (!item) continue;
-      if (doesWeaponHaveMaitrise(fighter, item, warband, rulesetStore)) {
-        return true;
-      }
-    }
-  }
-
-  return false;
+  return getFighterMaitriseWeapons(fighter, warband, rulesetStore).length > 0;
 }
 
 /**

@@ -3,6 +3,19 @@
 Toutes les modifications notables apportées à ce projet sont documentées dans ce fichier.
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet adhère à [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [0.5.2-beta] - 2026-10-19
+
+### 🐉 Règles Spécifiques des Monstres & Précision Finale de la Maîtrise
+- **Règles Spécifiques des Monstres (Backend .NET & Frontend Vue 3)** :
+  - **Limitation d'accès aux Spécialisations** : hors faction *La Monstruosité*, un Monstre n'a accès qu'à la **Voie de la Bête** (et réciproquement, la Voie de la Bête est strictement réservée aux Monstres).
+  - **Plafond d'Équipement** : un Monstre est limité aux **armes lourdes de niveau 3 maximum**, et à un **niveau 2 maximum pour toutes les autres armes, armures et boucliers** (s'applique aussi à *La Monstruosité*, sauf déblocage via l'Origine *Vétérans*).
+  - **Quota strict dans la liste** : limitation à **1 seul Monstre dans toute la liste** (sur table et réserve confondues) hors faction *La Monstruosité*.
+  - **Restrictions d'officiers** : interdiction absolue d'assigner un Monstre comme Leader ou Bras droit hors faction *La Monstruosité*.
+  - **Suite de tests xUnit** : extension de 32 à **36 tests automatisés (100% verts)** couvrant l'ensemble de ces règles.
+- **Règle Spéciale Maîtrise** :
+  - **Élimination du faux positif à mains nues** : un combattant sans aucune arme équipée ne bénéficie plus de la Maîtrise par le simple fait d'avoir des slots libres.
+  - **Exigence d'accès au Rang 4** : pour bénéficier de la Maîtrise (avec une main libre ou avec une arme de niveau $\le 3$), le combattant doit obligatoirement avoir accès au Rang 4 pour cette arme.
+
 ## [0.5.1-beta] - 2026-10-19
 
 ### ⚔️ Correction & Précision de la Règle Spéciale Maîtrise

@@ -40,6 +40,10 @@ public static class ValidationCodes
     public const string ArmorForbiddenFaction = "ARMOR_FORBIDDEN_FACTION";
     public const string GoulesCannotWearArmor = "GOULES_CANNOT_WEAR_ARMOR";
     public const string MonstruositeRank1RequiresEsclavagistes = "MONSTRUOSITE_RANK_1_REQUIRES_ESCLAVAGISTES";
+    public const string MonsterSpecializationRestricted = "MONSTER_SPECIALIZATION_RESTRICTED";
+    public const string BeteRestrictedToMonsters = "BETE_RESTRICTED_TO_MONSTERS";
+    public const string MonsterHeavyWeaponLevelExceeded = "MONSTER_HEAVY_WEAPON_LEVEL_EXCEEDED";
+    public const string MonsterEquipmentLevelExceeded = "MONSTER_EQUIPMENT_LEVEL_EXCEEDED";
 
     // XP & Talents
     public const string SpecializationLimitExceeded = "SPECIALIZATION_LIMIT_EXCEEDED";

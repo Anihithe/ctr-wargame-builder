@@ -24,6 +24,7 @@ public static class RuleConstants
         public const string Destructeurs = "destructeurs";
         public const string Goules = "goules";
         public const string Esclavagistes = "esclavagistes";
+        public const string Veterans = "veterans";
         public const string Tueurs = "tueurs";
         public const string BetesFeroces = "betes_feroces";
     }
@@ -42,6 +43,7 @@ public static class RuleConstants
         public const string Moine = "moine";
         public const string Druide = "druide";
         public const string Mage = "mage";
+        public const string Bete = "bete";
     }
 
     public static class Talents

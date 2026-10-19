@@ -29,6 +29,7 @@ export const ORIGIN_IDS = {
   Destructeurs: 'destructeurs',
   Goules: 'goules',
   Esclavagistes: 'esclavagistes',
+  Veterans: 'veterans',
   Tueurs: 'tueurs',
   BetesFeroces: 'betes_feroces',
   Sylvains: 'sylvains',
@@ -47,6 +48,7 @@ export const SPEC_IDS = {
   Moine: 'moine',
   Druide: 'druide',
   Mage: 'mage',
+  Bete: 'bete',
 } as const;
 
 export const TALENT_IDS = {
@@ -115,6 +117,10 @@ export const VALIDATION_CODES = {
   ExcellenceCannotWearArmor: 'EXCELLENCE_CANNOT_WEAR_ARMOR',
   GoulesCannotWearArmor: 'GOULES_CANNOT_WEAR_ARMOR',
   MonstruositeRank1RequiresEsclavagistes: 'MONSTRUOSITE_RANK_1_REQUIRES_ESCLAVAGISTES',
+  MonsterSpecializationRestricted: 'MONSTER_SPECIALIZATION_RESTRICTED',
+  BeteRestrictedToMonsters: 'BETE_RESTRICTED_TO_MONSTERS',
+  MonsterHeavyWeaponLevelExceeded: 'MONSTER_HEAVY_WEAPON_LEVEL_EXCEEDED',
+  MonsterEquipmentLevelExceeded: 'MONSTER_EQUIPMENT_LEVEL_EXCEEDED',
 
   // Spells
   SpellsCannotBeCast: 'SPELLS_CANNOT_BE_CAST',

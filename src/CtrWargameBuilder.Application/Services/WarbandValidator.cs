@@ -71,12 +71,12 @@ public class WarbandValidator : IWarbandValidator
             result.AddError(ValidationCodes.BrasDroitLimitExceeded, $"La bande ne peut avoir qu'un seul Bras droit actif (actuel : {brasDroits.Count}).");
         }
 
-        // 6. Quotas Spéciaux (Monstres et Animaux sur table)
-        var monsterCount = activeFighters.Count(f => f.Type == FighterType.Monster);
+        // 6. Quotas Spéciaux (Monstres et Animaux)
+        var monsterCount = warband.Fighters.Count(f => f.Type == FighterType.Monster);
         var maxMonsters = faction.UnlimitedMonsters ? int.MaxValue : ruleset.Config.MaxMonsters;
         if (monsterCount > maxMonsters)
         {
-            result.AddError(ValidationCodes.MonstersLimitExceeded, $"La bande ne peut recruter que {ruleset.Config.MaxMonsters} Monstre au maximum sur table (actuel : {monsterCount}).");
+            result.AddError(ValidationCodes.MonstersLimitExceeded, $"La bande ne peut recruter que {ruleset.Config.MaxMonsters} Monstre au maximum dans la liste (actuel : {monsterCount}).");
         }
 
         var animalCount = activeFighters.Count(f => f.Type == FighterType.Animal);
@@ -111,12 +111,13 @@ public class WarbandValidator : IWarbandValidator
         var hasDestructeursOrigin = warband.SelectedOriginIds.Any(o => string.Equals(o, RuleConstants.Origins.Destructeurs, StringComparison.OrdinalIgnoreCase));
         var hasGoulesOrigin = warband.SelectedOriginIds.Any(o => string.Equals(o, RuleConstants.Origins.Goules, StringComparison.OrdinalIgnoreCase));
         var hasEsclavagistesOrigin = warband.SelectedOriginIds.Any(o => string.Equals(o, RuleConstants.Origins.Esclavagistes, StringComparison.OrdinalIgnoreCase));
+        var hasVeteransOrigin = warband.SelectedOriginIds.Any(o => string.Equals(o, RuleConstants.Origins.Veterans, StringComparison.OrdinalIgnoreCase));
 
         foreach (var fighter in warband.Fighters)
         {
             ValidateFighter(fighter, warband, faction, ruleset, equipmentDict, specDict, specializationFighterCounts,
                 hasMutantsOrigin, hasNoblesseOrigin, hasChevaliersNoirsOrigin, hasCompagnieDeFerOrigin,
-                hasGardesRoyauxOrigin, hasDestructeursOrigin, hasGoulesOrigin, hasEsclavagistesOrigin, result);
+                hasGardesRoyauxOrigin, hasDestructeursOrigin, hasGoulesOrigin, hasEsclavagistesOrigin, hasVeteransOrigin, result);
         }
 
         return result;
@@ -172,6 +173,7 @@ public class WarbandValidator : IWarbandValidator
         bool hasDestructeursOrigin,
         bool hasGoulesOrigin,
         bool hasEsclavagistesOrigin,
+        bool hasVeteransOrigin,
         ValidationResult result)
     {
         var name = string.IsNullOrWhiteSpace(fighter.CustomName) ? $"Combattant ({fighter.Type} Rang {fighter.Rank})" : fighter.CustomName;
@@ -263,6 +265,19 @@ public class WarbandValidator : IWarbandValidator
                 else if (specId == RuleConstants.Specializations.TireurDElite && (eq.SubCategory.Contains("Arbalète") || eq.SubCategory.Contains("poing") || eq.Id.StartsWith("tir_2m_arbalete") || eq.Id.StartsWith("tir_1m_poing")))
                 {
                     effectiveRank += 1;
+                }
+            }
+
+            // Plafonnement d'équipement pour les Monstres (Armes lourdes Niv 3 max, autres armes/armures/boucliers Niv 2 max, sauf Vétérans)
+            if (fighter.Type == FighterType.Monster && !hasVeteransOrigin)
+            {
+                var isHeavy = eq.SubCategory?.Contains("lourde", StringComparison.OrdinalIgnoreCase) == true;
+                effectiveRank = Math.Min(effectiveRank, isHeavy ? 3 : 2);
+                var maxLevel = isHeavy ? 3 : 2;
+                if (eq.Level > maxLevel)
+                {
+                    var itemTypeDesc = isHeavy ? "armes lourdes" : "équipements (armes, armures, boucliers)";
+                    result.AddError(ValidationCodes.MonsterEquipmentLevelExceeded, $"Un Monstre est limité au niveau {maxLevel} pour les {itemTypeDesc} ('{eq.Name}' de niveau {eq.Level} sur '{name}').", fighter.Id);
                 }
             }
 
@@ -358,6 +373,19 @@ public class WarbandValidator : IWarbandValidator
             {
                 result.AddError(ValidationCodes.UnknownSpecialization, $"Spécialisation '{specChoice.SpecializationId}' inconnue sur '{name}'.", fighter.Id);
                 continue;
+            }
+
+            // Restriction de Spécialisation pour les Monstres
+            if (fighter.Type == FighterType.Monster && !string.Equals(faction.Id, RuleConstants.Factions.Monstruosite, StringComparison.OrdinalIgnoreCase))
+            {
+                if (!string.Equals(specChoice.SpecializationId, RuleConstants.Specializations.Bete, StringComparison.OrdinalIgnoreCase))
+                {
+                    result.AddError(ValidationCodes.MonsterSpecializationRestricted, $"Le monstre '{name}' n'a accès qu'à la Voie de la Bête pour la faction {faction.Name}.", fighter.Id);
+                }
+            }
+            if (fighter.Type != FighterType.Monster && string.Equals(specChoice.SpecializationId, RuleConstants.Specializations.Bete, StringComparison.OrdinalIgnoreCase))
+            {
+                result.AddError(ValidationCodes.BeteRestrictedToMonsters, $"La Voie de la Bête est réservée aux Monstres ('{name}').", fighter.Id);
             }
 
             // Coût de spécialisation : 6 XP + surcoût si d'autres combattants la possèdent

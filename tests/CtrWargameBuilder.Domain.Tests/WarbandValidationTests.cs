@@ -1,4 +1,5 @@
 using CtrWargameBuilder.Application.Services;
+using CtrWargameBuilder.Domain.Constants;
 using CtrWargameBuilder.Domain.Entities;
 using CtrWargameBuilder.Domain.Enums;
 using CtrWargameBuilder.Domain.Models.Ruleset;
@@ -926,6 +927,152 @@ public class WarbandValidationTests
         var resultChevaliersNoirs = _validator.Validate(warbandChevaliersNoirs, _ruleset);
         Assert.True(resultChevaliersNoirs.IsValid);
         Assert.DoesNotContain(resultChevaliersNoirs.Messages, m => m.Code == "ITEM_LEVEL_TOO_HIGH");
+    }
+
+    [Fact]
+    public void Monster_Outside_Monstruosite_Can_Only_Choose_Voie_De_La_Bete()
+    {
+        // Monstre avec spécialisation Guerrier dans Alliance -> Doit échouer
+        var warbandInvalid = new Warband
+        {
+            FactionId = "alliance",
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter { CustomName = "Leader", Rank = 2, Role = OfficerRole.Leader },
+                new Fighter { CustomName = "Bras droit", Rank = 2, Role = OfficerRole.BrasDroit },
+                new Fighter
+                {
+                    CustomName = "Ogre",
+                    Type = FighterType.Monster,
+                    Rank = 4,
+                    Role = OfficerRole.None,
+                    AllocatedXp = 12,
+                    Specializations = [new FighterSpecialization { SpecializationId = "guerrier" }]
+                }
+            ]
+        };
+        var resInvalid = _validator.Validate(warbandInvalid, _ruleset);
+        Assert.False(resInvalid.IsValid);
+        Assert.Contains(resInvalid.Messages, m => m.Code == ValidationCodes.MonsterSpecializationRestricted);
+
+        // Monstre avec spécialisation Bête dans Alliance -> Valide
+        var warbandValid = new Warband
+        {
+            FactionId = "alliance",
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter { CustomName = "Leader", Rank = 2, Role = OfficerRole.Leader },
+                new Fighter { CustomName = "Bras droit", Rank = 2, Role = OfficerRole.BrasDroit },
+                new Fighter
+                {
+                    CustomName = "Ogre",
+                    Type = FighterType.Monster,
+                    Rank = 4,
+                    Role = OfficerRole.None,
+                    AllocatedXp = 12,
+                    Specializations = [new FighterSpecialization { SpecializationId = "bete" }]
+                }
+            ]
+        };
+        var resValid = _validator.Validate(warbandValid, _ruleset);
+        Assert.True(resValid.IsValid);
+        Assert.DoesNotContain(resValid.Messages, m => m.Code == ValidationCodes.MonsterSpecializationRestricted);
+    }
+
+    [Fact]
+    public void Non_Monster_Cannot_Choose_Voie_De_La_Bete()
+    {
+        var warband = new Warband
+        {
+            FactionId = "alliance",
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter
+                {
+                    CustomName = "Leader Humain",
+                    Rank = 2,
+                    Role = OfficerRole.Leader,
+                    Specializations = [new FighterSpecialization { SpecializationId = "bete" }]
+                },
+                new Fighter { CustomName = "Bras droit", Rank = 2, Role = OfficerRole.BrasDroit }
+            ]
+        };
+        var result = _validator.Validate(warband, _ruleset);
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Messages, m => m.Code == ValidationCodes.BeteRestrictedToMonsters);
+    }
+
+    [Fact]
+    public void Monster_Equipment_Caps_Level_3_For_Heavy_And_Level_2_For_Others()
+    {
+        // 1. Arme lourde niveau 3 -> autorisé pour un Monstre
+        var wbHeavy3 = new Warband
+        {
+            FactionId = "alliance",
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter { CustomName = "Leader", Rank = 2, Role = OfficerRole.Leader },
+                new Fighter { CustomName = "Bras droit", Rank = 2, Role = OfficerRole.BrasDroit },
+                new Fighter
+                {
+                    CustomName = "Ogre",
+                    Type = FighterType.Monster,
+                    Rank = 4,
+                    Role = OfficerRole.None,
+                    Equipments = [new EquippedItem { EquipmentId = "cac_2m_lourde_3", SlotsOccupied = 2 }]
+                }
+            ]
+        };
+        var resHeavy3 = _validator.Validate(wbHeavy3, _ruleset);
+        Assert.True(resHeavy3.IsValid);
+
+        // 2. Arme intermédiaire niveau 3 -> interdit pour un Monstre (limité à 2)
+        var wbInter3 = new Warband
+        {
+            FactionId = "alliance",
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter { CustomName = "Leader", Rank = 2, Role = OfficerRole.Leader },
+                new Fighter { CustomName = "Bras droit", Rank = 2, Role = OfficerRole.BrasDroit },
+                new Fighter
+                {
+                    CustomName = "Ogre",
+                    Type = FighterType.Monster,
+                    Rank = 4,
+                    Role = OfficerRole.None,
+                    Equipments = [new EquippedItem { EquipmentId = "cac_1m_inter_3", SlotsOccupied = 1 }]
+                }
+            ]
+        };
+        var resInter3 = _validator.Validate(wbInter3, _ruleset);
+        Assert.False(resInter3.IsValid);
+        Assert.Contains(resInter3.Messages, m => m.Code == ValidationCodes.MonsterEquipmentLevelExceeded);
+    }
+
+    [Fact]
+    public void Monster_Max_1_Across_Whole_List_In_Standard_Faction()
+    {
+        // 2 monstres dans la liste (1 actif, 1 en réserve) dans Alliance -> Doit échouer
+        var warband = new Warband
+        {
+            FactionId = "alliance",
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter { CustomName = "Leader", Rank = 2, Role = OfficerRole.Leader },
+                new Fighter { CustomName = "Bras droit", Rank = 2, Role = OfficerRole.BrasDroit },
+                new Fighter { CustomName = "Ogre 1", Type = FighterType.Monster, Rank = 4, Role = OfficerRole.None, Status = FighterStatus.Active },
+                new Fighter { CustomName = "Ogre 2", Type = FighterType.Monster, Rank = 4, Role = OfficerRole.None, Status = FighterStatus.Reserve }
+            ]
+        };
+        var result = _validator.Validate(warband, _ruleset);
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Messages, m => m.Code == ValidationCodes.MonstersLimitExceeded);
     }
 }
 

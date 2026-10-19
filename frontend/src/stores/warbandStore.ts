@@ -222,6 +222,36 @@ export const useWarbandStore = defineStore('warband', () => {
         });
       }
 
+      // Monster specialization restriction: only Voie de la Bête allowed outside Monstruosite faction
+      if (f.type === 'Monstre' && wb.factionId !== FACTION_IDS.Monstruosite) {
+        for (const sp of f.specializations) {
+          if (sp.specializationId !== SPEC_IDS.Bete) {
+            errors.push({
+              fighterId: f.id,
+              fighterName: f.name,
+              code: VALIDATION_CODES.MonsterSpecializationRestricted,
+              message: `Le monstre "${f.name}" n'a accès qu'à la Voie de la Bête pour cette faction.`,
+              severity: 'Error',
+            });
+          }
+        }
+      }
+
+      // Voie de la Bête restriction: reserved exclusively for Monsters
+      if (f.type !== 'Monstre') {
+        for (const sp of f.specializations) {
+          if (sp.specializationId === SPEC_IDS.Bete) {
+            errors.push({
+              fighterId: f.id,
+              fighterName: f.name,
+              code: VALIDATION_CODES.BeteRestrictedToMonsters,
+              message: `La Voie de la Bête est réservée aux Monstres (${f.name}).`,
+              severity: 'Error',
+            });
+          }
+        }
+      }
+
       for (const eq of f.equippedItems) {
         if (!eq.isMagicItem) {
           const item = rulesetStore.getEquipment(eq.equipmentId);
@@ -379,6 +409,29 @@ export const useWarbandStore = defineStore('warband', () => {
                 severity: 'Error',
               });
             }
+
+            // Monster Equipment Restrictions: Heavy weapons <= level 3, other weapons / protections <= level 2 (unless Veterans origin)
+            if (f.type === 'Monstre' && !wb.selectedOriginIds?.includes(ORIGIN_IDS.Veterans)) {
+              const isHeavy = item.subCategory?.includes('lourde');
+              if (isHeavy && item.level > 3) {
+                errors.push({
+                  fighterId: f.id,
+                  fighterName: f.name,
+                  code: VALIDATION_CODES.MonsterHeavyWeaponLevelExceeded,
+                  message: `Un Monstre ne peut pas sélectionner d'arme lourde supérieure au niveau 3 (${item.name} sur ${f.name}).`,
+                  severity: 'Error',
+                });
+              }
+              if (!isHeavy && item.level > 2) {
+                errors.push({
+                  fighterId: f.id,
+                  fighterName: f.name,
+                  code: VALIDATION_CODES.MonsterEquipmentLevelExceeded,
+                  message: `Un Monstre ne peut pas sélectionner d'équipement supérieur au niveau 2 (${item.name} sur ${f.name}).`,
+                  severity: 'Error',
+                });
+              }
+            }
           }
         } else {
           const mItem = rulesetStore.getMagicItem(eq.equipmentId);
@@ -507,10 +560,11 @@ export const useWarbandStore = defineStore('warband', () => {
       });
     }
 
-    if (monsterCount > 1 && !faction?.unlimitedMonsters) {
+    const totalMonsters = wb.fighters.filter((f) => f.type === 'Monstre').length;
+    if (totalMonsters > 1 && !faction?.unlimitedMonsters) {
       errors.push({
         code: VALIDATION_CODES.MonsterQuotaExceeded,
-        message: `La bande compte ${monsterCount} monstres actifs (maximum standard: 1).`,
+        message: `La bande compte ${totalMonsters} monstres dans la liste (maximum autorisé hors faction Monstruosité: 1).`,
         severity: 'Error',
       });
     }
