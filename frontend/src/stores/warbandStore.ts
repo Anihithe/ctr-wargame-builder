@@ -11,7 +11,7 @@ import {
   ALLEGIANCE_IDS,
   EQUIPMENT_CATEGORIES,
 } from '@/constants/rules';
-import { calculateMaxSlots, calculateEffectiveRank, canFighterCastSpells } from '@/domain/rulesEngine';
+import { calculateMaxSlots, calculateEffectiveRank, canFighterCastSpells, calculateFighterSpentXp } from '@/domain/rulesEngine';
 
 const STORAGE_KEY = 'ctr_wargame_warbands_v2';
 const ACTIVE_WARBAND_KEY = 'ctr_wargame_active_id';
@@ -516,6 +516,21 @@ export const useWarbandStore = defineStore('warband', () => {
           message: `${f.name} porte ${armorCount} armures (maximum 1 seule armure autorisée).`,
           severity: 'Error',
         });
+      }
+
+      // XP limit validation
+      if (f.type !== 'Animal') {
+        const spentXp = calculateFighterSpentXp(f, wb);
+        const maxBaseXp = f.allocatedXp || 0;
+        if (spentXp > maxBaseXp) {
+          errors.push({
+            fighterId: f.id,
+            fighterName: f.name,
+            code: VALIDATION_CODES.XpLimitExceeded,
+            message: `${f.name} a dépensé ${spentXp} XP pour un budget alloué de ${maxBaseXp} XP.`,
+            severity: 'Error',
+          });
+        }
       }
 
       // Spell capability validation

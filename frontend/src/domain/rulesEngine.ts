@@ -724,5 +724,99 @@ export function calculateTotalArmorBonus(
   return bonus;
 }
 
+/**
+ * Returns how many living fighters in the warband ALREADY possess the given specialization
+ * before this fighter (if fighter already has it), or among all other living fighters (if candidate).
+ * Fighters in Graveyard status are strictly excluded from the count.
+ */
+export function getSpecializationDuplicateCount(
+  warband: Warband | null | undefined,
+  targetFighterId: string,
+  specializationId: string
+): number {
+  if (!warband) return 0;
+  const targetFighter = warband.fighters.find((f) => f.id === targetFighterId);
+  const alreadyHasSpec = targetFighter?.specializations.some((s) => s.specializationId === specializationId);
 
+  let count = 0;
+  for (const f of warband.fighters) {
+    if (f.status === 'Graveyard') continue;
+    if (f.id === targetFighterId) {
+      if (alreadyHasSpec) {
+        // If the target fighter already has this spec, we only count prior living fighters who possessed it
+        break;
+      } else {
+        // If the candidate fighter doesn't have it, skip self and continue counting other living fighters
+        continue;
+      }
+    }
+    if (f.specializations.some((s) => s.specializationId === specializationId)) {
+      count++;
+    }
+  }
+  return count;
+}
 
+/**
+ * Returns the exact XP cost for a fighter to acquire (or have) a specialization:
+ * 6 XP base + 6 XP per living duplicate already possessing it,
+ * with exception for Conclave des Mages (Collège de Magie) on Mage.
+ */
+export function getSpecializationXpCost(
+  warband: Warband | null | undefined,
+  targetFighterId: string,
+  specializationId: string
+): number {
+  let duplicates = getSpecializationDuplicateCount(warband, targetFighterId, specializationId);
+
+  if (
+    warband?.allegianceId === 'conclave_des_mages' &&
+    warband?.selectedAllegianceRuleName === 'Collège de Magie' &&
+    specializationId === 'mage'
+  ) {
+    duplicates = Math.max(0, duplicates - 1);
+  }
+
+  return 6 + duplicates * 6;
+}
+
+/**
+ * Calculates the total XP spent by a fighter taking into account:
+ * - Dynamic specialization costs with duplicate penalty
+ * - 6 XP per talent
+ * - Free Incantation Maîtrisée for officers under Conclave des Mages (Érudits)
+ */
+export function calculateFighterSpentXp(
+  fighter: Fighter,
+  warband: Warband | null | undefined
+): number {
+  if (!fighter) return 0;
+  let total = 0;
+  const isOfficer = fighter.officerRole !== 'None';
+  const hasErudits =
+    warband?.allegianceId === 'conclave_des_mages' &&
+    warband?.selectedAllegianceRuleName === 'Érudits';
+
+  for (const s of fighter.specializations) {
+    total += getSpecializationXpCost(warband, fighter.id, s.specializationId);
+    for (const tId of s.acquiredTalentIds) {
+      if (isOfficer && hasErudits && tId === 'incantation_maitrisee') {
+        continue;
+      }
+      total += 6;
+    }
+  }
+
+  return total;
+}
+
+/**
+ * Calculates the available (unspent) XP for a fighter.
+ */
+export function calculateFighterAvailableXp(
+  fighter: Fighter,
+  warband: Warband | null | undefined
+): number {
+  if (!fighter) return 0;
+  return Math.max(0, (fighter.allocatedXp || 0) - calculateFighterSpentXp(fighter, warband));
+}

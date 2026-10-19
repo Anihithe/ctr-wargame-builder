@@ -128,7 +128,8 @@ export const VALIDATION_CODES = {
   MonsterHeavyWeaponLevelExceeded: 'MONSTER_HEAVY_WEAPON_LEVEL_EXCEEDED',
   MonsterEquipmentLevelExceeded: 'MONSTER_EQUIPMENT_LEVEL_EXCEEDED',
 
-  // Spells
+  // Spells & XP
+  XpLimitExceeded: 'XP_LIMIT_EXCEEDED',
   SpellsCannotBeCast: 'SPELLS_CANNOT_BE_CAST',
   SpellsLevelExceeded: 'SPELLS_LEVEL_EXCEEDED',
 } as const;

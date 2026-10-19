@@ -1217,6 +1217,47 @@ public class WarbandValidationTests
         var resValid = _validator.Validate(wbValid, _ruleset);
         Assert.DoesNotContain(resValid.Messages, m => m.Code == ValidationCodes.MonstruositeOfficerCannotBeRank1);
     }
+
+    [Fact]
+    public void Specialization_Duplicate_Penalty_Applies_Sequentially_Only_To_Later_Living_Fighters()
+    {
+        // 1. Leader (12 XP de base) a Barbare (1er combattant -> coûte 6 XP, reste 6 XP -> Valide)
+        // Bras droit (6 XP de base) a Barbare (2ème combattant -> coûte 6 + 6 = 12 XP, dépasse les 6 XP alloués -> Invalide)
+        var wbBothLiving = new Warband
+        {
+            FactionId = "alliance",
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter
+                {
+                    CustomName = "Leader Barbare",
+                    Rank = 2,
+                    Role = OfficerRole.Leader,
+                    Specializations = [new FighterSpecialization { SpecializationId = "barbare" }]
+                },
+                new Fighter
+                {
+                    CustomName = "Bras Droit Barbare",
+                    Rank = 2,
+                    Role = OfficerRole.BrasDroit,
+                    Specializations = [new FighterSpecialization { SpecializationId = "barbare" }]
+                }
+            ]
+        };
+        var resBoth = _validator.Validate(wbBothLiving, _ruleset);
+        Assert.False(resBoth.IsValid);
+        Assert.Contains(resBoth.Messages, m => m.Code == ValidationCodes.XpLimitExceeded && m.FighterId == wbBothLiving.Fighters[1].Id);
+
+        // 2. Le Leader Barbare meurt et est envoyé au cimetière (Graveyard).
+        // Le Bras Droit est désormais le seul Barbare vivant de la bande.
+        // Barbare lui coûte 6 XP (1er vivant), ce qui respecte son budget de 6 XP -> Valide !
+        wbBothLiving.Fighters[0].Status = FighterStatus.Graveyard;
+        var resWithGraveyard = _validator.Validate(wbBothLiving, _ruleset);
+        // Assert: le Bras droit ne dépasse plus ses XP
+        Assert.DoesNotContain(resWithGraveyard.Messages, m => m.Code == ValidationCodes.XpLimitExceeded && m.FighterId == wbBothLiving.Fighters[1].Id);
+    }
 }
+
 
 
