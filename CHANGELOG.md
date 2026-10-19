@@ -6,6 +6,12 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 ## [0.5.10-beta] - 2026-10-20
 
 ### 🎯 Recrutement des Troupes & Équilibrage des Rangs
+- **Gestion du Trésor par Modale (`WarbandGoldModal.vue`)** :
+  - Suppression de l'encart d'ajustement du budget PO situé dans l'en-tête supérieur droit.
+  - Transformation de l'icône de pièces de la carte *Trésor dépensé* en bouton interactif ouvrant une modale dédiée permettant d'ajouter ou de retirer des PO (boutons rapides -10, -5, -1, +1, +5, +10, saisie directe, vue solde et rétablissement à 10 PO).
+- **Gestion de l'Expérience par Modale (`FighterXpModal.vue`)** :
+  - Épuration de la carte XP : suppression des boutons d'incrément (+1, +2, +6) et du champ numérique direct.
+  - Ajout d'un encart compact avec icône d'expérience cliquable ouvrant une modale dédiée pour ajouter ou retirer des points d'XP (sécurisé contre la suppression d'XP déjà investi dans des spécialisations/talents).
 - **Ordre croissant des Rangs (1 à 3)** :
   - Harmonisation de l'affichage des boutons de recrutement dans l'ordre croissant de gauche à droite (Rang 1, Rang 2, Rang 3) pour les Combattants de base, les Animaux, ainsi que les sélecteurs d'Officiers (Leader et Bras droit).
 - **Correction du Rang 3 pour les Animaux** :

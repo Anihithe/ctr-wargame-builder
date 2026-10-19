@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
 import { useWarbandStore } from '@/stores/warbandStore';
 import type { Fighter } from '@/types/warband';
 import { Sparkles } from 'lucide-vue-next';
+import FighterXpModal from './FighterXpModal.vue';
 import {
   calculateFighterSpentXp,
   calculateFighterAvailableXp,
@@ -15,6 +16,8 @@ const props = defineProps<{
 const warbandStore = useWarbandStore();
 const warband = computed(() => warbandStore.currentWarband);
 
+const showXpModal = ref(false);
+
 const fighterSpentXp = computed(() => {
   return calculateFighterSpentXp(props.fighter, warband.value);
 });
@@ -22,15 +25,6 @@ const fighterSpentXp = computed(() => {
 const fighterAvailableXp = computed(() => {
   return calculateFighterAvailableXp(props.fighter, warband.value);
 });
-
-function onAddXp(delta: number) {
-  warbandStore.addFighterXp(props.fighter.id, delta);
-}
-
-function onSetXp(val: number) {
-  if (isNaN(val) || val < 0) return;
-  warbandStore.setFighterXp(props.fighter.id, val);
-}
 </script>
 
 <template>
@@ -43,41 +37,25 @@ function onSetXp(val: number) {
         </h3>
       </div>
 
-      <div class="flex items-center gap-2">
-        <span class="text-xs text-grim-400">Total :</span>
-        <input
-          type="number"
-          min="0"
-          max="999"
-          :value="fighter.allocatedXp || 0"
-          @change="(e) => onSetXp(Number((e.target as HTMLInputElement).value))"
-          class="w-14 text-center font-mono font-bold text-xs bg-grim-900 border border-grim-700 rounded px-1.5 py-0.5 text-white focus:border-amber-500 focus:outline-none"
-          title="Cliquer pour modifier directement le total d'XP"
-        />
-        <div class="flex items-center gap-1">
-          <button
-            @click="onAddXp(1)"
-            class="px-2 py-0.5 text-xs font-bold rounded bg-amber-600/30 hover:bg-amber-600/50 text-amber-300 border border-amber-600/50 transition active:scale-95 cursor-pointer"
-            title="Gagner +1 XP"
-          >
-            +1
-          </button>
-          <button
-            @click="onAddXp(2)"
-            class="px-2 py-0.5 text-xs font-bold rounded bg-amber-600/30 hover:bg-amber-600/50 text-amber-300 border border-amber-600/50 transition active:scale-95 cursor-pointer"
-            title="Gagner +2 XP"
-          >
-            +2
-          </button>
-          <button
-            @click="onAddXp(6)"
-            class="px-2 py-0.5 text-xs font-bold rounded bg-amber-600/30 hover:bg-amber-600/50 text-amber-300 border border-amber-600/50 transition active:scale-95 cursor-pointer"
-            title="Gagner +6 XP (1 talent ou spécialisation)"
-          >
-            +6
-          </button>
+      <!-- Small Encart / Button with XP Icon -->
+      <button
+        type="button"
+        @click="showXpModal = true"
+        class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-amber-950/40 hover:bg-amber-950/80 border border-amber-800/60 hover:border-amber-500/80 transition cursor-pointer active:scale-95 group shadow-sm"
+        title="Gérer l'expérience (XP)"
+      >
+        <div class="p-1 rounded bg-amber-950/90 border border-amber-600/60 text-amber-400 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-200">
+          <Sparkles class="w-3.5 h-3.5" />
         </div>
-      </div>
+        <div class="text-left leading-none font-mono">
+          <span class="text-xs font-bold text-amber-300 group-hover:text-amber-200">
+            {{ fighter.allocatedXp || 0 }} XP
+          </span>
+          <span class="text-[9px] text-grim-400 block mt-0.5 uppercase tracking-wider font-sans font-semibold">
+            Gérer
+          </span>
+        </div>
+      </button>
     </div>
 
     <!-- Progress bar and numbers -->
@@ -97,5 +75,12 @@ function onSetXp(val: number) {
         ></div>
       </div>
     </div>
+
+    <!-- Fighter XP Management Modal -->
+    <FighterXpModal
+      v-if="showXpModal"
+      :fighter="fighter"
+      @close="showXpModal = false"
+    />
   </div>
 </template>

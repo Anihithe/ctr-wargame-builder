@@ -47,16 +47,9 @@ function onSelectWarband(event: Event) {
   warbandStore.selectedFighterId = null;
 }
 
-function updateGold(delta: number) {
-  if (!warband.value) return;
-  const newBudget = Math.max(1, warband.value.startingGoldPo + delta);
-  warbandStore.updateWarband({ startingGoldPo: newBudget, currentGoldPo: newBudget });
-}
+import WarbandGoldModal from '@/components/warband/WarbandGoldModal.vue';
 
-function onGoldChange(val: number) {
-  if (!warband.value || isNaN(val) || val < 1) return;
-  warbandStore.updateWarband({ startingGoldPo: val, currentGoldPo: val });
-}
+const showGoldModal = ref(false);
 </script>
 
 <template>
@@ -188,41 +181,6 @@ function onGoldChange(val: number) {
             </div>
           </div>
 
-          <!-- Selectors: Budget PO -->
-          <div class="flex flex-wrap items-center gap-3">
-            <!-- Budget PO Adjuster -->
-            <div class="flex items-center gap-2 bg-grim-850 px-3 py-1.5 rounded-lg border border-grim-700">
-              <Coins class="w-4 h-4 text-gold-400" />
-              <div class="text-xs">
-                <div class="text-grim-400 leading-none mb-1">Budget PO</div>
-                <div class="flex items-center gap-1.5">
-                  <button
-                    @click="updateGold(-1)"
-                    class="w-5 h-5 flex items-center justify-center bg-grim-700 hover:bg-grim-600 rounded text-grim-200 text-xs font-bold transition"
-                    title="Diminuer"
-                  >
-                    -
-                  </button>
-                  <input
-                    type="number"
-                    min="1"
-                    max="999"
-                    :value="warband.startingGoldPo"
-                    @change="(e) => onGoldChange(Number((e.target as HTMLInputElement).value))"
-                    class="font-mono font-bold text-sm text-gold-300 w-12 text-center bg-grim-900 border border-grim-700 rounded px-1 py-0.5 focus:border-gold-500 focus:outline-none"
-                    title="Cliquer pour modifier directement le budget PO"
-                  />
-                  <button
-                    @click="updateGold(1)"
-                    class="w-5 h-5 flex items-center justify-center bg-grim-700 hover:bg-grim-600 rounded text-grim-200 text-xs font-bold transition"
-                    title="Augmenter"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
 
         <!-- Resource Counters & Status -->
@@ -230,9 +188,14 @@ function onGoldChange(val: number) {
           <!-- PO Counter Card -->
           <div class="bg-grim-850/70 border border-grim-800 rounded-lg p-2.5 flex items-center justify-between">
             <div class="flex items-center gap-2.5">
-              <div class="p-2 rounded-md bg-gold-950/60 border border-gold-800/80 text-gold-400">
-                <Coins class="w-4 h-4" />
-              </div>
+              <button
+                type="button"
+                @click="showGoldModal = true"
+                class="p-2 rounded-md bg-gold-950/60 border border-gold-800/80 text-gold-400 hover:bg-gold-900/90 hover:border-gold-500 hover:text-gold-300 transition cursor-pointer active:scale-95 group shadow-sm flex items-center justify-center"
+                title="Gérer le budget & le trésor de la bande (PO)"
+              >
+                <Coins class="w-4 h-4 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-200" />
+              </button>
               <div>
                 <div class="text-[11px] text-grim-400">Trésor dépensé</div>
                 <div class="text-sm font-mono font-bold" :class="validation.totalCostPo > warband.startingGoldPo ? 'text-crimson-400' : 'text-gold-300'">
@@ -322,5 +285,11 @@ function onGoldChange(val: number) {
         </div>
       </div>
     </div>
+
+    <!-- Gold & Budget Management Modal -->
+    <WarbandGoldModal
+      v-if="showGoldModal"
+      @close="showGoldModal = false"
+    />
   </header>
 </template>
