@@ -13,6 +13,7 @@ import {
   formatSpecialRuleName,
   hasFighterMaitrise,
   doesWeaponHaveMaitrise,
+  getFighterWeaponSpecialRuleIds,
 } from '@/domain/rulesEngine';
 import { Sword, Shield, X, Check, Plus, Minus, AlertCircle, Lock } from 'lucide-vue-next';
 
@@ -89,6 +90,17 @@ const equippedArmor = computed(() => {
   return null;
 });
 
+const equippedShield = computed(() => {
+  if (!fighter.value) return null;
+  for (const eq of fighter.value.equippedItems) {
+    if (!eq.isMagicItem) {
+      const item = rulesetStore.getEquipment(eq.equipmentId);
+      if (item?.category === EQUIPMENT_CATEGORIES.Shield) return item;
+    }
+  }
+  return null;
+});
+
 function getEffectiveRank(eq: Equipment): number {
   if (!fighter.value) return 1;
   return calculateEffectiveRank(fighter.value, eq, warband.value);
@@ -100,12 +112,26 @@ function isRankValid(eq: Equipment): boolean {
 
 function getEquipError(eq: Equipment): string | null {
   if (!fighter.value) return null;
-  return getEquipmentEquipError(fighter.value, eq, warband.value, equippedArmor.value, remainingSlots.value);
+  return getEquipmentEquipError(
+    fighter.value,
+    eq,
+    warband.value,
+    equippedArmor.value,
+    remainingSlots.value,
+    equippedShield.value,
+  );
 }
 
 function canEquip(eq: Equipment): boolean {
   if (!fighter.value) return false;
-  return canEquipEquipment(fighter.value, eq, warband.value, equippedArmor.value, remainingSlots.value);
+  return canEquipEquipment(
+    fighter.value,
+    eq,
+    warband.value,
+    equippedArmor.value,
+    remainingSlots.value,
+    equippedShield.value,
+  );
 }
 
 // Equipment Family definition
@@ -233,6 +259,9 @@ const FAMILIES: EquipmentFamily[] = [
 ];
 
 const filteredFamilies = computed(() => {
+  if (fighter.value?.type === 'Animal') {
+    return FAMILIES.filter((f) => f.id === 'fam_cac_pugilat');
+  }
   if (selectedCategory.value === 'Toutes') return FAMILIES;
   if (selectedCategory.value === 'Corps à corps') return FAMILIES.filter((f) => f.category === 'Melee');
   if (selectedCategory.value === 'Tir / Distance') return FAMILIES.filter((f) => f.category === 'Ranged');
@@ -267,6 +296,15 @@ function getActiveEquipment(fam: EquipmentFamily): Equipment | null {
     return accessible[accessible.length - 1];
   }
   return items[0];
+}
+
+function getActiveEquipmentSpecialRules(fam: EquipmentFamily): string[] {
+  const eq = getActiveEquipment(fam);
+  if (!eq) return [];
+  if (fighter.value) {
+    return getFighterWeaponSpecialRuleIds(fighter.value, eq);
+  }
+  return eq.specialRuleIds || [];
 }
 
 function selectFamilyLevel(familyId: string, level: number) {
@@ -308,26 +346,43 @@ function unequipOne(equipmentId: string) {
               <span v-if="activeRankBonusSummary" class="text-amber-400 ml-1">({{ activeRankBonusSummary }})</span>
             </span>
             <span class="text-grim-600">|</span>
-            <span>
-              Emplacements restants :
-              <strong :class="remainingSlots > 0 ? 'text-amber-400' : 'text-crimson-400'">
-                {{ remainingSlots }} / {{ maxSlots }}
-              </strong>
-              <span
-                v-if="fighterHasMaitrise"
-                class="text-emerald-400 ml-1 text-[11px] font-medium"
-                :title="remainingSlots > 0 ? 'Maîtrise active : au moins 1 emplacement libre' : 'Maîtrise active via arme(s) de niveau ≤ 3 avec accès > 3'"
-              >
-                (Maîtrise active{{ remainingSlots === 0 ? ' via armes' : '' }})
+            <template v-if="fighter?.type === 'Animal'">
+              <span>
+                Armes de Pugilat :
+                <strong :class="fighter.equippedItems.length < 2 ? 'text-amber-400' : 'text-emerald-400'">
+                  {{ fighter.equippedItems.length }} / 2 armes
+                </strong>
               </span>
-            </span>
-            <span class="text-grim-600">|</span>
-            <span>
-              Armure :
-              <strong :class="equippedArmor ? 'text-blue-300' : 'text-grim-400'">
-                {{ equippedArmor ? equippedArmor.name : 'Aucune' }}
-              </strong>
-            </span>
+            </template>
+            <template v-else>
+              <span>
+                Emplacements restants :
+                <strong :class="remainingSlots > 0 ? 'text-amber-400' : 'text-crimson-400'">
+                  {{ remainingSlots }} / {{ maxSlots }}
+                </strong>
+                <span
+                  v-if="fighterHasMaitrise"
+                  class="text-emerald-400 ml-1 text-[11px] font-medium"
+                  :title="remainingSlots > 0 ? 'Maîtrise active : au moins 1 emplacement libre' : 'Maîtrise active via arme(s) de niveau ≤ 3 avec accès > 3'"
+                >
+                  (Maîtrise active{{ remainingSlots === 0 ? ' via armes' : '' }})
+                </span>
+              </span>
+              <span class="text-grim-600">|</span>
+              <span>
+                Armure :
+                <strong :class="equippedArmor ? 'text-blue-300' : 'text-grim-400'">
+                  {{ equippedArmor ? equippedArmor.name : 'Aucune' }}
+                </strong>
+              </span>
+              <span class="text-grim-600">|</span>
+              <span>
+                Bouclier :
+                <strong :class="equippedShield ? 'text-blue-300' : 'text-grim-400'">
+                  {{ equippedShield ? equippedShield.name : 'Aucun' }}
+                </strong>
+              </span>
+            </template>
           </div>
         </div>
         <button
@@ -339,8 +394,8 @@ function unequipOne(equipmentId: string) {
         </button>
       </div>
 
-      <!-- Categories Filter Tabs -->
-      <div class="px-6 py-3 border-b border-grim-800/80 bg-grim-950 flex flex-wrap gap-2">
+      <!-- Categories Filter Tabs (hidden for Animal) -->
+      <div v-if="fighter?.type !== 'Animal'" class="px-6 py-3 border-b border-grim-800/80 bg-grim-950 flex flex-wrap gap-2">
         <button
           v-for="cat in categories"
           :key="cat"
@@ -463,9 +518,9 @@ function unequipOne(equipmentId: string) {
               </div>
 
               <!-- Special Rules / Traits if any -->
-              <div v-if="getActiveEquipment(fam)?.specialRuleIds?.length || (fighter && getActiveEquipment(fam) && doesWeaponHaveMaitrise(fighter, getActiveEquipment(fam)!, warband, rulesetStore))" class="flex flex-wrap gap-1.5 pt-1">
+              <div v-if="getActiveEquipmentSpecialRules(fam).length || (fighter && getActiveEquipment(fam) && doesWeaponHaveMaitrise(fighter, getActiveEquipment(fam)!, warband, rulesetStore))" class="flex flex-wrap gap-1.5 pt-1">
                 <span
-                  v-for="rule in getActiveEquipment(fam)?.specialRuleIds"
+                  v-for="rule in getActiveEquipmentSpecialRules(fam)"
                   :key="rule"
                   class="text-[11px] px-2 py-0.5 rounded bg-grim-850 border border-grim-700 text-gold-300 font-medium cursor-help"
                   :title="rulesetStore.getSpecialRule(rule)?.description || rule"

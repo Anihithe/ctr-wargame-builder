@@ -17,6 +17,7 @@ import {
   hasFighterMaitrise,
   calculateMaxSlots,
   calculateCurrentSlotsUsed,
+  getFighterWeaponSpecialRuleIds,
 } from '@/domain/rulesEngine';
 import { ORIGIN_IDS } from '@/constants/rules';
 import {
@@ -126,13 +127,30 @@ const printableFighters = computed(() => {
 // Helper for card weapons
 function getFighterWeaponsForCard(f: Fighter) {
   if (f.type === 'Animal') {
-    const rulesFormatted: string[] = ['Pugilat'];
+    const beastRules: string[] = ['Pugilat'];
     if (warband.value?.selectedOriginIds?.includes(ORIGIN_IDS.BetesFeroces)) {
-      rulesFormatted.push('Perce-armure (1)');
+      beastRules.push('Perce-armure (1)');
     }
     if (warband.value?.selectedOriginIds?.includes(ORIGIN_IDS.MaitreDesBetes)) {
-      rulesFormatted.push('Acérée');
+      beastRules.push('Acérée');
     }
+
+    const equippedPugilat = f.equippedItems
+      .filter((eq) => !eq.isMagicItem)
+      .map((eq) => rulesetStore.getEquipment(eq.equipmentId))
+      .filter((eq): eq is Equipment => !!eq);
+
+    if (equippedPugilat.length > 0) {
+      return equippedPugilat.map((item) => ({
+        item,
+        name: cleanEquipmentName(item.name, item.level),
+        range: 'CàC',
+        puissance: item.puissance ? `${item.puissance}` : '0',
+        precision: item.precision ? `${item.precision}+` : '0',
+        specialRules: [...beastRules],
+      }));
+    }
+
     return [
       {
         item: { name: 'Pugilat (Griffes & Crocs)' } as any,
@@ -140,7 +158,7 @@ function getFighterWeaponsForCard(f: Fighter) {
         range: 'CàC',
         puissance: '0',
         precision: '0',
-        specialRules: rulesFormatted,
+        specialRules: beastRules,
       },
     ];
   }
@@ -158,13 +176,13 @@ function getFighterWeaponsForCard(f: Fighter) {
     if (eq.isMagicItem) continue;
     const item = rulesetStore.getEquipment(eq.equipmentId);
     if (!item) continue;
+    if (item.category === 'Armor' || item.category === 'Shield') continue;
 
     const rulesFormatted: string[] = [];
-    if (item.specialRuleIds) {
-      for (const rid of item.specialRuleIds) {
-        const rDef = rulesetStore.getSpecialRule(rid);
-        rulesFormatted.push(formatSpecialRuleName(rid, rDef?.name, item));
-      }
+    const effectiveRules = getFighterWeaponSpecialRuleIds(f, item);
+    for (const rid of effectiveRules) {
+      const rDef = rulesetStore.getSpecialRule(rid);
+      rulesFormatted.push(formatSpecialRuleName(rid, rDef?.name, item));
     }
 
     if (warband.value && doesWeaponHaveMaitrise(f, item, warband.value, rulesetStore)) {

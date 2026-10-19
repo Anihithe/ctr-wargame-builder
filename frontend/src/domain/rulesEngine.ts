@@ -1,5 +1,5 @@
 import type { Fighter, Warband } from '@/types/warband';
-import type { Equipment } from '@/types/ruleset';
+import type { Equipment, Spell } from '@/types/ruleset';
 import { FACTION_IDS, ORIGIN_IDS, SPEC_IDS, TALENT_IDS, EQUIPMENT_CATEGORIES } from '@/constants/rules';
 
 export interface FighterStats {
@@ -66,6 +66,7 @@ export function calculateCurrentSlotsUsed(
     getMagicItem: (id: string) => any;
   },
 ): number {
+  if (fighter.type === 'Animal') return 0;
   let used = 0;
   for (const eq of fighter.equippedItems) {
     if (!eq.isMagicItem) {
@@ -191,12 +192,29 @@ export function getEquipmentEquipError(
   warband?: Warband | null,
   currentEquippedArmor?: Equipment | null,
   remainingSlots?: number,
+  currentEquippedShield?: Equipment | null,
 ): string | null {
   const origins = getFighterEffectiveOrigins(fighter, warband);
 
-  // 1. Animals cannot equip anything
+  // 1. Animals can ONLY equip Pugilat weapons, up to their rank, max 2 weapons, 0 slots
   if (fighter.type === 'Animal') {
-    return "Un Animal ne peut pas porter d'équipement (armes de pugilat naturelles)";
+    const isPugilat = eq.subCategory?.includes('Pugilat') || eq.id.includes('pugilat');
+    if (!isPugilat || eq.category === EQUIPMENT_CATEGORIES.Armor || eq.category === EQUIPMENT_CATEGORIES.Shield) {
+      return "Un Animal ne peut équiper que des armes de Pugilat naturelles (pas de protections ni d'autres armes)";
+    }
+    const currentWeaponCount = fighter.equippedItems.filter((i) => !i.isMagicItem).length;
+    if (currentWeaponCount >= 2) {
+      return "Un Animal ne peut équiper que 2 armes de Pugilat au maximum";
+    }
+    if (eq.level > fighter.rank) {
+      return `Pugilat Niv ${eq.level} inaccessible pour un Animal de Rang ${fighter.rank}`;
+    }
+    return null;
+  }
+
+  // Bouclier unique: un combattant ne peut équiper qu'un seul bouclier au maximum
+  if (eq.category === EQUIPMENT_CATEGORIES.Shield && currentEquippedShield) {
+    return "Un combattant ne peut équiper qu'un seul bouclier au maximum";
   }
 
   // 2. Monster Equipment Restrictions (unless Veterans origin)
@@ -298,7 +316,7 @@ export function getEquipmentEquipError(
     }
   }
 
-  // 7. Slots Remaining
+  // 7. Slots Remaining (Animals already returned early above)
   if (remainingSlots !== undefined && eq.slots > remainingSlots) {
     return `Emplacements insuffisants (${eq.slots} requis, ${remainingSlots} restant(s))`;
   }
@@ -315,8 +333,9 @@ export function canEquipEquipment(
   warband?: Warband | null,
   currentEquippedArmor?: Equipment | null,
   remainingSlots?: number,
+  currentEquippedShield?: Equipment | null,
 ): boolean {
-  return getEquipmentEquipError(fighter, eq, warband, currentEquippedArmor, remainingSlots) === null;
+  return getEquipmentEquipError(fighter, eq, warband, currentEquippedArmor, remainingSlots, currentEquippedShield) === null;
 }
 
 /**
@@ -842,3 +861,42 @@ export function calculateFighterAvailableXp(
   if (!fighter) return 0;
   return Math.max(0, (fighter.allocatedXp || 0) - calculateFighterSpentXp(fighter, warband));
 }
+
+/**
+ * Returns effective special rule IDs for an equipped weapon,
+ * taking into account specializations like Tireur d'élite (which removes Rechargement).
+ */
+export function getFighterWeaponSpecialRuleIds(fighter: Fighter, eq: Equipment): string[] {
+  const rules = [...(eq.specialRuleIds || [])];
+  const hasTireurDElite = fighter.specializations.some((s) => s.specializationId === SPEC_IDS.TireurDElite);
+  if (hasTireurDElite) {
+    return rules.filter((r) => r !== 'rechargement');
+  }
+  return rules;
+}
+
+/**
+ * Calculates max total spell levels a fighter can know.
+ * Base: Rank (for Mage or spellcasters)
+ * + Rank for each 'connaissances_approfondies' talent.
+ */
+export function calculateMaxSpellLevels(fighter: Fighter): number {
+  const mageSpec = fighter.specializations.find((s) => s.specializationId === SPEC_IDS.Mage);
+  if (!mageSpec) return fighter.rank;
+  const extraTalentsCount = mageSpec.acquiredTalentIds.filter((t) => t === 'connaissances_approfondies').length;
+  return fighter.rank * (1 + extraTalentsCount);
+}
+
+/**
+ * Calculates current total spell levels known by a fighter.
+ */
+export function calculateCurrentSpellLevels(
+  fighter: Fighter,
+  rulesetStore: { getSpell: (id: string) => Spell | undefined }
+): number {
+  return fighter.knownSpellIds.reduce((sum, id) => {
+    const spell = rulesetStore.getSpell(id);
+    return sum + (spell?.level || 1);
+  }, 0);
+}
+

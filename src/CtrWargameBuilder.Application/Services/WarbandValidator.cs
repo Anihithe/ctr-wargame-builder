@@ -257,9 +257,25 @@ public class WarbandValidator : IWarbandValidator
             {
                 result.AddError(ValidationCodes.AnimalCannotHaveSpecialization, $"L'animal '{name}' ne peut pas avoir de spécialisation.", fighter.Id);
             }
-            if (fighter.Equipments.Count > 0)
+            var pugilatCount = 0;
+            foreach (var item in fighter.Equipments)
             {
-                result.AddError(ValidationCodes.AnimalCannotEquipItems, $"L'animal '{name}' ne peut pas porter d'équipement.", fighter.Id);
+                if (equipmentDict.TryGetValue(item.EquipmentId, out var eq))
+                {
+                    var isPugilat = eq.SubCategory.Contains(RuleConstants.SubCategories.Pugilat, StringComparison.OrdinalIgnoreCase) || eq.Id.Contains("pugilat", StringComparison.OrdinalIgnoreCase);
+                    if (!isPugilat || eq.Category == RuleConstants.Categories.Armor || eq.Category == RuleConstants.Categories.Shield)
+                    {
+                        result.AddError(ValidationCodes.AnimalCannotEquipItems, $"L'animal '{name}' ne peut équiper que des armes de pugilat naturelles (pas de protections ni d'autres armes).", fighter.Id);
+                    }
+                    else
+                    {
+                        pugilatCount++;
+                    }
+                }
+            }
+            if (pugilatCount > 2)
+            {
+                result.AddError(ValidationCodes.AnimalCannotEquipItems, $"L'animal '{name}' ne peut pas équiper plus de 2 armes de pugilat (actuellement : {pugilatCount}).", fighter.Id);
             }
         }
 
@@ -359,7 +375,7 @@ public class WarbandValidator : IWarbandValidator
             }
         }
 
-        if (slotsUsed > baseSlots)
+        if (fighter.Type != FighterType.Animal && slotsUsed > baseSlots)
         {
             result.AddError(ValidationCodes.SlotsOverflow, $"'{name}' dépasse sa capacité d'emplacements ({slotsUsed}/{baseSlots} slots occupés).", fighter.Id);
         }
@@ -367,6 +383,12 @@ public class WarbandValidator : IWarbandValidator
         if (armorCount > 1)
         {
             result.AddError(ValidationCodes.MultipleArmors, $"'{name}' porte {armorCount} armures (maximum 1 seule armure autorisée).", fighter.Id);
+        }
+
+        var shieldCount = fighter.Equipments.Count(eq => equipmentDict.TryGetValue(eq.EquipmentId, out var def) && def.Category == RuleConstants.Categories.Shield);
+        if (shieldCount > 1)
+        {
+            result.AddError(ValidationCodes.MultipleShields, $"'{name}' porte {shieldCount} boucliers (maximum 1 seul bouclier autorisé).", fighter.Id);
         }
 
         // Restrictions d'armure pour la Spécialisation Mage (sauf talent mage_de_bataille)

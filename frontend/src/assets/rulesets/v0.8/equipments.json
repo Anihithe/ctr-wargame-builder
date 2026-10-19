@@ -573,7 +573,8 @@
     "slots": 0,
     "protection": 3,
     "statModifiers": {
-      "esquive": -1
+      "esquive": -1,
+      "mouvement": -1
     },
     "specialRuleIds": [
       "encombrant"

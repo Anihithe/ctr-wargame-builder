@@ -3,6 +3,31 @@
 Toutes les modifications notables apportées à ce projet sont documentées dans ce fichier.
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet adhère à [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [0.5.8-beta] - 2026-10-19
+
+### ⚔️ Évolutions de Règles & Retours d'Équilibrage
+- **Gestion Complète des Armes pour Animaux (Pugilat)** :
+  - Équipement automatique par défaut de 2 armes de pugilat adaptées au rang lors de la création de l'animal (`cac_pugilat_1` pour R1, `cac_pugilat_2` pour R2, `cac_pugilat_3` pour R3).
+  - Arsenal / Modal d'équipement adapté pour les animaux : filtre restreint uniquement aux armes de pugilat accessibles selon le rang (maximum 2 armes, 0 emplacements requis).
+  - Inspecteur de combattant avec section dynamique dédiée au pugilat, déséquipement et rééquipement direct.
+  - Export texte et fiches de combat prenant en compte les armes de pugilat équipées et les traits d'origines bestiales (*Bêtes féroces*, *Maître des bêtes*).
+- **Limitation à 1 Bouclier Maximum par Combattant** :
+  - Empêche l'équipement de deux boucliers à une main pour cumuler abusivement +2 en Protection sans subir l'encombrement du bouclier à deux mains.
+  - Validation backend avec code d'erreur `MULTIPLE_SHIELDS` et validation réactive en temps réel dans le modal d'équipement.
+- **Validation du Grimoire de Sorts (Plafond de Niveaux de Sorts)** :
+  - Application stricte de la limite de cumul des sorts du Mage : `Rang * (1 + nb de Connaissances approfondies)`.
+  - Affichage clair du budget dans `SpellPickerModal.vue` et `FighterInspector.vue` (`X / Y niveaux`).
+  - Verrouillage automatique des sorts dont l'apprentissage dépasserait le budget disponible.
+- **Spécialisation Tireur d'élite (Suppression de Rechargement)** :
+  - Les armes de tir des combattants dotés de la spécialisation *Tireur d'élite* ne subissent plus la règle spéciale `rechargement`.
+  - Prise en compte immédiate sur les fiches d'armes de l'inspecteur, de l'arsenal et des cartes d'export.
+- **Équilibrage Armure Niv 3 (Plates)** :
+  - Ajout du malus `-1 Mouvement` manquant dans `rulesets/v0.8/equipments.json` et synchronisé côté frontend.
+- **Ergonomie UI Origines** :
+  - Restauration de la grille sur 2 colonnes (`grid-cols-1 md:grid-cols-2`) dans `WarbandOverview.vue` pour un meilleur confort de lecture sans défilement excessif.
+- **Tests & Qualité** :
+  - Ajout de 3 nouveaux tests unitaires xUnit validant les nouvelles règles (animaux, bouclier unique, budget de sorts). Suite portée à **48 tests 100% verts**.
+
 ## [0.5.7-beta] - 2026-10-19
 
 ### 🏗️ Refactoring Frontend & Outils d'Accélération IA

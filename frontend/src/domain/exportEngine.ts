@@ -105,7 +105,6 @@ export function generateTextExport(
     // Specializations & Talents
     const talentNames: string[] = [];
     if (f.type === 'Animal') {
-      let natWeapon = 'Pugilat (Griffes & Crocs) x2';
       const traits: string[] = [];
       if (warband.selectedOriginIds?.includes(ORIGIN_IDS.BetesFeroces)) {
         traits.push('PA(1)');
@@ -113,10 +112,16 @@ export function generateTextExport(
       if (warband.selectedOriginIds?.includes(ORIGIN_IDS.MaitreDesBetes)) {
         traits.push('Acérée');
       }
-      if (traits.length > 0) {
-        natWeapon += ` [${traits.join(', ')}]`;
+
+      if (formattedWeapons.length === 0) {
+        let natWeapon = 'Pugilat (Griffes & Crocs) x2';
+        if (traits.length > 0) {
+          natWeapon += ` [${traits.join(', ')}]`;
+        }
+        formattedWeapons.push(natWeapon);
+      } else if (traits.length > 0) {
+        formattedWeapons[0] = `${formattedWeapons[0]} [${traits.join(', ')}]`;
       }
-      formattedWeapons.push(natWeapon);
 
       if (f.animalSpeciesBonusId) {
         const sp = rulesetStore.getAnimalSpeciesBonus(f.animalSpeciesBonusId);

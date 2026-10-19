@@ -34,6 +34,7 @@ public static class ValidationCodes
     public const string MagicItemRestricted = "MAGIC_ITEM_RESTRICTED";
     public const string SlotsOverflow = "SLOTS_OVERFLOW";
     public const string MultipleArmors = "MULTIPLE_ARMORS";
+    public const string MultipleShields = "MULTIPLE_SHIELDS";
 
     // Specialization Restrictions
     public const string MageCannotWearArmor = "MAGE_CANNOT_WEAR_ARMOR";

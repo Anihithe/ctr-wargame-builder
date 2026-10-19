@@ -3,8 +3,12 @@ import { ref, computed } from 'vue';
 import { useWarbandStore } from '@/stores/warbandStore';
 import { useRulesetStore } from '@/stores/rulesetStore';
 import type { Spell } from '@/types/ruleset';
-import { canFighterCastSpells } from '@/domain/rulesEngine';
-import { BookOpen, X, Check, AlertCircle } from 'lucide-vue-next';
+import {
+  canFighterCastSpells,
+  calculateMaxSpellLevels,
+  calculateCurrentSpellLevels,
+} from '@/domain/rulesEngine';
+import { BookOpen, X, Check, AlertCircle, Lock } from 'lucide-vue-next';
 
 const props = defineProps<{
   fighterId: string;
@@ -22,6 +26,11 @@ const fighter = computed(() => warband.value?.fighters.find((f) => f.id === prop
 
 const canCast = computed(() => (fighter.value ? canFighterCastSpells(fighter.value, warband.value) : false));
 
+const maxSpellLevels = computed(() => (fighter.value ? calculateMaxSpellLevels(fighter.value) : 0));
+const currentSpellLevels = computed(() =>
+  fighter.value ? calculateCurrentSpellLevels(fighter.value, rulesetStore) : 0,
+);
+
 const selectedLevel = ref<number | 'Tous'>('Tous');
 const allSpells = computed(() => rulesetStore.currentRuleset.spells);
 
@@ -34,9 +43,19 @@ function isSpellKnown(spellId: string): boolean {
   return fighter.value?.knownSpellIds.includes(spellId) ?? false;
 }
 
+function canLearnSpell(spell: Spell): boolean {
+  if (!canCast.value) return false;
+  if (isSpellKnown(spell.id)) return true;
+  return currentSpellLevels.value + spell.level <= maxSpellLevels.value;
+}
+
 function toggleSpell(spell: Spell) {
   if (!fighter.value) return;
-  if (!isSpellKnown(spell.id) && !canCast.value) return;
+  if (isSpellKnown(spell.id)) {
+    warbandStore.toggleSpell(fighter.value.id, spell.id);
+    return;
+  }
+  if (!canLearnSpell(spell)) return;
   warbandStore.toggleSpell(fighter.value.id, spell.id);
 }
 </script>
@@ -51,9 +70,17 @@ function toggleSpell(spell: Spell) {
             <BookOpen class="w-5 h-5 text-cyan-400" />
             <span>Livre des Sorts : {{ fighter?.name }}</span>
           </h2>
-          <p class="text-xs text-grim-400">
-            Sélectionnez les incantations apprises par ce combattant.
-          </p>
+          <div class="flex items-center gap-3 text-xs text-grim-400 mt-1">
+            <span>
+              Cumul des sorts :
+              <strong :class="currentSpellLevels > maxSpellLevels ? 'text-crimson-400' : 'text-cyan-400'">
+                {{ currentSpellLevels }} / {{ maxSpellLevels }} niveaux
+              </strong>
+            </span>
+            <span v-if="currentSpellLevels > maxSpellLevels" class="text-crimson-400 font-semibold">
+              (Budget dépassé !)
+            </span>
+          </div>
         </div>
         <button
           @click="emit('close')"
@@ -99,10 +126,14 @@ function toggleSpell(spell: Spell) {
             v-for="spell in filteredSpells"
             :key="spell.id"
             @click="toggleSpell(spell)"
-            class="trench-card p-4 flex flex-col justify-between cursor-pointer transition border"
-            :class="isSpellKnown(spell.id)
-              ? 'bg-cyan-950/40 border-cyan-600/70 shadow-sm'
-              : 'hover:border-cyan-500/50 hover:bg-grim-850 border-grim-800'"
+            class="trench-card p-4 flex flex-col justify-between transition border"
+            :class="[
+              isSpellKnown(spell.id)
+                ? 'bg-cyan-950/40 border-cyan-600/70 shadow-sm cursor-pointer'
+                : canLearnSpell(spell)
+                  ? 'hover:border-cyan-500/50 hover:bg-grim-850 border-grim-800 cursor-pointer'
+                  : 'border-grim-850 bg-grim-950/50 opacity-50 cursor-not-allowed',
+            ]"
           >
             <div class="space-y-2">
               <div class="flex items-start justify-between">
@@ -124,14 +155,26 @@ function toggleSpell(spell: Spell) {
             </div>
 
             <div class="mt-4 pt-3 border-t border-grim-800 flex items-center justify-between">
-              <span class="text-xs font-semibold" :class="isSpellKnown(spell.id) ? 'text-cyan-400' : 'text-grim-400'">
-                {{ isSpellKnown(spell.id) ? 'Appris dans le grimoire' : 'Non appris' }}
+              <span
+                class="text-xs font-semibold"
+                :class="isSpellKnown(spell.id)
+                  ? 'text-cyan-400'
+                  : canLearnSpell(spell)
+                    ? 'text-grim-400'
+                    : 'text-crimson-400/90'"
+              >
+                {{ isSpellKnown(spell.id) ? 'Appris dans le grimoire' : canLearnSpell(spell) ? 'Non appris' : `Budget insuffisant (+${spell.level} niv.)` }}
               </span>
               <div
                 class="w-5 h-5 rounded border flex items-center justify-center transition"
-                :class="isSpellKnown(spell.id) ? 'bg-cyan-500 border-cyan-400 text-grim-950' : 'border-grim-700'"
+                :class="isSpellKnown(spell.id)
+                  ? 'bg-cyan-500 border-cyan-400 text-grim-950'
+                  : canLearnSpell(spell)
+                    ? 'border-grim-700'
+                    : 'border-grim-800 bg-grim-900 text-grim-600'"
               >
                 <Check v-if="isSpellKnown(spell.id)" class="w-3.5 h-3.5 stroke-[3]" />
+                <Lock v-else-if="!canLearnSpell(spell)" class="w-3 h-3 text-grim-500" />
               </div>
             </div>
           </div>

@@ -1101,6 +1101,88 @@ public class WarbandValidationTests
     }
 
     [Fact]
+    public void Animal_Can_Equip_Up_To_Two_Pugilat_Weapons_Matching_Rank()
+    {
+        var warband = new Warband
+        {
+            FactionId = "alliance",
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter { CustomName = "Leader", Rank = 2, Role = OfficerRole.Leader },
+                new Fighter { CustomName = "Bras droit", Rank = 2, Role = OfficerRole.BrasDroit },
+                new Fighter
+                {
+                    CustomName = "Loup Équipé",
+                    Type = FighterType.Animal,
+                    Rank = 2,
+                    Equipments =
+                    [
+                        new EquippedItem { EquipmentId = "cac_pugilat_2", SlotsOccupied = 0 },
+                        new EquippedItem { EquipmentId = "cac_pugilat_2", SlotsOccupied = 0 }
+                    ]
+                }
+            ]
+        };
+        var result = _validator.Validate(warband, _ruleset);
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public void Fighter_Cannot_Equip_Multiple_Shields()
+    {
+        var warband = new Warband
+        {
+            FactionId = "alliance",
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter { CustomName = "Leader", Rank = 2, Role = OfficerRole.Leader },
+                new Fighter { CustomName = "Bras droit", Rank = 2, Role = OfficerRole.BrasDroit },
+                new Fighter
+                {
+                    CustomName = "Porteur Double Bouclier",
+                    Rank = 3,
+                    Equipments =
+                    [
+                        new EquippedItem { EquipmentId = "prot_bouclier_1", SlotsOccupied = 1 },
+                        new EquippedItem { EquipmentId = "prot_bouclier_1", SlotsOccupied = 1 }
+                    ]
+                }
+            ]
+        };
+        var result = _validator.Validate(warband, _ruleset);
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Messages, m => m.Code == ValidationCodes.MultipleShields);
+    }
+
+    [Fact]
+    public void Mage_Spells_Cannot_Exceed_Rank_Budget()
+    {
+        var warband = new Warband
+        {
+            FactionId = "alliance",
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter { CustomName = "Leader", Rank = 2, Role = OfficerRole.Leader },
+                new Fighter { CustomName = "Bras droit", Rank = 2, Role = OfficerRole.BrasDroit },
+                new Fighter
+                {
+                    CustomName = "Mage R1",
+                    Rank = 1,
+                    AllocatedXp = 6,
+                    Specializations = [new FighterSpecialization { SpecializationId = "mage" }],
+                    KnownSpellIds = ["celerite", "soin"] // 1 + 1 = 2 > 1 (Rang 1)
+                }
+            ]
+        };
+        var result = _validator.Validate(warband, _ruleset);
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Messages, m => m.Code == ValidationCodes.SpellsLevelExceeded);
+    }
+
+    [Fact]
     public void Animal_Cannot_Have_Specializations()
     {
         var warband = new Warband

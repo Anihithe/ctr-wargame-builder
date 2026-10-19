@@ -31,6 +31,9 @@ import {
   calculateFighterSpentXp,
   calculateFighterAvailableXp,
   getSpecializationXpCost,
+  getFighterWeaponSpecialRuleIds,
+  calculateMaxSpellLevels,
+  calculateCurrentSpellLevels,
 } from '@/domain/rulesEngine';
 import { THEME } from '@/constants/theme';
 import { ORIGIN_IDS, FACTION_IDS } from '@/constants/rules';
@@ -98,6 +101,16 @@ const maitriseWeapons = computed(() => {
 const canCastSpells = computed(() => {
   if (!fighter.value) return false;
   return canFighterCastSpells(fighter.value, warband.value);
+});
+
+const maxSpellLevels = computed(() => {
+  if (!fighter.value) return 1;
+  return calculateMaxSpellLevels(fighter.value);
+});
+
+const currentSpellLevels = computed(() => {
+  if (!fighter.value) return 0;
+  return calculateCurrentSpellLevels(fighter.value, rulesetStore);
 });
 
 // Total armor bonus from equipped items, talents, and animal species bonuses
@@ -583,10 +596,10 @@ function godGiftLabel(stat?: string | null): string {
               <span v-if="rulesetStore.getEquipment(eq.equipmentId)?.puissance">Puissance: {{ rulesetStore.getEquipment(eq.equipmentId)?.puissance }} | </span>
               <span v-if="rulesetStore.getEquipment(eq.equipmentId)?.precision">Précision: {{ rulesetStore.getEquipment(eq.equipmentId)?.precision }} | </span>
               <span v-if="rulesetStore.getEquipment(eq.equipmentId)?.rangeInInches">Portée: {{ rulesetStore.getEquipment(eq.equipmentId)?.rangeInInches }}" | </span>
-              <div v-if="rulesetStore.getEquipment(eq.equipmentId)?.specialRuleIds?.length || (!eq.isMagicItem && fighter && rulesetStore.getEquipment(eq.equipmentId) && doesWeaponHaveMaitrise(fighter, rulesetStore.getEquipment(eq.equipmentId)!, warband, rulesetStore))" class="flex flex-wrap items-center gap-1 mt-1">
+              <div v-if="getFighterWeaponSpecialRuleIds(fighter, rulesetStore.getEquipment(eq.equipmentId)!).length || (!eq.isMagicItem && fighter && rulesetStore.getEquipment(eq.equipmentId) && doesWeaponHaveMaitrise(fighter, rulesetStore.getEquipment(eq.equipmentId)!, warband, rulesetStore))" class="flex flex-wrap items-center gap-1 mt-1">
                 <span class="text-[10px] text-grim-400">Règles :</span>
                 <span
-                  v-for="rid in rulesetStore.getEquipment(eq.equipmentId)?.specialRuleIds"
+                  v-for="rid in getFighterWeaponSpecialRuleIds(fighter, rulesetStore.getEquipment(eq.equipmentId)!)"
                   :key="rid"
                   class="inline-block px-1.5 py-0.2 text-[10px] rounded bg-grim-800 text-gold-300 border border-grim-700 font-medium cursor-help"
                   :title="rulesetStore.getSpecialRule(rid)?.description || rid"
@@ -692,62 +705,95 @@ function godGiftLabel(stat?: string | null): string {
 
       <!-- 2. Armes Naturelles (Pugilat x2) -->
       <div class="pt-3 border-t border-grim-800 space-y-2">
-        <span class="text-xs font-bold text-grim-300 uppercase tracking-wider">
-          Armes Naturelles Équipées
-        </span>
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-grim-300 uppercase tracking-wider">
+            Armes Naturelles de Pugilat ({{ fighter.equippedItems.length }} / 2)
+          </span>
+          <button
+            v-if="fighter.equippedItems.length < 2"
+            @click="emit('open-equipment', fighter.id)"
+            class="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-grim-950 rounded transition shadow cursor-pointer active:scale-95"
+          >
+            <Plus class="w-3.5 h-3.5" />
+            <span>Ajouter Pugilat</span>
+          </button>
+        </div>
 
-        <div class="bg-grim-850 border border-grim-800 rounded-lg p-3 space-y-2">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <Sword class="w-4 h-4 text-emerald-400" />
-              <span class="text-xs font-bold text-grim-100">Pugilat (Griffes & Crocs) x 2</span>
+        <div v-if="fighter.equippedItems.length === 0" class="text-xs text-grim-400 italic bg-grim-850 p-3 rounded text-center">
+          Aucune arme de pugilat équipée. Cliquez sur "Ajouter Pugilat" pour équiper.
+        </div>
+
+        <div v-else class="space-y-2">
+          <div
+            v-for="eq in fighter.equippedItems"
+            :key="eq.id"
+            class="bg-grim-850 border border-grim-800 rounded-lg p-3 space-y-2"
+          >
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <Sword class="w-4 h-4 text-emerald-400" />
+                <span class="text-xs font-bold text-grim-100">
+                  {{ rulesetStore.getEquipment(eq.equipmentId)?.name || cleanEquipmentName(eq.equipmentId) }}
+                </span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] px-1.5 py-0.5 rounded font-mono font-bold bg-emerald-950 text-emerald-300 border border-emerald-800">
+                  Naturel (0 slot)
+                </span>
+                <button
+                  @click="warbandStore.unequipItem(fighter.id, eq.id)"
+                  class="p-1 hover:bg-crimson-900/60 rounded text-grim-400 hover:text-crimson-300 transition cursor-pointer"
+                  title="Retirer cette arme"
+                >
+                  <Trash2 class="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
-            <span class="text-[10px] px-1.5 py-0.5 rounded font-mono font-bold bg-emerald-950 text-emerald-300 border border-emerald-800">
-              Naturel
-            </span>
-          </div>
 
-          <div class="text-[11px] text-grim-400 flex items-center gap-3 font-mono">
-            <span>Portée : <strong class="text-grim-200">CàC</strong></span>
-            <span>Puissance : <strong class="text-grim-200">0</strong></span>
-            <span>Précision : <strong class="text-grim-200">0</strong></span>
-          </div>
+            <div class="text-[11px] text-grim-400 flex items-center gap-3 font-mono">
+              <span>Portée : <strong class="text-grim-200">CàC</strong></span>
+              <span>Puissance : <strong class="text-grim-200">{{ rulesetStore.getEquipment(eq.equipmentId)?.puissance ?? 0 }}</strong></span>
+              <span>Précision : <strong class="text-grim-200">{{ rulesetStore.getEquipment(eq.equipmentId)?.precision ? rulesetStore.getEquipment(eq.equipmentId)?.precision + '+' : '0' }}</strong></span>
+            </div>
 
-          <div class="flex flex-wrap items-center gap-1.5 pt-1">
-            <span class="text-[10px] text-grim-400">Règles actives :</span>
-            <span
-              class="inline-block px-1.5 py-0.5 text-[10px] rounded bg-grim-800 text-gold-300 border border-grim-700 font-medium cursor-help"
-              :title="rulesetStore.getSpecialRule('pugilat')?.description || 'Pugilat'"
-            >
-              Pugilat
-            </span>
-            <span
-              v-if="warband?.selectedOriginIds?.includes(ORIGIN_IDS.BetesFeroces)"
-              class="inline-block px-1.5 py-0.5 text-[10px] rounded bg-amber-950/80 text-amber-300 border border-amber-600/60 font-medium cursor-help"
-              title="Bêtes féroces : Les Combattants de type Animal gagnent +1 PV et ajoutent Perce-armure (1) à leurs armes."
-            >
-              Perce-armure (1) [Bêtes féroces]
-            </span>
-            <span
-              v-if="warband?.selectedOriginIds?.includes(ORIGIN_IDS.MaitreDesBetes)"
-              class="inline-block px-1.5 py-0.5 text-[10px] rounded bg-purple-950/80 text-purple-300 border border-purple-600/60 font-medium cursor-help"
-              title="Maître des Bêtes : Les Combattants de type Animal ajoutent Acéré à leurs armes et peuvent être activés gratuitement par vos Officiers."
-            >
-              Acérée [Maître des Bêtes]
-            </span>
-            <span
-              v-if="fighter.animalSpeciesBonusId === 'vol_bond'"
-              class="inline-block px-1.5 py-0.5 text-[10px] rounded bg-blue-950/80 text-blue-300 border border-blue-600/60 font-medium cursor-help"
-              :title="rulesetStore.getSpecialRule('vol_bond')?.description || 'Vol/bond'"
-            >
-              Vol/bond
-            </span>
-            <span
-              v-if="fighter.animalSpeciesBonusId === 'bonus_charge_2_des'"
-              class="inline-block px-1.5 py-0.5 text-[10px] rounded bg-emerald-950/80 text-emerald-300 border border-emerald-600/60 font-medium"
-            >
-              Charge (+2 dés)
-            </span>
+            <div class="flex flex-wrap items-center gap-1.5 pt-1">
+              <span class="text-[10px] text-grim-400">Règles actives :</span>
+              <span
+                v-for="rid in rulesetStore.getEquipment(eq.equipmentId)?.specialRuleIds || []"
+                :key="rid"
+                class="inline-block px-1.5 py-0.5 text-[10px] rounded bg-grim-800 text-gold-300 border border-grim-700 font-medium cursor-help"
+                :title="rulesetStore.getSpecialRule(rid)?.description || rid"
+              >
+                {{ formatSpecialRuleName(rid, rulesetStore.getSpecialRule(rid)?.name, rulesetStore.getEquipment(eq.equipmentId)) }}
+              </span>
+              <span
+                v-if="warband?.selectedOriginIds?.includes(ORIGIN_IDS.BetesFeroces)"
+                class="inline-block px-1.5 py-0.5 text-[10px] rounded bg-amber-950/80 text-amber-300 border border-amber-600/60 font-medium cursor-help"
+                title="Bêtes féroces : Les Combattants de type Animal gagnent +1 PV et ajoutent Perce-armure (1) à leurs armes."
+              >
+                Perce-armure (1) [Bêtes féroces]
+              </span>
+              <span
+                v-if="warband?.selectedOriginIds?.includes(ORIGIN_IDS.MaitreDesBetes)"
+                class="inline-block px-1.5 py-0.5 text-[10px] rounded bg-purple-950/80 text-purple-300 border border-purple-600/60 font-medium cursor-help"
+                title="Maître des Bêtes : Les Combattants de type Animal ajoutent Acéré à leurs armes et peuvent être activés gratuitement par vos Officiers."
+              >
+                Acérée [Maître des Bêtes]
+              </span>
+              <span
+                v-if="fighter.animalSpeciesBonusId === 'vol_bond'"
+                class="inline-block px-1.5 py-0.5 text-[10px] rounded bg-blue-950/80 text-blue-300 border border-blue-600/60 font-medium cursor-help"
+                :title="rulesetStore.getSpecialRule('vol_bond')?.description || 'Vol/bond'"
+              >
+                Vol/bond
+              </span>
+              <span
+                v-if="fighter.animalSpeciesBonusId === 'bonus_charge_2_des'"
+                class="inline-block px-1.5 py-0.5 text-[10px] rounded bg-emerald-950/80 text-emerald-300 border border-emerald-600/60 font-medium"
+              >
+                Charge (+2 dés)
+              </span>
+            </div>
           </div>
 
           <div
@@ -881,7 +927,7 @@ function godGiftLabel(stat?: string | null): string {
         <div class="flex items-center gap-2">
           <BookOpen class="w-4 h-4 text-cyan-400" />
           <h3 class="text-sm font-bold text-white uppercase tracking-wider font-display">
-            Grimoire de Sorts ({{ fighter.knownSpellIds.length }} connus)
+            Grimoire de Sorts ({{ currentSpellLevels }} / {{ maxSpellLevels }} niveaux)
           </h3>
         </div>
 

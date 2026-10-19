@@ -916,8 +916,11 @@ export const useWarbandStore = defineStore('warband', () => {
       }
     }
 
+    const fighterId = generateId();
+    const pugilatId = rank === 1 ? 'cac_pugilat_1' : rank === 2 ? 'cac_pugilat_2' : 'cac_pugilat_3';
+
     const fighter: Fighter = {
-      id: generateId(),
+      id: fighterId,
       warbandId: currentWarband.value.id,
       name,
       type,
@@ -926,7 +929,12 @@ export const useWarbandStore = defineStore('warband', () => {
       officerRole: role,
       status: 'Active',
       allocatedXp: role === 'Leader' ? 12 : role === 'BrasDroit' ? 6 : 0,
-      equippedItems: [],
+      equippedItems: type === 'Animal'
+        ? [
+            { id: generateId(), fighterId, equipmentId: pugilatId, slotIndex: 0, isMagicItem: false },
+            { id: generateId(), fighterId, equipmentId: pugilatId, slotIndex: 1, isMagicItem: false },
+          ]
+        : [],
       specializations: [],
       knownSpellIds: [],
     };
