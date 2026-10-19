@@ -123,7 +123,6 @@ export const useWarbandStore = defineStore('warband', () => {
     let totalCost = 0;
     let leaderCount = 0;
     let brasDroitCount = 0;
-    let rank3Count = 0;
     let monsterCount = 0;
 
     // Calculate total cost for all warband troops (Active, Reserve, Graveyard)
@@ -161,7 +160,7 @@ export const useWarbandStore = defineStore('warband', () => {
     // Check ACTIVE fighters for table quotas and officer roles
     for (const f of activeFighters) {
       if (f.type === 'Guerrier') {
-        if (f.rank === 3) rank3Count++;
+        // No specific warrior quota
       } else if (f.type === 'Monstre') {
         monsterCount++;
       }
@@ -650,14 +649,6 @@ export const useWarbandStore = defineStore('warband', () => {
     }
 
     // Quotas
-    if (rank3Count > 2) {
-      errors.push({
-        code: VALIDATION_CODES.Rank3QuotaExceeded,
-        message: `La bande compte ${rank3Count} combattants de Rang 3 actifs (maximum standard: 2).`,
-        severity: 'Error',
-      });
-    }
-
     const hasDruideOrMaitre = wb.fighters.some((f) =>
       f.specializations.some((s) => s.specializationId === SPEC_IDS.Druide || s.specializationId === SPEC_IDS.MaitreDesBetes)
     );

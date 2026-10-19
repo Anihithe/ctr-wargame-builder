@@ -101,7 +101,6 @@ export const VALIDATION_CODES = {
   MonstruositeOfficerCannotBeRank1: 'MONSTRUOSITE_OFFICER_CANNOT_BE_RANK_1',
 
   // Quotas
-  Rank3QuotaExceeded: 'RANK3_QUOTA_EXCEEDED',
   MonsterQuotaExceeded: 'MONSTER_QUOTA_EXCEEDED',
   AnimalsLimitExceeded: 'ANIMALS_LIMIT_EXCEEDED',
   AnimalCannotHaveSpecialization: 'ANIMAL_CANNOT_HAVE_SPECIALIZATION',
