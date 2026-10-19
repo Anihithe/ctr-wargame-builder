@@ -48,6 +48,7 @@ export const useRulesetStore = defineStore('ruleset', () => {
   const activeVersion = computed(() => currentRuleset.value.manifest.version);
   const isLiveVersion = computed(() => currentRuleset.value.manifest.isLive);
   const config = computed(() => currentRuleset.value.manifest.config);
+  const monsters = computed(() => currentRuleset.value.monsters || []);
 
   async function loadManifests() {
     try {
@@ -145,6 +146,7 @@ export const useRulesetStore = defineStore('ruleset', () => {
     activeVersion,
     isLiveVersion,
     config,
+    monsters,
     loadManifests,
     loadLiveRuleset,
     loadRulesetByVersion,
