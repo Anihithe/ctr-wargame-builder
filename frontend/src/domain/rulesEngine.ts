@@ -282,42 +282,101 @@ export function canEquipEquipment(
 }
 
 /**
+ * Checks whether a specific weapon qualifies for the Maîtrise rule:
+ * 1. If the fighter has at least 1 free slot: all equipped weapons qualify for Maîtrise.
+ * 2. If the fighter has 0 free slots: only weapons of level <= 3 where the fighter has effective rank > 3 qualify.
+ */
+export function doesWeaponHaveMaitrise(
+  fighter: Fighter,
+  weapon: Equipment,
+  warband?: Warband | null,
+  rulesetStore?: {
+    config?: { slotsByRank?: Record<string, number> };
+    getEquipment?: (id: string) => Equipment | undefined;
+    getMagicItem?: (id: string) => any;
+  },
+): boolean {
+  if (fighter.type === 'Animal') return false;
+  if (weapon.category !== EQUIPMENT_CATEGORIES.Melee && weapon.category !== EQUIPMENT_CATEGORIES.Ranged) {
+    return false;
+  }
+
+  // 1. If fighter has at least 1 free slot, Maîtrise applies to all weapon attacks
+  const maxSlots = calculateMaxSlots(fighter, warband, rulesetStore?.config?.slotsByRank);
+  const usedSlots = rulesetStore && rulesetStore.getEquipment ? calculateCurrentSlotsUsed(fighter, rulesetStore as any) : 0;
+  if (maxSlots - usedSlots > 0) {
+    return true;
+  }
+
+  // 2. Second case (0 free slots): weapon level <= 3 AND access to level > 3 (effective rank > 3)
+  if (weapon.level <= 3) {
+    const effRank = calculateEffectiveRank(fighter, weapon, warband);
+    if (effRank > 3) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
  * Checks if a fighter qualifies for the Maîtrise rule:
- * Has at least 1 free slot OR is equipped with a weapon of level <= 3 with effective rank > 3.
+ * - Has at least 1 free slot (all attacks qualify)
+ * - OR equips at least one weapon of level <= 3 in a category where they have access to level > 3.
  */
 export function hasFighterMaitrise(
   fighter: Fighter,
   warband?: Warband | null,
   rulesetStore?: {
     config?: { slotsByRank?: Record<string, number> };
-    getEquipment: (id: string) => Equipment | undefined;
-    getMagicItem: (id: string) => any;
+    getEquipment?: (id: string) => Equipment | undefined;
+    getMagicItem?: (id: string) => any;
   },
 ): boolean {
   if (fighter.type === 'Animal') return false;
 
-  const maxSlots = calculateMaxSlots(fighter, warband, rulesetStore?.config?.slotsByRank);
-  const usedSlots = rulesetStore ? calculateCurrentSlotsUsed(fighter, rulesetStore) : 0;
-
   // 1. Free slot
+  const maxSlots = calculateMaxSlots(fighter, warband, rulesetStore?.config?.slotsByRank);
+  const usedSlots = rulesetStore && rulesetStore.getEquipment ? calculateCurrentSlotsUsed(fighter, rulesetStore as any) : 0;
   if (maxSlots - usedSlots > 0) return true;
 
   // 2. Equipped weapon <= 3 with effective rank > 3
-  if (rulesetStore) {
+  if (rulesetStore && rulesetStore.getEquipment) {
     for (const eq of fighter.equippedItems) {
       if (eq.isMagicItem) continue;
       const item = rulesetStore.getEquipment(eq.equipmentId);
       if (!item) continue;
-      if (item.category === EQUIPMENT_CATEGORIES.Melee || item.category === EQUIPMENT_CATEGORIES.Ranged) {
-        if (item.level <= 3) {
-          const eff = calculateEffectiveRank(fighter, item, warband);
-          if (eff > 3) return true;
-        }
+      if (doesWeaponHaveMaitrise(fighter, item, warband, rulesetStore)) {
+        return true;
       }
     }
   }
 
   return false;
+}
+
+/**
+ * Returns the list of equipped weapons that qualify for Maîtrise.
+ */
+export function getFighterMaitriseWeapons(
+  fighter: Fighter,
+  warband?: Warband | null,
+  rulesetStore?: {
+    config?: { slotsByRank?: Record<string, number> };
+    getEquipment?: (id: string) => Equipment | undefined;
+    getMagicItem?: (id: string) => any;
+  },
+): Equipment[] {
+  if (!rulesetStore || !rulesetStore.getEquipment) return [];
+  const list: Equipment[] = [];
+  for (const eq of fighter.equippedItems) {
+    if (eq.isMagicItem) continue;
+    const item = rulesetStore.getEquipment(eq.equipmentId);
+    if (item && doesWeaponHaveMaitrise(fighter, item, warband, rulesetStore)) {
+      list.push(item);
+    }
+  }
+  return list;
 }
 
 /**

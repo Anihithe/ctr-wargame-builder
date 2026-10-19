@@ -3,6 +3,19 @@
 Toutes les modifications notables apportées à ce projet sont documentées dans ce fichier.
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet adhère à [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [0.5.1-beta] - 2026-10-19
+
+### ⚔️ Correction & Précision de la Règle Spéciale Maîtrise
+- **Correction du Moteur de Règles (`rulesEngine.ts`)** :
+  - Respect strict des 2 conditions de Maîtrise :
+    1. Présence d'au moins un emplacement d'équipement libre (`freeSlots > 0`).
+    2. Utilisation d'une arme de niveau $\le 3$ alors que le combattant a accès à un niveau $> 3$ dans cette catégorie (`doesWeaponHaveMaitrise`).
+  - Un combattant équipant deux armes de niveau $\le 3$ (occupant tous ses slots) dans des catégories où il a accès au niveau 4 bénéficie désormais bel et bien de la Maîtrise sur ces armes.
+- **Affichage & Interface Utilisateur** :
+  - **Modal d'équipement (`EquipmentPickerModal.vue`)** : l'en-tête affiche l'état réel de Maîtrise même avec 0 emplacement libre disponible (`Maîtrise active via armes`), et chaque arme éligible affiche le badge `★ Maîtrise`.
+  - **Panneau Inspecteur (`InspectorPanel.vue`)** : bannière contextuelle détaillant les armes bénéficiant de la Maîtrise et badge `★ Maîtrise` directement sous chaque arme équipée concernée.
+  - **Cartes de Combat & Export (`ExportWarbandModal.vue` & `exportEngine.ts`)** : ajout automatique de `Maîtrise` dans la colonne des règles spéciales de l'arme et dans les aptitudes du combattant, ainsi que dans les exports texte / Discord (`(Maîtrise)`).
+
 ## [0.5.0-beta] - 2026-10-19
 
 ### 📤 Système d'Exportation Double (Partage Texte/Discord & Fiches Tabletop)
