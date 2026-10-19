@@ -17,11 +17,13 @@ import {
   ChevronDown,
   ChevronUp,
   AlertCircle,
+  Share2,
 } from 'lucide-vue-next';
 
 const emit = defineEmits<{
   (e: 'open-create'): void;
   (e: 'open-migration'): void;
+  (e: 'open-export'): void;
 }>();
 
 const warbandStore = useWarbandStore();
@@ -122,6 +124,16 @@ function onGoldChange(val: number) {
               <span>Migrer (v{{ warband?.rulesetVersion }})</span>
             </button>
           </div>
+
+          <button
+            v-if="warband"
+            @click="emit('open-export')"
+            class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-grim-800 hover:bg-grim-750 text-gold-300 hover:text-gold-200 border border-gold-500/40 hover:border-gold-500/70 rounded-lg shadow transition active:scale-95"
+            title="Exporter la bande (Texte, Discord, Fiches de jeu)"
+          >
+            <Share2 class="w-3.5 h-3.5 text-gold-400" />
+            <span>Exporter</span>
+          </button>
 
           <button
             @click="emit('open-create')"

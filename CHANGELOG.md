@@ -3,6 +3,27 @@
 Toutes les modifications notables apportées à ce projet sont documentées dans ce fichier.
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet adhère à [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [0.5.0-beta] - 2026-10-19
+
+### 📤 Système d'Exportation Double (Partage Texte/Discord & Fiches Tabletop)
+- **Export Texte & Discord (Style Old World Builder / Trench-Companion)** :
+  - **3 Types de listes** : *Régulière* (détaillée avec profils, armes, armures et talents), *Compacte* (optimisée pour Discord avec sous-lignes `-#`), *Minimaliste* (1 ligne condensée par unité).
+  - **2 Formats de sortie** : *Discord / Markdown* (titres `##`, gras, listes) et *Texte brut* (ASCII).
+  - **Options configurables** : affichage des statistiques, des talents/règles, inclusion de la réserve/cimetière, et mode *Liste Secrète* (masque les objets magiques et le budget restant pour les tournois).
+  - **Aperçu interactif & Actions** : zone d'aperçu dynamique en direct, copie en 1 clic dans le presse-papier avec retour visuel, téléchargement `.txt` et sauvegarde `.json`.
+- **Fiches de Combat & Impression Table (Format Battle Scroll / AoS)** :
+  - **Design inspiré de `card-builder-ctr`** :
+    - *Stat Dial* circulaire avec points de vie en grand au centre et caractéristiques (M, C, E, V) sur les nœuds cardinaux.
+    - **Jauge de points de vie sur table** : cases à cocher `[ ]` pour marquer les blessures au crayon en cours de partie.
+    - Tableau complet des armes & armures (Portée, Puissance, Précision, Règles avec valeurs réelles comme *Perce-armure (1)*).
+    - Blocs d'aptitudes, talents et sorts avec rappels de règles complets pour jouer sans rouvrir les PDF.
+  - **Prise en charge de l'impression `@media print`** :
+    - Mode *Parchemin Authentique CTR* vs Mode *Éco-Encre* (monochrome sur fond blanc pour économiser l'encre).
+    - Mise en page automatique A4 avec saut de page propre pour découpage.
+    - Déclenchement de `window.print()` en un clic via le bouton d'impression.
+- **Intégration UI** :
+  - Bouton *« Exporter »* avec icône de partage intégré dans l'en-tête persistant `AppHeader.vue`.
+
 ## [0.4.0-beta] - 2026-10-19
 
 ### 🧹 Refactorisation & Élimination des Valeurs Magiques

@@ -597,4 +597,37 @@ export function formatSpecialRuleName(
   return baseName;
 }
 
+/**
+ * Calculates total gold cost of a single fighter including base cost (by type/rank) and equipped items.
+ */
+export function calculateFighterGoldCost(
+  fighter: Fighter,
+  rulesetStore: {
+    getMagicItem?: (id: string) => any;
+    getEquipment?: (id: string) => any;
+  },
+): number {
+  let cost = 0;
+  if (fighter.type === 'Guerrier') {
+    cost = fighter.rank;
+  } else if (fighter.type === 'Monstre') {
+    cost = 4;
+  } else if (fighter.type === 'Animal') {
+    cost = fighter.rank;
+  }
+
+  for (const eq of fighter.equippedItems) {
+    if (eq.isMagicItem && rulesetStore.getMagicItem) {
+      const mi = rulesetStore.getMagicItem(eq.equipmentId);
+      if (mi) cost += mi.costInGold || 0;
+    } else if (!eq.isMagicItem && rulesetStore.getEquipment) {
+      const eqDef = rulesetStore.getEquipment(eq.equipmentId);
+      if (eqDef) cost += eqDef.costInGold || 0;
+    }
+  }
+
+  return cost;
+}
+
+
 
