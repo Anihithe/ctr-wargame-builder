@@ -1257,6 +1257,153 @@ public class WarbandValidationTests
         // Assert: le Bras droit ne dépasse plus ses XP
         Assert.DoesNotContain(resWithGraveyard.Messages, m => m.Code == ValidationCodes.XpLimitExceeded && m.FighterId == wbBothLiving.Fighters[1].Id);
     }
+
+    [Fact]
+    public void UnionDesPeuples_AlliedFighter_WithoutAlliedFaction_ShouldFail()
+    {
+        // Arrange
+        var warband = new Warband
+        {
+            Name = "Bande Union",
+            FactionId = "alliance",
+            AllegianceId = RuleConstants.Allegiances.UnionDesPeuples,
+            SelectedAllegianceRuleName = "Collaboration",
+            AlliedFactionId = null, // Aucune faction alliée sélectionnée
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter { CustomName = "Leader", Rank = 2, Role = OfficerRole.Leader },
+                new Fighter { CustomName = "Bras Droit", Rank = 2, Role = OfficerRole.BrasDroit },
+                new Fighter { CustomName = "Allié Inconnu", Rank = 1, IsAllied = true }
+            ]
+        };
+
+        // Act
+        var result = _validator.Validate(warband, _ruleset);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Messages, m => m.Code == ValidationCodes.AlliedFactionRequired);
+    }
+
+    [Fact]
+    public void UnionDesPeuples_AlliedFactionSameAsMain_ShouldFail()
+    {
+        // Arrange
+        var warband = new Warband
+        {
+            Name = "Bande Union Erreur",
+            FactionId = "alliance",
+            AllegianceId = RuleConstants.Allegiances.UnionDesPeuples,
+            SelectedAllegianceRuleName = "Collaboration",
+            AlliedFactionId = "alliance", // Même faction que la principale
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter { CustomName = "Leader", Rank = 2, Role = OfficerRole.Leader },
+                new Fighter { CustomName = "Bras Droit", Rank = 2, Role = OfficerRole.BrasDroit }
+            ]
+        };
+
+        // Act
+        var result = _validator.Validate(warband, _ruleset);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Messages, m => m.Code == ValidationCodes.AlliedFactionSameAsMain);
+    }
+
+    [Fact]
+    public void UnionDesPeuples_AlliedFighter_WithoutUnionDesPeuplesAllegiance_ShouldFail()
+    {
+        // Arrange
+        var warband = new Warband
+        {
+            Name = "Bande Alliance Classique",
+            FactionId = "alliance",
+            AllegianceId = "corps_d_armee", // Pas Union des peuples
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter { CustomName = "Leader", Rank = 2, Role = OfficerRole.Leader },
+                new Fighter { CustomName = "Bras Droit", Rank = 2, Role = OfficerRole.BrasDroit },
+                new Fighter { CustomName = "Combattant Illégal", Rank = 1, IsAllied = true, FactionId = "brutalite" }
+            ]
+        };
+
+        // Act
+        var result = _validator.Validate(warband, _ruleset);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Messages, m => m.Code == ValidationCodes.AlliedFighterForbiddenWithoutAllegiance);
+    }
+
+    [Fact]
+    public void UnionDesPeuples_AlliedFighter_BenefitsOnlyFromAlliedOrigin_AndNotMainFactionRules()
+    {
+        // Arrange :
+        // Faction principale : L'Excellence (interdit armures et boucliers).
+        // Origine principale : Goules (interdit armure au Rang 1).
+        // Allégeance : Union des peuples (Collaboration).
+        // Faction alliée : Alliance (qui autorise armures).
+        // Origine alliée : Noblesse (+1 niveau effectif aux armures).
+        var warband = new Warband
+        {
+            Name = "L'Excellence et ses Mercenaires de l'Alliance",
+            FactionId = RuleConstants.Factions.Excellence,
+            AllegianceId = RuleConstants.Allegiances.UnionDesPeuples,
+            SelectedAllegianceRuleName = "Collaboration",
+            AlliedFactionId = RuleConstants.Factions.Alliance,
+            AlliedOriginId = RuleConstants.Origins.Noblesse,
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter
+                {
+                    CustomName = "Leader Excellence",
+                    Rank = 2,
+                    Role = OfficerRole.Leader,
+                    IsAllied = false,
+                    // Si porte armure -> interdit par Excellence (ArmorForbiddenFaction)
+                    Equipments = [new EquippedItem { EquipmentId = "prot_armure_2", SlotsOccupied = 1 }]
+                },
+                new Fighter
+                {
+                    CustomName = "Bras Droit Excellence",
+                    Rank = 2,
+                    Role = OfficerRole.BrasDroit,
+                    IsAllied = false
+                },
+                new Fighter
+                {
+                    CustomName = "Garde Allié Alliance",
+                    Rank = 1,
+                    IsAllied = true,
+                    FactionId = RuleConstants.Factions.Alliance,
+                    // Rang 1 de l'Alliance avec Origine Noblesse (+1 rang effectif pour armure = Rang 2).
+                    // Porte armure niveau 2 (prot_armure_2) !
+                    // S'il subissait les règles de l'Excellence -> ArmorForbiddenFaction.
+                    // S'il n'avait pas l'origine Noblesse -> ItemLevelTooHigh (Niveau 2 > Rang 1).
+                    // Mais étant Allié avec Noblesse -> Autorisé sans erreur d'armure !
+                    Equipments = [new EquippedItem { EquipmentId = "prot_armure_2", SlotsOccupied = 1 }]
+                }
+            ]
+        };
+
+        // Act
+        var result = _validator.Validate(warband, _ruleset);
+
+        // Assert :
+        // 1. Le Leader Excellence doit avoir l'erreur ArmorForbiddenFaction
+        Assert.Contains(result.Messages, m => m.Code == ValidationCodes.ArmorForbiddenFaction && m.FighterId == warband.Fighters[0].Id);
+
+        // 2. Le Garde Allié Alliance NE DOIT PAS avoir l'erreur ArmorForbiddenFaction
+        Assert.DoesNotContain(result.Messages, m => m.Code == ValidationCodes.ArmorForbiddenFaction && m.FighterId == warband.Fighters[2].Id);
+
+        // 3. Le Garde Allié Alliance bénéficie bien de Noblesse : son armure niv 2 est acceptée (pas d'erreur ItemLevelTooHigh)
+        Assert.DoesNotContain(result.Messages, m => m.Code == ValidationCodes.ItemLevelTooHigh && m.FighterId == warband.Fighters[2].Id);
+    }
 }
 
 

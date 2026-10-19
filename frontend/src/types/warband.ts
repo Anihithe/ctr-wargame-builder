@@ -31,6 +31,8 @@ export interface Fighter {
   allocatedXp?: number;
   notes?: string;
   godGiftStat?: 'mouvement' | 'pv' | 'volonte' | 'esquive' | 'combat' | null;
+  isAllied?: boolean;
+  factionId?: string;
   equippedItems: EquippedItem[];
   specializations: FighterSpecialization[];
   knownSpellIds: string[];
@@ -43,6 +45,8 @@ export interface Warband {
   factionId: string;
   allegianceId?: string;
   selectedAllegianceRuleName?: string;
+  alliedFactionId?: string;
+  alliedOriginId?: string;
   selectedOriginIds: string[];
   startingGoldPo: number;
   currentGoldPo: number;

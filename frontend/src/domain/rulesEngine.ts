@@ -11,6 +11,26 @@ export interface FighterStats {
 }
 
 /**
+ * Returns the effective faction ID for a fighter (allied faction if allied, otherwise warband faction).
+ */
+export function getFighterEffectiveFactionId(fighter: Fighter, warband?: Warband | null): string | undefined {
+  if (fighter.isAllied && warband?.alliedFactionId) {
+    return warband.alliedFactionId;
+  }
+  return fighter.factionId || warband?.factionId;
+}
+
+/**
+ * Returns the effective origins for a fighter (allied origin if allied, otherwise warband origins).
+ */
+export function getFighterEffectiveOrigins(fighter: Fighter, warband?: Warband | null): string[] {
+  if (fighter.isAllied) {
+    return warband?.alliedOriginId ? [warband.alliedOriginId] : [];
+  }
+  return warband?.selectedOriginIds || [];
+}
+
+/**
  * Calculates max equipment slots for a fighter.
  */
 export function calculateMaxSlots(
@@ -28,7 +48,8 @@ export function calculateMaxSlots(
     slots = fighter.rank >= 3 ? 3 : 2;
   }
 
-  if (fighter.officerRole !== 'None' && warband?.selectedOriginIds?.includes(ORIGIN_IDS.Mutants)) {
+  const origins = getFighterEffectiveOrigins(fighter, warband);
+  if (fighter.officerRole !== 'None' && origins.includes(ORIGIN_IDS.Mutants)) {
     slots += 1;
   }
 
@@ -68,7 +89,7 @@ export function calculateEffectiveRank(
   warband?: Warband | null,
 ): number {
   let rank = fighter.rank;
-  const origins = warband?.selectedOriginIds || [];
+  const origins = getFighterEffectiveOrigins(fighter, warband);
 
   // Origins bonuses
   if (
@@ -171,7 +192,7 @@ export function getEquipmentEquipError(
   currentEquippedArmor?: Equipment | null,
   remainingSlots?: number,
 ): string | null {
-  const origins = warband?.selectedOriginIds || [];
+  const origins = getFighterEffectiveOrigins(fighter, warband);
 
   // 1. Animals cannot equip anything
   if (fighter.type === 'Animal') {
@@ -189,8 +210,8 @@ export function getEquipmentEquipError(
     }
   }
 
-  // 3. Excellence Faction Restriction (Réflexes surhumains)
-  const isExcellence = warband?.factionId === FACTION_IDS.Excellence;
+  // 3. Excellence Faction Restriction (Réflexes surhumains : ne s'applique qu'aux combattants de la faction principale Excellence)
+  const isExcellence = !fighter.isAllied && warband?.factionId === FACTION_IDS.Excellence;
   const hasGardesRoyaux = origins.includes(ORIGIN_IDS.GardesRoyaux);
   if (isExcellence && (eq.category === EQUIPMENT_CATEGORIES.Armor || eq.category === EQUIPMENT_CATEGORIES.Shield) && !hasGardesRoyaux) {
     return "Interdit pour L'Excellence (Réflexes surhumains : pas d'armure ni bouclier)";
@@ -406,10 +427,11 @@ export function calculateFighterStats(
   },
 ): FighterStats {
   const stats: FighterStats = { mouvement: 6, combat: 4, esquive: 3, volonte: 5, pv: 7 };
+  const effectiveFactionId = getFighterEffectiveFactionId(fighter, warband);
 
   // 1. Base profile
   if (fighter.type === 'Guerrier') {
-    const faction = warband ? rulesetStore.getFaction(warband.factionId) : null;
+    const faction = effectiveFactionId ? rulesetStore.getFaction(effectiveFactionId) : null;
     const base = faction?.profiles?.[fighter.rank.toString()];
     if (base) {
       stats.mouvement = base.mouvement ?? stats.mouvement;
@@ -429,7 +451,7 @@ export function calculateFighterStats(
         stats.pv = m.pv;
       }
     } else {
-      const faction = warband ? rulesetStore.getFaction(warband.factionId) : null;
+      const faction = effectiveFactionId ? rulesetStore.getFaction(effectiveFactionId) : null;
       const base = faction?.profiles?.[fighter.rank.toString()];
       if (base) {
         stats.mouvement = base.mouvement ?? stats.mouvement;
@@ -464,18 +486,18 @@ export function calculateFighterStats(
     return item?.category === EQUIPMENT_CATEGORIES.Armor || item?.category === EQUIPMENT_CATEGORIES.Shield;
   });
 
-  // 2. Faction Special Rules
-  if (warband?.factionId === FACTION_IDS.Excellence) {
+  // 2. Faction Special Rules (ne s'applique qu'aux combattants de la faction principale)
+  if (!fighter.isAllied && warband?.factionId === FACTION_IDS.Excellence) {
     // Réflexes surhumains : bonus d'Esquive de +1 si ne porte pas d'armure ni de bouclier
     if (!hasArmorOrShield) {
       stats.esquive += 1;
     }
   }
 
-  // 3. Origin modifiers
-  const origins = warband?.selectedOriginIds || [];
+  // 3. Origin modifiers (bénéficie de l'origine alliée si allié, ou des origines de la bande si principal)
+  const origins = getFighterEffectiveOrigins(fighter, warband);
   if (fighter.type === 'Guerrier') {
-    const faction = warband ? rulesetStore.getFaction(warband.factionId) : null;
+    const faction = effectiveFactionId ? rulesetStore.getFaction(effectiveFactionId) : null;
     const availableOrigins = faction?.origins || [];
     for (const oId of origins) {
       const origDef = availableOrigins.find((o: any) => o.id === oId);

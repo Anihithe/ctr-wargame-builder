@@ -17,6 +17,7 @@ export const FACTION_IDS = {
 export const ALLEGIANCE_IDS = {
   ConclaveDesMages: 'conclave_des_mages',
   OrdreDuTemple: 'ordre_du_temple',
+  UnionDesPeuples: 'union_des_peuples',
   Alliance: 'alliance',
 } as const;
 
@@ -85,6 +86,10 @@ export const VALIDATION_CODES = {
   OriginsLimitExceeded: 'ORIGINS_LIMIT_EXCEEDED',
   WarbandSizeExceeded: 'MAX_FIGHTERS_EXCEEDED',
   BudgetExceeded: 'BUDGET_EXCEEDED',
+  AlliedFactionRequired: 'ALLIED_FACTION_REQUIRED',
+  AlliedFactionSameAsMain: 'ALLIED_FACTION_SAME_AS_MAIN',
+  AlliedOriginInvalid: 'ALLIED_ORIGIN_INVALID',
+  AlliedFighterForbiddenWithoutAllegiance: 'ALLIED_FIGHTER_FORBIDDEN_WITHOUT_ALLEGIANCE',
 
   // Officers
   LeaderRequired: 'LEADER_REQUIRED',

@@ -31,6 +31,8 @@ public class WarbandDbContext : DbContext
             b.HasKey(w => w.Id);
             b.Property(w => w.Name).HasMaxLength(100).IsRequired();
             b.Property(w => w.FactionId).HasMaxLength(50).IsRequired();
+            b.Property(w => w.AlliedFactionId).HasMaxLength(50);
+            b.Property(w => w.AlliedOriginId).HasMaxLength(50);
             b.Property(w => w.RulesetVersion).HasMaxLength(20).IsRequired();
 
             b.Property(w => w.SelectedOriginIds)
@@ -56,6 +58,7 @@ public class WarbandDbContext : DbContext
         {
             b.HasKey(f => f.Id);
             b.Property(f => f.CustomName).HasMaxLength(100);
+            b.Property(f => f.FactionId).HasMaxLength(50);
 
             b.Property(f => f.KnownSpellIds)
                 .HasConversion(
