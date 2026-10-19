@@ -90,6 +90,37 @@ public class WarbandValidator : IWarbandValidator
             result.AddError(ValidationCodes.AnimalsLimitExceeded, $"La bande ne peut recruter que {maxAnimals} Animaux au maximum dans la liste (actuel : {animalCount}).");
         }
 
+        // Validation Union des peuples (Collaboration)
+        var isUnionDesPeuples = string.Equals(warband.AllegianceId, RuleConstants.Allegiances.UnionDesPeuples, StringComparison.OrdinalIgnoreCase);
+        FactionDefinition? alliedFaction = null;
+
+        if (isUnionDesPeuples)
+        {
+            if (!string.IsNullOrWhiteSpace(warband.AlliedFactionId))
+            {
+                if (string.Equals(warband.AlliedFactionId, warband.FactionId, StringComparison.OrdinalIgnoreCase))
+                {
+                    result.AddError(ValidationCodes.AlliedFactionSameAsMain, "La Faction Alliée ne peut pas être la même que la Faction principale de la bande.");
+                }
+                else
+                {
+                    alliedFaction = ruleset.Factions.FirstOrDefault(f => string.Equals(f.Id, warband.AlliedFactionId, StringComparison.OrdinalIgnoreCase));
+                    if (alliedFaction == null)
+                    {
+                        result.AddError(ValidationCodes.FactionNotFound, $"La Faction Alliée '{warband.AlliedFactionId}' est inconnue.");
+                    }
+                    else if (!string.IsNullOrWhiteSpace(warband.AlliedOriginId))
+                    {
+                        var originExists = alliedFaction.Origins.Any(o => string.Equals(o.Id, warband.AlliedOriginId, StringComparison.OrdinalIgnoreCase));
+                        if (!originExists)
+                        {
+                            result.AddError(ValidationCodes.AlliedOriginInvalid, $"L'Origine Alliée '{warband.AlliedOriginId}' n'appartient pas à la Faction Alliée {alliedFaction.Name}.");
+                        }
+                    }
+                }
+            }
+        }
+
         // 7. Validation par Combattant
         var seenSpecializationCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
@@ -101,19 +132,38 @@ public class WarbandValidator : IWarbandValidator
         var specDict = ruleset.Specializations
             .ToDictionary(s => s.Id, s => s, StringComparer.OrdinalIgnoreCase);
 
-        var hasMutantsOrigin = warband.SelectedOriginIds.Any(o => string.Equals(o, RuleConstants.Origins.Mutants, StringComparison.OrdinalIgnoreCase));
-        var hasNoblesseOrigin = warband.SelectedOriginIds.Any(o => string.Equals(o, RuleConstants.Origins.Noblesse, StringComparison.OrdinalIgnoreCase));
-        var hasChevaliersNoirsOrigin = warband.SelectedOriginIds.Any(o => string.Equals(o, RuleConstants.Origins.ChevaliersNoirs, StringComparison.OrdinalIgnoreCase));
-        var hasCompagnieDeFerOrigin = warband.SelectedOriginIds.Any(o => string.Equals(o, RuleConstants.Origins.CompagnieDeFer, StringComparison.OrdinalIgnoreCase));
-        var hasGardesRoyauxOrigin = warband.SelectedOriginIds.Any(o => string.Equals(o, RuleConstants.Origins.GardesRoyaux, StringComparison.OrdinalIgnoreCase));
-        var hasDestructeursOrigin = warband.SelectedOriginIds.Any(o => string.Equals(o, RuleConstants.Origins.Destructeurs, StringComparison.OrdinalIgnoreCase));
-        var hasGoulesOrigin = warband.SelectedOriginIds.Any(o => string.Equals(o, RuleConstants.Origins.Goules, StringComparison.OrdinalIgnoreCase));
-        var hasEsclavagistesOrigin = warband.SelectedOriginIds.Any(o => string.Equals(o, RuleConstants.Origins.Esclavagistes, StringComparison.OrdinalIgnoreCase));
-        var hasVeteransOrigin = warband.SelectedOriginIds.Any(o => string.Equals(o, RuleConstants.Origins.Veterans, StringComparison.OrdinalIgnoreCase));
-
         foreach (var fighter in warband.Fighters)
         {
-            ValidateFighter(fighter, warband, faction, ruleset, equipmentDict, specDict, seenSpecializationCounts,
+            var fighterName = string.IsNullOrWhiteSpace(fighter.CustomName) ? $"Combattant ({fighter.Type} Rang {fighter.Rank})" : fighter.CustomName;
+
+            if (fighter.IsAllied)
+            {
+                if (!isUnionDesPeuples)
+                {
+                    result.AddError(ValidationCodes.AlliedFighterForbiddenWithoutAllegiance, $"Le combattant '{fighterName}' ne peut être Allié que sous l'Allégeance Union des peuples.", fighter.Id);
+                }
+                else if (string.IsNullOrWhiteSpace(warband.AlliedFactionId))
+                {
+                    result.AddError(ValidationCodes.AlliedFactionRequired, $"Le combattant '{fighterName}' est marqué comme Allié mais aucune Faction Alliée n'est sélectionnée pour la bande.", fighter.Id);
+                }
+            }
+
+            var effectiveFaction = (fighter.IsAllied && alliedFaction != null) ? alliedFaction : faction;
+            var effectiveOrigins = fighter.IsAllied
+                ? (!string.IsNullOrWhiteSpace(warband.AlliedOriginId) ? new List<string> { warband.AlliedOriginId } : new List<string>())
+                : warband.SelectedOriginIds;
+
+            var hasMutantsOrigin = effectiveOrigins.Any(o => string.Equals(o, RuleConstants.Origins.Mutants, StringComparison.OrdinalIgnoreCase));
+            var hasNoblesseOrigin = effectiveOrigins.Any(o => string.Equals(o, RuleConstants.Origins.Noblesse, StringComparison.OrdinalIgnoreCase));
+            var hasChevaliersNoirsOrigin = effectiveOrigins.Any(o => string.Equals(o, RuleConstants.Origins.ChevaliersNoirs, StringComparison.OrdinalIgnoreCase));
+            var hasCompagnieDeFerOrigin = effectiveOrigins.Any(o => string.Equals(o, RuleConstants.Origins.CompagnieDeFer, StringComparison.OrdinalIgnoreCase));
+            var hasGardesRoyauxOrigin = effectiveOrigins.Any(o => string.Equals(o, RuleConstants.Origins.GardesRoyaux, StringComparison.OrdinalIgnoreCase));
+            var hasDestructeursOrigin = effectiveOrigins.Any(o => string.Equals(o, RuleConstants.Origins.Destructeurs, StringComparison.OrdinalIgnoreCase));
+            var hasGoulesOrigin = effectiveOrigins.Any(o => string.Equals(o, RuleConstants.Origins.Goules, StringComparison.OrdinalIgnoreCase));
+            var hasEsclavagistesOrigin = effectiveOrigins.Any(o => string.Equals(o, RuleConstants.Origins.Esclavagistes, StringComparison.OrdinalIgnoreCase));
+            var hasVeteransOrigin = effectiveOrigins.Any(o => string.Equals(o, RuleConstants.Origins.Veterans, StringComparison.OrdinalIgnoreCase));
+
+            ValidateFighter(fighter, warband, faction, effectiveFaction, ruleset, equipmentDict, specDict, seenSpecializationCounts,
                 hasMutantsOrigin, hasNoblesseOrigin, hasChevaliersNoirsOrigin, hasCompagnieDeFerOrigin,
                 hasGardesRoyauxOrigin, hasDestructeursOrigin, hasGoulesOrigin, hasEsclavagistesOrigin, hasVeteransOrigin, result);
         }
@@ -158,7 +208,8 @@ public class WarbandValidator : IWarbandValidator
     private static void ValidateFighter(
         Fighter fighter,
         Warband warband,
-        FactionDefinition faction,
+        FactionDefinition mainFaction,
+        FactionDefinition effectiveFaction,
         GameRuleset ruleset,
         Dictionary<string, EquipmentDefinition> equipmentDict,
         Dictionary<string, SpecializationDefinition> specDict,
@@ -177,7 +228,7 @@ public class WarbandValidator : IWarbandValidator
         var name = string.IsNullOrWhiteSpace(fighter.CustomName) ? $"Combattant ({fighter.Type} Rang {fighter.Rank})" : fighter.CustomName;
 
         // Restriction Monstruosité Rang 1 sans Esclavagistes
-        if (string.Equals(faction.Id, RuleConstants.Factions.Monstruosite, StringComparison.OrdinalIgnoreCase) && fighter.Type == FighterType.Infantry && fighter.Rank == 1 && !hasEsclavagistesOrigin)
+        if (string.Equals(effectiveFaction.Id, RuleConstants.Factions.Monstruosite, StringComparison.OrdinalIgnoreCase) && fighter.Type == FighterType.Infantry && fighter.Rank == 1 && !hasEsclavagistesOrigin)
         {
             result.AddError(ValidationCodes.MonstruositeRank1RequiresEsclavagistes, $"La faction Monstruosité ne peut pas recruter de Combattant de Rang 1 sans l'origine Esclavagistes ('{name}').", fighter.Id);
         }
@@ -189,11 +240,11 @@ public class WarbandValidator : IWarbandValidator
             {
                 result.AddError(ValidationCodes.AnimalCannotBeOfficer, $"L'animal '{name}' ne peut pas être désigné Officier.", fighter.Id);
             }
-            else if (fighter.Type == FighterType.Monster && !faction.CanHaveMonstersAsOfficers)
+            else if (fighter.Type == FighterType.Monster && !effectiveFaction.CanHaveMonstersAsOfficers)
             {
-                result.AddError(ValidationCodes.MonsterCannotBeOfficer, $"Le monstre '{name}' ne peut pas être Officier pour la faction {faction.Name}.", fighter.Id);
+                result.AddError(ValidationCodes.MonsterCannotBeOfficer, $"Le monstre '{name}' ne peut pas être Officier pour la faction {effectiveFaction.Name}.", fighter.Id);
             }
-            if (string.Equals(faction.Id, RuleConstants.Factions.Monstruosite, StringComparison.OrdinalIgnoreCase) && fighter.Rank == 1)
+            if (string.Equals(effectiveFaction.Id, RuleConstants.Factions.Monstruosite, StringComparison.OrdinalIgnoreCase) && fighter.Rank == 1)
             {
                 result.AddError(ValidationCodes.MonstruositeOfficerCannotBeRank1, $"La faction Monstruosité ne peut pas désigner un Combattant de Rang 1 comme Officier ('{name}').", fighter.Id);
             }
@@ -362,9 +413,9 @@ public class WarbandValidator : IWarbandValidator
         }
 
         // Restrictions d'armure de faction (Ex: L'Excellence)
-        if ((hasArmor || hasShield) && string.Equals(faction.Id, RuleConstants.Factions.Excellence, StringComparison.OrdinalIgnoreCase) && !hasGardesRoyauxOrigin)
+        if (!fighter.IsAllied && (hasArmor || hasShield) && string.Equals(mainFaction.Id, RuleConstants.Factions.Excellence, StringComparison.OrdinalIgnoreCase) && !hasGardesRoyauxOrigin)
         {
-            result.AddError(ValidationCodes.ArmorForbiddenFaction, $"Les combattants de {faction.Name} ne peuvent pas porter d'armure ni de bouclier (sauf Origine Gardes royaux).", fighter.Id);
+            result.AddError(ValidationCodes.ArmorForbiddenFaction, $"Les combattants de {mainFaction.Name} ne peuvent pas porter d'armure ni de bouclier (sauf Origine Gardes royaux).", fighter.Id);
         }
 
         // Restrictions Goules (Rang 1 ne peut pas porter de protection)
@@ -391,11 +442,11 @@ public class WarbandValidator : IWarbandValidator
             }
 
             // Restriction de Spécialisation pour les Monstres
-            if (fighter.Type == FighterType.Monster && !string.Equals(faction.Id, RuleConstants.Factions.Monstruosite, StringComparison.OrdinalIgnoreCase))
+            if (fighter.Type == FighterType.Monster && !string.Equals(effectiveFaction.Id, RuleConstants.Factions.Monstruosite, StringComparison.OrdinalIgnoreCase))
             {
                 if (!string.Equals(specChoice.SpecializationId, RuleConstants.Specializations.Bete, StringComparison.OrdinalIgnoreCase))
                 {
-                    result.AddError(ValidationCodes.MonsterSpecializationRestricted, $"Le monstre '{name}' n'a accès qu'à la Voie de la Bête pour la faction {faction.Name}.", fighter.Id);
+                    result.AddError(ValidationCodes.MonsterSpecializationRestricted, $"Le monstre '{name}' n'a accès qu'à la Voie de la Bête pour la faction {effectiveFaction.Name}.", fighter.Id);
                 }
             }
             if (fighter.Type != FighterType.Monster && string.Equals(specChoice.SpecializationId, RuleConstants.Specializations.Bete, StringComparison.OrdinalIgnoreCase))
@@ -432,9 +483,9 @@ public class WarbandValidator : IWarbandValidator
                 }
 
                 // Restriction de faction sur le talent
-                if (talentDef.AllowedFactionIds.Count > 0 && !talentDef.AllowedFactionIds.Any(fid => string.Equals(fid, faction.Id, StringComparison.OrdinalIgnoreCase)))
+                if (talentDef.AllowedFactionIds.Count > 0 && !talentDef.AllowedFactionIds.Any(fid => string.Equals(fid, effectiveFaction.Id, StringComparison.OrdinalIgnoreCase)))
                 {
-                    result.AddError(ValidationCodes.TalentFactionRestricted, $"Le talent '{talentDef.Name}' n'est pas accessible à la faction {faction.Name}.", fighter.Id);
+                    result.AddError(ValidationCodes.TalentFactionRestricted, $"Le talent '{talentDef.Name}' n'est pas accessible à la faction {effectiveFaction.Name}.", fighter.Id);
                 }
 
                 // Règle Érudits (Conclave des mages) : Les Officiers obtiennent gratuitement le Talent Incantation maîtrisée (0 XP)

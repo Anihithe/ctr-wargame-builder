@@ -3,6 +3,32 @@
 Toutes les modifications notables apportées à ce projet sont documentées dans ce fichier.
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet adhère à [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [0.5.6-beta] - 2026-10-19
+
+### 🤝 Allégeance Union des peuples & Règle Collaboration
+- **Règle Collaboration (*Union des peuples*)** :
+  - *"Vous pouvez recruter des Combattants provenant d'une (et une seule) autre faction. Ils ne bénéficient pas des règles et Origines de votre faction mais peuvent bénéficier d'une Origine de leur faction (ne peut pas permettre de profiter de la règle spéciale de faction)."*
+- **Sélecteur Faction Alliée & Origine Alliée au niveau de la Bande** :
+  - Choix d'une **Faction Alliée** unique parmi toutes les autres factions du ruleset (`alliedFactionId`), exclusion automatique de la faction principale.
+  - Choix d'une **Origine Alliée** (`alliedOriginId`) parmi les origines disponibles de cette faction alliée.
+  - Purge automatique de l'origine alliée si la faction alliée change pour une faction ne possédant pas cette origine.
+- **Marquage et Gestion des Combattants Alliés** :
+  - Nouveau sélecteur de provenance dans la fiche du combattant : **Faction principale** ou **Faction Alliée** (`isAllied: true`).
+  - Badge et bannière informative d'alliance dans l'inspecteur : indication du profil effectif, de l'origine alliée et rappel de l'isolation des règles de la bande.
+  - Badges distinctifs `🛡️ Allié : [Nom Faction]` sur toutes les cartes de combattants (Leader, Bras droit, Troupes, Réserve et Cimetière).
+- **Isolation Stricte des Profils, Règles et Origines** :
+  - **Unités principales** : profitent des caractéristiques de base de la bande, des règles spéciales de faction (ex: *Réflexes surhumains* de *L'Excellence*), et des origines choisies de la bande.
+  - **Unités alliées** : profitent des caractéristiques de base de la faction alliée et de l'origine alliée choisie. Elles ne bénéficient **ni** des règles spéciales de la bande principale, **ni** des origines de la bande principale, et ne peuvent **pas** profiter de la règle spéciale de la faction alliée.
+- **Validateur Backend & Frontend** :
+  - Nouvelles vérifications avec codes d'erreur explicites :
+    - `ALLIED_FACTION_REQUIRED` : combattant allié sans faction alliée sélectionnée sur la bande.
+    - `ALLIED_FACTION_SAME_AS_MAIN` : la faction alliée ne peut pas être identique à la faction principale.
+    - `ALLIED_ORIGIN_INVALID` : origine alliée invalide pour la faction alliée choisie.
+    - `ALLIED_FIGHTER_FORBIDDEN_WITHOUT_ALLEGIANCE` : combattant allié interdit hors de l'allégeance *Union des peuples*.
+  - Les restrictions d'équipement et de talents (comme l'interdiction de protection pour l'Excellence ou les restrictions de rang 1 pour la Monstruosité) sont évaluées selon la faction effective et les origines effectives de chaque combattant.
+- **Tests automatisés xUnit** :
+  - 4 nouveaux tests unitaires dédiés dans `WarbandValidationTests.cs` validant l'ensemble des scénarios de l'allégeance et l'isolation des règles (suite portée à **45 tests 100% verts**).
+
 ## [0.5.5-beta] - 2026-10-19
 
 ### ⚡ Don des Dieux Définitif & Pénalité Séquentielle de Redondance des Spécialisations

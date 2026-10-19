@@ -91,9 +91,18 @@ function removeAllegiance() {
       }
     }
   }
+  if (warband.value?.allegianceId === 'union_des_peuples') {
+    for (const f of warband.value.fighters) {
+      if (f.isAllied) {
+        warbandStore.updateFighter(f.id, { isAllied: false, factionId: warband.value.factionId });
+      }
+    }
+  }
   warbandStore.updateWarband({
     allegianceId: undefined,
     selectedAllegianceRuleName: undefined,
+    alliedFactionId: undefined,
+    alliedOriginId: undefined,
   });
   showAllAllegianceRules.value = false;
 }
@@ -106,6 +115,50 @@ function onSelectAllegianceRule(ruleName: string) {
 function onUnselectAllegianceRule() {
   warbandStore.unselectAllegianceRule();
   showAllAllegianceRules.value = true;
+}
+
+const isUnionDesPeuples = computed(() => warband.value?.allegianceId === 'union_des_peuples');
+const availableAlliedFactions = computed(() => {
+  if (!rulesetStore.currentRuleset?.factions || !warband.value) return [];
+  return rulesetStore.currentRuleset.factions.filter((f) => f.id !== warband.value?.factionId);
+});
+const alliedFaction = computed(() => {
+  if (!warband.value?.alliedFactionId) return null;
+  return rulesetStore.getFaction(warband.value.alliedFactionId);
+});
+const alliedFactionOrigins = computed(() => {
+  return alliedFaction.value?.origins || [];
+});
+
+function onAlliedFactionChange(event: Event) {
+  const target = event.target as HTMLSelectElement;
+  warbandStore.setWarbandAlliedFaction(target.value);
+}
+
+function onAlliedOriginSelect(originId: string) {
+  if (warband.value?.alliedOriginId === originId) {
+    warbandStore.setWarbandAlliedOrigin(undefined);
+  } else {
+    warbandStore.setWarbandAlliedOrigin(originId);
+  }
+}
+
+function onFighterAlliedChange(event: Event) {
+  if (!fighter.value) return;
+  const target = event.target as HTMLSelectElement;
+  const isAllied = target.value === 'allied';
+  warbandStore.setFighterAllied(fighter.value.id, isAllied);
+}
+
+function formatOriginModifiers(mods: any): string {
+  if (!mods) return '';
+  const parts: string[] = [];
+  if (mods.mouvement) parts.push(`Mouv ${mods.mouvement > 0 ? '+' : ''}${mods.mouvement}`);
+  if (mods.combat) parts.push(`Combat ${mods.combat > 0 ? '+' : ''}${mods.combat}D`);
+  if (mods.esquive) parts.push(`Esquive ${mods.esquive > 0 ? '+' : ''}${mods.esquive}D`);
+  if (mods.volonte) parts.push(`Volonté ${mods.volonte > 0 ? '+' : ''}${mods.volonte}D`);
+  if (mods.pv) parts.push(`PV ${mods.pv > 0 ? '+' : ''}${mods.pv}`);
+  return parts.join(' | ');
 }
 
 import {
@@ -494,6 +547,86 @@ function godGiftLabel(stat?: string | null): string {
                 </div>
               </div>
             </div>
+
+            <!-- Union des peuples : Faction Alliée & Origine Alliée -->
+            <div v-if="isUnionDesPeuples" class="pt-3 border-t border-amber-900/40 space-y-3">
+              <div>
+                <label class="text-[11px] font-semibold text-amber-400 uppercase tracking-wider block mb-1.5">
+                  Faction Alliée (1 seule autre faction)
+                </label>
+                <select
+                  :value="warband.alliedFactionId || ''"
+                  @change="onAlliedFactionChange"
+                  class="w-full bg-grim-900 border border-grim-700 rounded-lg px-3 py-2 text-xs font-semibold text-grim-200 focus:border-amber-500 focus:outline-none"
+                >
+                  <option value="">-- Sélectionner une faction alliée --</option>
+                  <option
+                    v-for="f in availableAlliedFactions"
+                    :key="f.id"
+                    :value="f.id"
+                  >
+                    {{ f.name }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- Origine Alliée -->
+              <div v-if="alliedFaction" class="space-y-2 pt-1">
+                <div class="flex items-center justify-between">
+                  <div class="text-[11px] font-semibold text-amber-400 uppercase tracking-wider">
+                    Origine Alliée (1 au choix parmi {{ alliedFaction.name }})
+                  </div>
+                  <span
+                    class="text-xs font-mono font-semibold"
+                    :class="warband.alliedOriginId ? 'text-amber-400' : 'text-grim-400'"
+                  >
+                    {{ warband.alliedOriginId ? '1 / 1 sélectionnée' : 'Optionnelle (0 / 1)' }}
+                  </span>
+                </div>
+
+                <div class="grid grid-cols-1 gap-2">
+                  <div
+                    v-for="orig in alliedFactionOrigins"
+                    :key="orig.id"
+                    @click="onAlliedOriginSelect(orig.id)"
+                    class="p-2.5 rounded-lg border text-xs space-y-1 cursor-pointer transition select-none"
+                    :class="
+                      warband.alliedOriginId === orig.id
+                        ? 'border-emerald-500 bg-emerald-950/30 ring-1 ring-emerald-500/50'
+                        : 'bg-grim-850 border-grim-800 hover:border-emerald-700/60 text-grim-400'
+                    "
+                  >
+                    <div class="flex items-center justify-between">
+                      <span
+                        class="font-bold text-xs"
+                        :class="warband.alliedOriginId === orig.id ? 'text-emerald-300' : 'text-grim-200'"
+                      >
+                        {{ orig.name }}
+                      </span>
+                      <div class="flex items-center gap-1">
+                        <span
+                          v-if="orig.modifiers"
+                          class="text-[10px] font-mono text-emerald-400/90 font-semibold"
+                        >
+                          {{ formatOriginModifiers(orig.modifiers) }}
+                        </span>
+                        <div
+                          class="w-4 h-4 rounded-full border flex items-center justify-center transition ml-1.5"
+                          :class="warband.alliedOriginId === orig.id ? 'border-emerald-500 bg-emerald-500 text-grim-950' : 'border-grim-700'"
+                        >
+                          <Check v-if="warband.alliedOriginId === orig.id" class="w-3 h-3 stroke-[3]" />
+                        </div>
+                      </div>
+                    </div>
+                    <p class="text-grim-300 text-[11px] leading-relaxed">{{ orig.description }}</p>
+                  </div>
+                </div>
+
+                <div class="p-2.5 rounded bg-amber-950/30 border border-amber-900/50 text-[11px] text-amber-300/90 leading-relaxed">
+                  💡 <strong>Règle Collaboration :</strong> Vous pouvez marquer vos combattants comme <em>Alliés</em> dans leur fiche d'inspection. Ils bénéficieront des caractéristiques de <strong>{{ alliedFaction.name }}</strong> et de l'Origine alliée sélectionnée, sans profiter des règles ni des origines de votre faction principale.
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -623,6 +756,44 @@ function godGiftLabel(stat?: string | null): string {
               <option value="Graveyard">Cimetière (Décédé)</option>
             </select>
           </div>
+
+          <!-- Fighter Provenance / Allegiance (Union des peuples) -->
+          <div v-if="isUnionDesPeuples" class="w-56">
+            <label class="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider block mb-1">
+              Origine / Faction
+            </label>
+            <select
+              :value="fighter.isAllied ? 'allied' : 'main'"
+              @change="onFighterAlliedChange"
+              class="w-full bg-grim-850 border rounded px-2.5 py-1.5 text-xs font-semibold focus:outline-none transition"
+              :class="fighter.isAllied ? 'border-emerald-500 text-emerald-300 bg-emerald-950/30' : 'border-grim-700 text-grim-200'"
+              :disabled="!warband?.alliedFactionId"
+            >
+              <option value="main">Faction : {{ faction?.name || 'Bande' }}</option>
+              <option value="allied" :disabled="!warband?.alliedFactionId">
+                {{ warband?.alliedFactionId ? `Allié : ${alliedFaction?.name || warband.alliedFactionId}` : 'Allié (aucune faction choisie)' }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Allied Fighter Banner (Union des peuples) -->
+        <div
+          v-if="isUnionDesPeuples && fighter.isAllied"
+          class="p-2.5 rounded-lg border bg-emerald-950/20 border-emerald-500/40 flex flex-wrap items-center justify-between gap-2"
+        >
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded bg-emerald-900/60 border border-emerald-600/60 text-emerald-300 font-bold text-[10px] uppercase">
+              Combattant Allié
+            </span>
+            <span class="text-xs text-grim-200">
+              Profil de base : <strong class="text-emerald-300">{{ alliedFaction?.name }}</strong>
+              <span v-if="warband?.alliedOriginId" class="text-grim-300 ml-1.5">
+                • Origine : <strong class="text-emerald-300">{{ alliedFactionOrigins.find(o => o.id === warband?.alliedOriginId)?.name || warband?.alliedOriginId }}</strong>
+              </span>
+            </span>
+          </div>
+          <span class="text-[10px] text-grim-400 italic">Isolé des règles & origines de la faction principale</span>
         </div>
 
         <!-- Base Stats Bar -->

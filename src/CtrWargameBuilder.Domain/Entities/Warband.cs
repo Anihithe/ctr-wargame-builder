@@ -8,6 +8,8 @@ public class Warband
     public string FactionId { get; set; } = string.Empty;
     public string? AllegianceId { get; set; }
     public string? SelectedAllegianceRuleName { get; set; }
+    public string? AlliedFactionId { get; set; }
+    public string? AlliedOriginId { get; set; }
     public List<string> SelectedOriginIds { get; set; } = [];
     public int StartingGold { get; set; } = 10;
     public int CurrentGold { get; set; } = 10;

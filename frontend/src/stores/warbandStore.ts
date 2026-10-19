@@ -148,6 +148,16 @@ export const useWarbandStore = defineStore('warband', () => {
       totalCost += cost;
     }
 
+    // Union des peuples validation
+    const isUnionDesPeuples = wb.allegianceId === ALLEGIANCE_IDS.UnionDesPeuples;
+    if (isUnionDesPeuples && wb.alliedFactionId && wb.alliedFactionId === wb.factionId) {
+      errors.push({
+        code: VALIDATION_CODES.AlliedFactionSameAsMain,
+        message: 'La Faction Alliée ne peut pas être la même que la Faction principale de la bande.',
+        severity: 'Error',
+      });
+    }
+
     // Check ACTIVE fighters for table quotas and officer roles
     for (const f of activeFighters) {
       if (f.type === 'Guerrier') {
@@ -155,6 +165,31 @@ export const useWarbandStore = defineStore('warband', () => {
       } else if (f.type === 'Monstre') {
         monsterCount++;
       }
+
+      // Check allied constraints
+      if (f.isAllied) {
+        if (!isUnionDesPeuples) {
+          errors.push({
+            fighterId: f.id,
+            fighterName: f.name,
+            code: VALIDATION_CODES.AlliedFighterForbiddenWithoutAllegiance,
+            message: `Le combattant "${f.name}" ne peut être Allié que sous l'Allégeance Union des peuples.`,
+            severity: 'Error',
+          });
+        } else if (!wb.alliedFactionId) {
+          errors.push({
+            fighterId: f.id,
+            fighterName: f.name,
+            code: VALIDATION_CODES.AlliedFactionRequired,
+            message: `Le combattant "${f.name}" est marqué comme Allié mais aucune Faction Alliée n'est sélectionnée pour la bande.`,
+            severity: 'Error',
+          });
+        }
+      }
+
+      const effectiveFactionId = (f.isAllied && wb.alliedFactionId) ? wb.alliedFactionId : (f.factionId || wb.factionId);
+      const effectiveOrigins = f.isAllied ? (wb.alliedOriginId ? [wb.alliedOriginId] : []) : (wb.selectedOriginIds || []);
+      const effectiveFaction = rulesetStore.getFaction(effectiveFactionId);
 
       if (f.officerRole === 'Leader') {
         leaderCount++;
@@ -166,7 +201,7 @@ export const useWarbandStore = defineStore('warband', () => {
             message: `L'animal "${f.name}" ne peut pas être un Leader.`,
             severity: 'Error',
           });
-        } else if (f.type === 'Monstre' && !faction?.canHaveMonstersAsOfficers) {
+        } else if (f.type === 'Monstre' && !effectiveFaction?.canHaveMonstersAsOfficers) {
           errors.push({
             fighterId: f.id,
             fighterName: f.name,
@@ -185,7 +220,7 @@ export const useWarbandStore = defineStore('warband', () => {
             message: `L'animal "${f.name}" ne peut pas être un Bras droit.`,
             severity: 'Error',
           });
-        } else if (f.type === 'Monstre' && !faction?.canHaveMonstersAsOfficers) {
+        } else if (f.type === 'Monstre' && !effectiveFaction?.canHaveMonstersAsOfficers) {
           errors.push({
             fighterId: f.id,
             fighterName: f.name,
@@ -196,7 +231,7 @@ export const useWarbandStore = defineStore('warband', () => {
         }
       }
 
-      if (f.officerRole !== 'None' && wb.factionId === FACTION_IDS.Monstruosite && f.rank === 1) {
+      if (f.officerRole !== 'None' && effectiveFactionId === FACTION_IDS.Monstruosite && f.rank === 1) {
         errors.push({
           fighterId: f.id,
           fighterName: f.name,
@@ -215,7 +250,7 @@ export const useWarbandStore = defineStore('warband', () => {
       const hasMageDeBataille = f.specializations.some(
         (s) => s.specializationId === SPEC_IDS.Mage && s.acquiredTalentIds.includes(TALENT_IDS.MageDeBataille),
       );
-      const isExcellence = wb.factionId === FACTION_IDS.Excellence;
+      const isExcellence = !f.isAllied && wb.factionId === FACTION_IDS.Excellence;
       const hasBarbare = f.specializations.some((s) => s.specializationId === SPEC_IDS.Barbare);
       const hasRoublard = f.specializations.some((s) => s.specializationId === SPEC_IDS.Roublard);
       const hasRanger = f.specializations.some((s) => s.specializationId === SPEC_IDS.Ranger);
@@ -234,11 +269,11 @@ export const useWarbandStore = defineStore('warband', () => {
       const hasEcoleDeLEau = f.specializations.some(
         (s) => s.specializationId === SPEC_IDS.Moine && s.acquiredTalentIds.includes(TALENT_IDS.EcoleDeLEau),
       );
-      const hasGardesRoyaux = wb.selectedOriginIds?.includes(ORIGIN_IDS.GardesRoyaux);
-      const hasGoules = wb.selectedOriginIds?.includes(ORIGIN_IDS.Goules);
-      const hasEsclavagistes = wb.selectedOriginIds?.includes(ORIGIN_IDS.Esclavagistes);
+      const hasGardesRoyaux = effectiveOrigins.includes(ORIGIN_IDS.GardesRoyaux);
+      const hasGoules = effectiveOrigins.includes(ORIGIN_IDS.Goules);
+      const hasEsclavagistes = effectiveOrigins.includes(ORIGIN_IDS.Esclavagistes);
 
-      if (f.type === 'Guerrier' && f.rank === 1 && wb.factionId === FACTION_IDS.Monstruosite && !hasEsclavagistes) {
+      if (f.type === 'Guerrier' && f.rank === 1 && effectiveFactionId === FACTION_IDS.Monstruosite && !hasEsclavagistes) {
         errors.push({
           fighterId: f.id,
           fighterName: f.name,
@@ -271,7 +306,7 @@ export const useWarbandStore = defineStore('warband', () => {
       }
 
       // Monster specialization restriction: only Voie de la Bête allowed outside Monstruosite faction
-      if (f.type === 'Monstre' && wb.factionId !== FACTION_IDS.Monstruosite) {
+      if (f.type === 'Monstre' && effectiveFactionId !== FACTION_IDS.Monstruosite) {
         for (const sp of f.specializations) {
           if (sp.specializationId !== SPEC_IDS.Bete) {
             errors.push({
@@ -459,7 +494,7 @@ export const useWarbandStore = defineStore('warband', () => {
             }
 
             // Monster Equipment Restrictions: Heavy weapons <= level 3, other weapons / protections <= level 2 (unless Veterans origin)
-            if (f.type === 'Monstre' && !wb.selectedOriginIds?.includes(ORIGIN_IDS.Veterans)) {
+            if (f.type === 'Monstre' && !effectiveOrigins.includes(ORIGIN_IDS.Veterans)) {
               const isHeavy = item.subCategory?.includes('lourde');
               if (isHeavy && item.level > 3) {
                 errors.push({
@@ -821,6 +856,40 @@ export const useWarbandStore = defineStore('warband', () => {
     syncWarbandWithBackend(currentWarband.value);
   }
 
+  function setWarbandAlliedFaction(factionId: string) {
+    if (!currentWarband.value) return;
+    currentWarband.value.alliedFactionId = factionId;
+    const alliedFaction = rulesetStore.getFaction(factionId);
+    if (!alliedFaction?.origins.some((o: any) => o.id === currentWarband.value?.alliedOriginId)) {
+      currentWarband.value.alliedOriginId = undefined;
+    }
+    for (const f of currentWarband.value.fighters) {
+      if (f.isAllied) {
+        f.factionId = factionId;
+      }
+    }
+    currentWarband.value.updatedAt = new Date().toISOString();
+    syncWarbandWithBackend(currentWarband.value);
+  }
+
+  function setWarbandAlliedOrigin(originId: string | undefined) {
+    if (!currentWarband.value) return;
+    currentWarband.value.alliedOriginId = originId;
+    currentWarband.value.updatedAt = new Date().toISOString();
+    syncWarbandWithBackend(currentWarband.value);
+  }
+
+  function setFighterAllied(fighterId: string, isAllied: boolean) {
+    if (!currentWarband.value) return;
+    const fighter = currentWarband.value.fighters.find((f) => f.id === fighterId);
+    if (fighter) {
+      fighter.isAllied = isAllied;
+      fighter.factionId = isAllied ? currentWarband.value.alliedFactionId : currentWarband.value.factionId;
+      currentWarband.value.updatedAt = new Date().toISOString();
+      syncWarbandWithBackend(currentWarband.value);
+    }
+  }
+
   // Fighter CRUD
   function addFighter(
     type: FighterType,
@@ -1140,6 +1209,9 @@ export const useWarbandStore = defineStore('warband', () => {
     toggleOrigin,
     selectAllegianceRule,
     unselectAllegianceRule,
+    setWarbandAlliedFaction,
+    setWarbandAlliedOrigin,
+    setFighterAllied,
     addFighter,
     setFighterStatus,
     setFighterRole,

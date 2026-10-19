@@ -14,6 +14,13 @@ public static class RuleConstants
         public const string Monstruosite = "monstruosite";
     }
 
+    public static class Allegiances
+    {
+        public const string UnionDesPeuples = "union_des_peuples";
+        public const string ConclaveDesMages = "conclave_des_mages";
+        public const string OrdreDuTemple = "ordre_du_temple";
+    }
+
     public static class Origins
     {
         public const string Mutants = "mutants";

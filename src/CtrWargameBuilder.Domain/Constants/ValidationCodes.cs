@@ -8,6 +8,10 @@ public static class ValidationCodes
     public const string OriginsLimitExceeded = "ORIGINS_LIMIT_EXCEEDED";
     public const string WarbandSizeExceeded = "WARBAND_SIZE_EXCEEDED";
     public const string BudgetExceeded = "BUDGET_EXCEEDED";
+    public const string AlliedFactionRequired = "ALLIED_FACTION_REQUIRED";
+    public const string AlliedFactionSameAsMain = "ALLIED_FACTION_SAME_AS_MAIN";
+    public const string AlliedOriginInvalid = "ALLIED_ORIGIN_INVALID";
+    public const string AlliedFighterForbiddenWithoutAllegiance = "ALLIED_FIGHTER_FORBIDDEN_WITHOUT_ALLEGIANCE";
 
     // Officers
     public const string LeaderRequired = "LEADER_REQUIRED";

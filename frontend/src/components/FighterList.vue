@@ -77,17 +77,31 @@ function recruitOfficer(role: OfficerRole, rank: number, type: FighterType = 'Gu
 }
 
 function getFighterSubline(f: Fighter): string {
+  let baseLine = '';
   if (f.type === 'Guerrier') {
-    return `Rang ${f.rank}`;
-  }
-  if (f.type === 'Monstre') {
+    baseLine = `Rang ${f.rank}`;
+  } else if (f.type === 'Monstre') {
     const m = rulesetStore.getMonster(f.subTypeId || '');
-    return m ? `Monstre • ${m.name}` : 'Monstre';
+    baseLine = m ? `Monstre • ${m.name}` : 'Monstre';
+  } else if (f.type === 'Animal') {
+    baseLine = `Animal Rang ${f.rank}`;
+  } else {
+    baseLine = f.type;
   }
-  if (f.type === 'Animal') {
-    return `Animal Rang ${f.rank}`;
+
+  if (f.isAllied) {
+    const aFaction = warband.value?.alliedFactionId ? rulesetStore.getFaction(warband.value.alliedFactionId) : null;
+    const fName = aFaction?.name || 'Allié';
+    return `${baseLine} • Allié (${fName})`;
   }
-  return f.type;
+
+  return baseLine;
+}
+
+function getAlliedFactionName(): string {
+  if (!warband.value?.alliedFactionId) return 'Allié';
+  const f = rulesetStore.getFaction(warband.value.alliedFactionId);
+  return f?.name || warband.value.alliedFactionId;
 }
 
 function getTalentName(specId: string, talentId: string): string {
@@ -230,7 +244,7 @@ function hasFighterMaitrise(f: Fighter): boolean {
 }
 
 function hasFighterBadges(f: Fighter): boolean {
-  return f.specializations.length > 0 || f.equippedItems.length > 0 || hasFighterMaitrise(f);
+  return !!f.isAllied || f.specializations.length > 0 || f.equippedItems.length > 0 || hasFighterMaitrise(f);
 }
 
 const canRecruitRank1 = computed(() => {
@@ -428,6 +442,14 @@ const canRecruitAnimal = computed(() => {
             v-if="hasFighterBadges(leaderFighter)"
             class="mt-2 flex flex-wrap gap-1 pt-1.5 border-t border-grim-800/60"
           >
+            <!-- Badge Allié (Union des peuples) -->
+            <span
+              v-if="leaderFighter.isAllied"
+              class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950/80 border border-emerald-600/70 text-emerald-300 font-bold flex items-center gap-1"
+            >
+              <span>🛡️ Allié : {{ getAlliedFactionName() }}</span>
+            </span>
+
             <!-- 1. Spécialisation(s) -->
             <span
               v-for="sp in getFighterSpecializations(leaderFighter)"
@@ -630,6 +652,14 @@ const canRecruitAnimal = computed(() => {
             v-if="hasFighterBadges(brasDroitFighter)"
             class="mt-2 flex flex-wrap gap-1 pt-1.5 border-t border-grim-800/60"
           >
+            <!-- Badge Allié (Union des peuples) -->
+            <span
+              v-if="brasDroitFighter.isAllied"
+              class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950/80 border border-emerald-600/70 text-emerald-300 font-bold flex items-center gap-1"
+            >
+              <span>🛡️ Allié : {{ getAlliedFactionName() }}</span>
+            </span>
+
             <!-- 1. Spécialisation(s) -->
             <span
               v-for="sp in getFighterSpecializations(brasDroitFighter)"
@@ -956,6 +986,14 @@ const canRecruitAnimal = computed(() => {
             v-if="hasFighterBadges(f)"
             class="mt-2 flex flex-wrap gap-1 pt-1.5 border-t border-grim-800/60"
           >
+            <!-- Badge Allié (Union des peuples) -->
+            <span
+              v-if="f.isAllied"
+              class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950/80 border border-emerald-600/70 text-emerald-300 font-bold flex items-center gap-1"
+            >
+              <span>🛡️ Allié : {{ getAlliedFactionName() }}</span>
+            </span>
+
             <!-- 1. Spécialisation(s) -->
             <span
               v-for="sp in getFighterSpecializations(f)"
@@ -1082,7 +1120,10 @@ const canRecruitAnimal = computed(() => {
                       {{ f.officerRole }}
                     </span>
                   </div>
-                  <div class="text-[10px] text-grim-500">{{ f.type }} • Réserve</div>
+                  <div class="text-[10px] text-grim-500">
+                    {{ f.type }} • Réserve
+                    <span v-if="f.isAllied" class="text-emerald-400 font-semibold ml-1">• Allié ({{ getAlliedFactionName() }})</span>
+                  </div>
                 </div>
               </div>
 
@@ -1143,7 +1184,10 @@ const canRecruitAnimal = computed(() => {
                   <div class="text-xs font-semibold text-slate-300 line-through group-hover:text-slate-100 transition">
                     {{ f.name }}
                   </div>
-                  <div class="text-[10px] text-slate-500">{{ f.type }} • Décédé</div>
+                  <div class="text-[10px] text-slate-500">
+                    {{ f.type }} • Décédé
+                    <span v-if="f.isAllied" class="text-slate-400 ml-1">• Allié ({{ getAlliedFactionName() }})</span>
+                  </div>
                 </div>
               </div>
 
