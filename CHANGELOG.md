@@ -3,6 +3,21 @@
 Toutes les modifications notables apportées à ce projet sont documentées dans ce fichier.
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet adhère à [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [0.5.9-beta] - 2026-10-19
+
+### 🏗️ Architecture & Modularisation Vue (FighterInspector)
+- **Décomposition Modulaire de `FighterInspector.vue`** :
+  - Restructuration intégrale de la fiche détaillée du combattant, passant d'un fichier monolithique de **981 lignes** à un orchestrateur épuré de **58 lignes**, découpé en 6 sous-composants spécialisés dans `frontend/src/components/fighter/` :
+    - `FighterProfileHeader.vue` (361 lignes) : identité, rôle de commandement, statut, sélecteur et bannière d'alliance (*Union des peuples*), profil de combat réactif, bonus de protection, Don des Dieux (*Ordre du Temple*) et bannière de Maîtrise.
+    - `FighterXpCard.vue` (101 lignes) : gestion et gain d'XP (total modifiable, boutons d'incrément +1, +2, +6, barre de progression et suivi d'XP dépensé/disponible).
+    - `FighterEquipmentCard.vue` (146 lignes) : suivi des emplacements occupés, listing détaillé des armes, armures et boucliers (caractéristiques, règles spéciales avec filtre *Tireur d'élite*, statut de maîtrise), déséquipement et objets magiques.
+    - `FighterAnimalCard.vue` (191 lignes) : composant dédié aux animaux regroupant le sélecteur de bonus d'espèce (4 choix) et les armes naturelles de pugilat équipées (avec bonus de traits d'origines bestiales).
+    - `FighterSpecializationsCard.vue` (174 lignes) : spécialisations acquises avec coût réel d'XP (pénalité séquentielle), talents associés, gratuité Conclave et bouton d'apprentissage.
+    - `FighterGrimoireCard.vue` (94 lignes) : grimoire de sorts avec indicateur de budget cumulé (`X / Y niveaux`), apprentissage et oubli de sorts.
+    - `FighterInspector.vue` (58 lignes) : composant conteneur orchestrateur.
+- **Assurance Qualité** :
+  - 48/48 tests unitaires backend xUnit validés, 0 erreur TypeScript `vue-tsc`, build de production propre et déploiement synchronisé dans `wwwroot`.
+
 ## [0.5.8-beta] - 2026-10-19
 
 ### ⚔️ Évolutions de Règles & Retours d'Équilibrage
