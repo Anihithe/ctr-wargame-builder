@@ -241,7 +241,7 @@ const canRecruitAnimal = computed(() => {
             </div>
             <div class="grid grid-cols-3 gap-2">
               <button
-                v-for="r in [3, 2, 1]"
+                v-for="r in [1, 2, 3]"
                 :key="r"
                 @click="recruitOfficer('Leader', r, 'Guerrier')"
                 :disabled="r === 1 && !canOfficerBeRank1"
@@ -260,7 +260,7 @@ const canRecruitAnimal = computed(() => {
                 <button
                   v-for="m in rulesetStore.monsters"
                   :key="m.id"
-                  @click="recruitOfficer('Leader', 3, 'Monstre', m.id)"
+                  @click="recruitOfficer('Leader', m.rank || 4, 'Monstre', m.id)"
                   class="p-1.5 rounded border border-purple-800/60 bg-purple-950/20 hover:bg-purple-950/40 text-purple-200 text-xs text-left"
                 >
                   {{ m.name }} (4 PO)
@@ -320,7 +320,7 @@ const canRecruitAnimal = computed(() => {
             </div>
             <div class="grid grid-cols-3 gap-2">
               <button
-                v-for="r in [3, 2, 1]"
+                v-for="r in [1, 2, 3]"
                 :key="r"
                 @click="recruitOfficer('BrasDroit', r, 'Guerrier')"
                 :disabled="r === 1 && !canOfficerBeRank1"
@@ -339,7 +339,7 @@ const canRecruitAnimal = computed(() => {
                 <button
                   v-for="m in rulesetStore.monsters"
                   :key="m.id"
-                  @click="recruitOfficer('BrasDroit', 3, 'Monstre', m.id)"
+                  @click="recruitOfficer('BrasDroit', m.rank || 4, 'Monstre', m.id)"
                   class="p-1.5 rounded border border-purple-800/60 bg-purple-950/20 hover:bg-purple-950/40 text-purple-200 text-xs text-left"
                 >
                   {{ m.name }} (4 PO)
@@ -404,14 +404,14 @@ const canRecruitAnimal = computed(() => {
           v-if="showTroopRecruitMenu"
           class="absolute left-0 right-0 mt-1 z-20 p-3 rounded-xl bg-grim-850 border border-grim-700 shadow-2xl space-y-3"
         >
-          <!-- Rangs 3 à 1 -->
+          <!-- Rangs 1 à 3 -->
           <div>
             <div class="text-[11px] font-bold text-grim-300 uppercase tracking-wider mb-1.5">
               Combattants de base :
             </div>
             <div class="grid grid-cols-3 gap-2">
               <button
-                v-for="r in [3, 2, 1]"
+                v-for="r in [1, 2, 3]"
                 :key="r"
                 @click="recruitTroop('Guerrier', r)"
                 :disabled="r === 1 && !canRecruitRank1"
@@ -450,7 +450,7 @@ const canRecruitAnimal = computed(() => {
               <button
                 v-for="m in rulesetStore.monsters"
                 :key="m.id"
-                @click="recruitTroop('Monstre', 3, m.id)"
+                @click="recruitTroop('Monstre', m.rank || 4, m.id)"
                 :disabled="!canRecruitMonster"
                 class="p-1.5 rounded border border-purple-800/60 bg-purple-950/20 text-purple-200 text-xs text-left transition"
                 :class="canRecruitMonster ? 'hover:bg-purple-900/40 hover:border-purple-500' : 'opacity-40 cursor-not-allowed'"
@@ -474,16 +474,16 @@ const canRecruitAnimal = computed(() => {
             <div v-if="!canRecruitAnimal" class="text-[10px] text-crimson-400 italic mb-1.5">
               Limite d'animaux atteinte pour la bande.
             </div>
-            <div class="grid grid-cols-2 gap-2">
+            <div class="grid grid-cols-3 gap-2">
               <button
-                v-for="r in [2, 1]"
+                v-for="r in [1, 2, 3]"
                 :key="r"
                 @click="recruitTroop('Animal', r)"
                 :disabled="!canRecruitAnimal"
                 class="p-2 rounded border border-emerald-900/60 bg-emerald-950/20 text-emerald-200 text-xs text-left transition flex items-center justify-between"
                 :class="canRecruitAnimal ? 'hover:bg-emerald-900/40 hover:border-emerald-500' : 'opacity-40 cursor-not-allowed'"
               >
-                <span>Animal Rang {{ r }}</span>
+                <span>Rang {{ r }}</span>
                 <span class="text-[10px] font-mono text-emerald-400">{{ r }} PO</span>
               </button>
             </div>

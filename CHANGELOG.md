@@ -3,6 +3,19 @@
 Toutes les modifications notables apportées à ce projet sont documentées dans ce fichier.
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet adhère à [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [0.5.10-beta] - 2026-10-20
+
+### 🎯 Recrutement des Troupes & Équilibrage des Rangs
+- **Ordre croissant des Rangs (1 à 3)** :
+  - Harmonisation de l'affichage des boutons de recrutement dans l'ordre croissant de gauche à droite (Rang 1, Rang 2, Rang 3) pour les Combattants de base, les Animaux, ainsi que les sélecteurs d'Officiers (Leader et Bras droit).
+- **Correction du Rang 3 pour les Animaux** :
+  - Déblocage du recrutement de l'Animal Rang 3 (3 PO) manquant dans l'interface (auparavant limité par erreur aux rangs 1 et 2).
+  - Aligné sur une grille 3 colonnes identique aux combattants de base.
+- **Correction du Rang des Monstres** :
+  - Attribution correcte du Rang 4 (au lieu de 3) lors du recrutement de monstres comme troupes ou officiers.
+- **Validation Monstruosité & Troupes Rang 1** :
+  - Maintien et contrôle de la restriction de faction : le Rang 1 Guerrier reste verrouillé pour la Monstruosité sauf si l'origine *Esclavagistes* est active, et les officiers de la Monstruosité restent interdits au Rang 1.
+
 ## [0.5.9-beta] - 2026-10-19
 
 ### 🏗️ Architecture & Modularisation Vue (FighterInspector)
