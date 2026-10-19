@@ -3,8 +3,14 @@ import { ref, computed } from 'vue';
 import { useWarbandStore } from '@/stores/warbandStore';
 import { useRulesetStore } from '@/stores/rulesetStore';
 import type { Specialization } from '@/types/ruleset';
-import { Flame, X, Check, AlertCircle, Trash2, Sparkles, Dices, PawPrint } from 'lucide-vue-next';
+import { Flame, X, Check, AlertCircle, Trash2, Sparkles, Dices, PawPrint, Lock } from 'lucide-vue-next';
 import { SPEC_IDS, FACTION_IDS } from '@/constants/rules';
+import {
+  getSpecializationXpCost,
+  getSpecializationDuplicateCount,
+  calculateFighterSpentXp,
+  calculateFighterAvailableXp,
+} from '@/domain/rulesEngine';
 
 const props = defineProps<{
   fighterId: string;
@@ -52,7 +58,6 @@ const needsGodGiftBeforeSpec = computed(() => {
   return fighter.value.specializations.length === 0 && !fighter.value.godGiftStat;
 });
 
-const isEditingGodGift = ref(false);
 const rolledFace = ref<number | null>(null);
 
 function rollD6() {
@@ -77,7 +82,6 @@ function pickFace(face: number) {
 function applyGodGift(stat: 'mouvement' | 'pv' | 'volonte' | 'esquive' | 'combat') {
   if (!fighter.value) return;
   warbandStore.setFighterGodGift(fighter.value.id, stat);
-  isEditingGodGift.value = false;
   rolledFace.value = null;
 }
 
@@ -90,7 +94,6 @@ function godGiftLabel(stat?: string | null): string {
   return '';
 }
 
-// XP Calculation
 function isConclaveFreeTalent(talentId: string): boolean {
   if (!fighter.value || fighter.value.officerRole === 'None') return false;
   if (warband.value?.allegianceId !== 'conclave_des_mages') return false;
@@ -98,28 +101,25 @@ function isConclaveFreeTalent(talentId: string): boolean {
   return talentId === 'incantation_maitrisee';
 }
 
+// XP Calculation
+function getSpecCost(specId: string): number {
+  if (!fighter.value) return 6;
+  return getSpecializationXpCost(warband.value, fighter.value.id, specId);
+}
+
+function getSpecDuplicateCount(specId: string): number {
+  if (!fighter.value) return 0;
+  return getSpecializationDuplicateCount(warband.value, fighter.value.id, specId);
+}
+
 const spentXp = computed(() => {
   if (!fighter.value) return 0;
-  let total = fighter.value.specializations.length * 6;
-  const isOfficer = fighter.value.officerRole !== 'None';
-  const hasErudits =
-    warband.value?.allegianceId === 'conclave_des_mages' &&
-    warband.value?.selectedAllegianceRuleName === 'Érudits';
-
-  for (const s of fighter.value.specializations) {
-    for (const tId of s.acquiredTalentIds) {
-      if (isOfficer && hasErudits && tId === 'incantation_maitrisee') {
-        continue;
-      }
-      total += 6;
-    }
-  }
-  return total;
+  return calculateFighterSpentXp(fighter.value, warband.value);
 });
 
 const availableXp = computed(() => {
   if (!fighter.value) return 0;
-  return Math.max(0, (fighter.value.allocatedXp || 0) - spentXp.value);
+  return calculateFighterAvailableXp(fighter.value, warband.value);
 });
 
 function isAcquired(specId: string): boolean {
@@ -131,7 +131,8 @@ function chooseSpecialization(specId: string) {
   if (!fighter.value) return;
   if (isAcquired(specId)) return;
   if (fighter.value.specializations.length >= 2) return;
-  if (availableXp.value < 6) return;
+  const cost = getSpecCost(specId);
+  if (availableXp.value < cost) return;
   if (needsGodGiftBeforeSpec.value) {
     alert("Veuillez d'abord déterminer le Don des Dieux avant de choisir votre première spécialisation.");
     return;
@@ -201,7 +202,7 @@ function unchooseSpecialization(specId: string) {
         </div>
         <div v-else-if="availableXp < 6" class="text-xs text-crimson-400 flex items-center gap-1.5">
           <AlertCircle class="w-4 h-4 shrink-0" />
-          <span>XP insuffisant pour adopter une nouvelle voie (6 XP requis).</span>
+          <span>XP restant insuffisant pour adopter une nouvelle voie.</span>
         </div>
       </div>
 
@@ -214,26 +215,25 @@ function unchooseSpecialization(specId: string) {
             <span class="text-grim-400 text-[11px]">— Requis avant la 1ère Spécialisation</span>
           </div>
 
-          <button
-            v-if="fighter?.godGiftStat && !needsGodGiftBeforeSpec"
-            type="button"
-            @click="isEditingGodGift = !isEditingGodGift"
-            class="text-[11px] px-2 py-0.5 rounded bg-grim-800 hover:bg-grim-750 text-amber-300 border border-grim-700 transition"
+          <span
+            v-if="fighter?.godGiftStat"
+            class="text-[10px] text-amber-400/80 flex items-center gap-1 font-medium bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800/60"
           >
-            {{ isEditingGodGift ? 'Replier' : 'Modifier' }}
-          </button>
+            <Lock class="w-3 h-3 text-amber-400" />
+            <span>Définitif</span>
+          </span>
         </div>
 
-        <!-- Case 1: Already has God Gift and not editing -->
-        <div v-if="fighter?.godGiftStat && !isEditingGodGift" class="flex items-center gap-2 text-xs text-amber-200 bg-amber-900/20 p-2.5 rounded-lg border border-amber-500/30">
+        <!-- Case 1: Already has God Gift -->
+        <div v-if="fighter?.godGiftStat" class="flex items-center gap-2 text-xs text-amber-200 bg-amber-900/20 p-2.5 rounded-lg border border-amber-500/30">
           <Check class="w-4 h-4 text-emerald-400 shrink-0" />
           <span>Bénédiction divine active : <strong class="text-amber-300 font-mono">{{ godGiftLabel(fighter.godGiftStat) }}</strong> (appliqué aux caractéristiques).</span>
         </div>
 
-        <!-- Case 2: Needs God Gift OR editing -->
+        <!-- Case 2: Needs God Gift -->
         <div v-else class="p-3 rounded-lg border border-amber-500/50 bg-grim-900 space-y-3">
           <p class="text-xs text-amber-200 leading-relaxed">
-            Avant de choisir votre première Spécialisation, lancez un dé 6 pour recevoir votre bénédiction divine :
+            Avant de choisir votre première Spécialisation, lancez un dé 6 pour recevoir votre bénédiction divine (le résultat est définitif) :
           </p>
 
           <div class="flex flex-wrap items-center gap-3">
@@ -268,7 +268,7 @@ function unchooseSpecialization(specId: string) {
           <div v-if="rolledFace === 6" class="p-2.5 rounded border border-amber-500/60 bg-amber-950/30 space-y-2 animate-fade-in">
             <div class="text-xs font-bold text-amber-300 flex items-center gap-1.5">
               <Sparkles class="w-3.5 h-3.5 text-amber-400" />
-              <span>Résultat 6 : Don au choix ! Sélectionnez la caractéristique à augmenter de +1 :</span>
+              <span>Résultat 6 : Don au choix ! Sélectionnez la caractéristique à augmenter de +1 (définitif) :</span>
             </div>
             <div class="flex flex-wrap gap-2">
               <button
@@ -330,23 +330,37 @@ function unchooseSpecialization(specId: string) {
             </div>
 
             <div class="flex flex-col items-end gap-2 shrink-0">
-              <span class="font-mono text-xs font-bold text-amber-300 bg-amber-950/80 px-2.5 py-1 rounded border border-amber-800/80">
-                6 XP
-              </span>
+              <div class="flex items-center gap-1.5">
+                <span
+                  class="font-mono text-xs font-bold px-2.5 py-1 rounded border"
+                  :class="getSpecCost(spec.id) > 6
+                    ? 'text-amber-400 bg-amber-950/90 border-amber-600/80'
+                    : 'text-amber-300 bg-amber-950/80 border-amber-800/80'"
+                >
+                  {{ getSpecCost(spec.id) }} XP
+                </span>
+                <span
+                  v-if="!isAcquired(spec.id) && getSpecDuplicateCount(spec.id) > 0"
+                  class="text-[10px] text-amber-400/90 font-mono"
+                  :title="`+${getSpecCost(spec.id) - 6} XP car ${getSpecDuplicateCount(spec.id)} combattant(s) vivant(s) la possède(nt) déjà`"
+                >
+                  (+{{ getSpecCost(spec.id) - 6 }} XP)
+                </span>
+              </div>
 
               <button
                 v-if="!isAcquired(spec.id)"
                 @click="chooseSpecialization(spec.id)"
-                :disabled="fighter && (fighter.specializations.length >= 2 || availableXp < 6 || needsGodGiftBeforeSpec)"
+                :disabled="fighter && (fighter.specializations.length >= 2 || availableXp < getSpecCost(spec.id) || needsGodGiftBeforeSpec)"
                 class="px-3 py-1.5 text-xs font-semibold rounded shadow transition flex items-center gap-1.5"
                 :class="
-                  fighter && (fighter.specializations.length >= 2 || availableXp < 6 || needsGodGiftBeforeSpec)
+                  fighter && (fighter.specializations.length >= 2 || availableXp < getSpecCost(spec.id) || needsGodGiftBeforeSpec)
                     ? 'bg-grim-800 text-grim-500 border border-grim-700 cursor-not-allowed'
                     : 'bg-amber-600 hover:bg-amber-500 text-grim-950 cursor-pointer active:scale-95'
                 "
               >
                 <Flame class="w-3.5 h-3.5" />
-                <span>{{ needsGodGiftBeforeSpec ? 'Don des Dieux requis' : 'Adopter la voie' }}</span>
+                <span>{{ needsGodGiftBeforeSpec ? 'Don des Dieux requis' : availableXp < getSpecCost(spec.id) ? `XP insuffisant (${getSpecCost(spec.id)} XP)` : 'Adopter la voie' }}</span>
               </button>
 
               <button

@@ -91,14 +91,7 @@ public class WarbandValidator : IWarbandValidator
         }
 
         // 7. Validation par Combattant
-        var specializationFighterCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        foreach (var fighter in warband.Fighters)
-        {
-            foreach (var spec in fighter.Specializations)
-            {
-                specializationFighterCounts[spec.SpecializationId] = specializationFighterCounts.GetValueOrDefault(spec.SpecializationId, 0) + 1;
-            }
-        }
+        var seenSpecializationCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
         var equipmentDict = ruleset.Equipments
             .Concat(ruleset.MagicItems)
@@ -120,7 +113,7 @@ public class WarbandValidator : IWarbandValidator
 
         foreach (var fighter in warband.Fighters)
         {
-            ValidateFighter(fighter, warband, faction, ruleset, equipmentDict, specDict, specializationFighterCounts,
+            ValidateFighter(fighter, warband, faction, ruleset, equipmentDict, specDict, seenSpecializationCounts,
                 hasMutantsOrigin, hasNoblesseOrigin, hasChevaliersNoirsOrigin, hasCompagnieDeFerOrigin,
                 hasGardesRoyauxOrigin, hasDestructeursOrigin, hasGoulesOrigin, hasEsclavagistesOrigin, hasVeteransOrigin, result);
         }
@@ -169,7 +162,7 @@ public class WarbandValidator : IWarbandValidator
         GameRuleset ruleset,
         Dictionary<string, EquipmentDefinition> equipmentDict,
         Dictionary<string, SpecializationDefinition> specDict,
-        Dictionary<string, int> specializationFighterCounts,
+        Dictionary<string, int> seenSpecializationCounts,
         bool hasMutantsOrigin,
         bool hasNoblesseOrigin,
         bool hasChevaliersNoirsOrigin,
@@ -410,8 +403,14 @@ public class WarbandValidator : IWarbandValidator
                 result.AddError(ValidationCodes.BeteRestrictedToMonsters, $"La Voie de la Bête est réservée aux Monstres ('{name}').", fighter.Id);
             }
 
-            // Coût de spécialisation : 6 XP + surcoût si d'autres combattants la possèdent
-            var duplicateCount = specializationFighterCounts.GetValueOrDefault(specChoice.SpecializationId, 1) - 1;
+            // Coût de spécialisation : 6 XP + surcoût si d'autres combattants vivants la possèdent déjà
+            var duplicateCount = 0;
+            if (fighter.Status != FighterStatus.Graveyard)
+            {
+                duplicateCount = seenSpecializationCounts.GetValueOrDefault(specChoice.SpecializationId, 0);
+                seenSpecializationCounts[specChoice.SpecializationId] = duplicateCount + 1;
+            }
+
             if (string.Equals(warband.AllegianceId, "conclave_des_mages", StringComparison.OrdinalIgnoreCase)
                 && string.Equals(warband.SelectedAllegianceRuleName, "Collège de Magie", StringComparison.OrdinalIgnoreCase)
                 && string.Equals(specChoice.SpecializationId, RuleConstants.Specializations.Mage, StringComparison.OrdinalIgnoreCase))

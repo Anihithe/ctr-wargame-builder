@@ -3,6 +3,23 @@
 Toutes les modifications notables apportées à ce projet sont documentées dans ce fichier.
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet adhère à [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [0.5.5-beta] - 2026-10-19
+
+### ⚡ Don des Dieux Définitif & Pénalité Séquentielle de Redondance des Spécialisations
+- **Verrouillage du Don des Dieux (*Ordre du Temple*)** :
+  - **Attribution irréversible** : une fois le Don des Dieux lancé au dé ou choisi (sur un résultat de 6), celui-ci devient strictement **définitif**.
+  - **Suppression des modifications/retraits** : suppression des boutons "Modifier" et "Retirer" dans l'inspecteur (`InspectorPanel.vue`) et dans le modal de spécialisation (`SpecializationPickerModal.vue`), remplacés par un badge sécurisé `🔒 Définitif`.
+- **Pénalité de Redondance Séquentielle des Spécialisations** :
+  - **Application fidèle de la règle** (*"Une Spécialisation vous coûtera 6 xp supplémentaires pour chaque Combattant de votre bande qui la possède déjà"*) :
+    - Le 1er combattant vivant à choisir une discipline paye **6 XP**.
+    - Le suivant à choisir cette même discipline paye **12 XP** ($6 + 6$), le 3ème paye **18 XP** ($6 + 12$), etc.
+    - Exclusion stricte du cimetière : les combattants morts au cimetière (`Graveyard`) ne sont plus comptabilisés dans le calcul de la pénalité (la mort d'un combattant permet au remplaçant de recruter cette voie au coût normal s'il n'y a pas d'autre combattant vivant qui la possède).
+  - **Harmonisation complète Backend / Frontend** :
+    - Algorithme séquentiel unifié dans `WarbandValidator.cs` et dans `rulesEngine.ts` (`getSpecializationXpCost`, `calculateFighterSpentXp`).
+    - Validation en temps réel de la limite d'XP (`XP_LIMIT_EXCEEDED`) dans le validateur backend et le store Vue.
+    - Affichage dynamique du coût réel en XP sur les cartes de spécialisation (`12 XP (+6 XP)`) et blocage réactif du bouton d'adoption si le budget d'XP disponible est insuffisant.
+  - **Suite de tests xUnit** : ajout d'un test automatisé `Specialization_Duplicate_Penalty_Applies_Sequentially_Only_To_Later_Living_Fighters` validant l'attribution séquentielle et la décharge de pénalité en cas de mort d'un combattant (**41 tests 100% verts**).
+
 ## [0.5.4-beta] - 2026-10-19
 
 ### 👑 Ajustements Officiers La Monstruosité & Ergonomie de Recrutement

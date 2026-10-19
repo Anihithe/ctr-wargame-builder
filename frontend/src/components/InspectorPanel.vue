@@ -18,6 +18,7 @@ import {
   ChevronDown,
   ChevronUp,
   PawPrint,
+  Lock,
 } from 'lucide-vue-next';
 
 const emit = defineEmits<{
@@ -118,6 +119,9 @@ import {
   cleanEquipmentName,
   formatSpecialRuleName,
   calculateTotalArmorBonus,
+  calculateFighterSpentXp,
+  calculateFighterAvailableXp,
+  getSpecializationXpCost,
 } from '@/domain/rulesEngine';
 import { THEME } from '@/constants/theme';
 import { ALLEGIANCE_IDS, SPEC_IDS, TALENT_IDS, ORIGIN_IDS, FACTION_IDS } from '@/constants/rules';
@@ -217,26 +221,12 @@ function isConclaveFreeTalent(talentId: string): boolean {
 
 const fighterSpentXp = computed(() => {
   if (!fighter.value) return 0;
-  let total = fighter.value.specializations.length * 6;
-  const isOfficer = fighter.value.officerRole !== 'None';
-  const hasErudits =
-    warband.value?.allegianceId === 'conclave_des_mages' &&
-    warband.value?.selectedAllegianceRuleName === 'Érudits';
-
-  for (const s of fighter.value.specializations) {
-    for (const tId of s.acquiredTalentIds) {
-      if (isOfficer && hasErudits && tId === 'incantation_maitrisee') {
-        continue; // Gratuit (0 XP)
-      }
-      total += 6;
-    }
-  }
-  return total;
+  return calculateFighterSpentXp(fighter.value, warband.value);
 });
 
 const fighterAvailableXp = computed(() => {
   if (!fighter.value) return 0;
-  return Math.max(0, (fighter.value.allocatedXp || 0) - fighterSpentXp.value);
+  return calculateFighterAvailableXp(fighter.value, warband.value);
 });
 
 function onToggleTalent(specId: string, talentId: string) {
@@ -684,22 +674,30 @@ function godGiftLabel(stat?: string | null): string {
               </div>
               <div class="flex items-center gap-1.5">
                 <button
+                  v-if="!fighter.godGiftStat"
                   type="button"
                   @click="showGodGiftPicker = !showGodGiftPicker"
                   class="text-[11px] px-2 py-0.5 rounded bg-grim-800 hover:bg-grim-750 text-amber-300 border border-grim-700 transition"
                 >
-                  {{ showGodGiftPicker ? 'Fermer' : fighter.godGiftStat ? 'Modifier' : 'Attribuer' }}
+                  {{ showGodGiftPicker ? 'Fermer' : 'Attribuer' }}
                 </button>
+                <span
+                  v-else
+                  class="text-[10px] text-amber-400/80 flex items-center gap-1 font-medium bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800/60"
+                >
+                  <Lock class="w-3 h-3 text-amber-400" />
+                  <span>Définitif</span>
+                </span>
               </div>
             </div>
 
-            <!-- Inline Picker if open -->
-            <div v-if="showGodGiftPicker" class="pt-2 border-t border-amber-900/40 space-y-2">
+            <!-- Inline Picker if open (only when not set yet) -->
+            <div v-if="showGodGiftPicker && !fighter.godGiftStat" class="pt-2 border-t border-amber-900/40 space-y-2">
               <div class="flex items-center gap-2">
                 <button
                   type="button"
                   @click="rollGodGiftD6"
-                  class="px-2.5 py-1 text-xs font-bold rounded bg-amber-600 hover:bg-amber-500 text-grim-950 transition flex items-center gap-1"
+                  class="px-2.5 py-1 text-xs font-bold rounded bg-amber-600 hover:bg-amber-500 text-grim-950 transition flex items-center gap-1 active:scale-95"
                 >
                   <Dices class="w-3.5 h-3.5" />
                   <span>Lancer d6</span>
@@ -710,51 +708,37 @@ function godGiftLabel(stat?: string | null): string {
                 <button
                   type="button"
                   @click="setGodGift('mouvement')"
-                  class="px-2 py-0.5 text-xs rounded border transition font-mono"
-                  :class="fighter.godGiftStat === 'mouvement' ? 'bg-amber-500 text-grim-950 font-bold border-amber-400' : 'bg-grim-850 text-grim-300 border-grim-700 hover:border-amber-500'"
+                  class="px-2 py-0.5 text-xs rounded border transition font-mono bg-grim-850 text-grim-300 border-grim-700 hover:border-amber-500 hover:text-white"
                 >
                   1: +1 Mouv
                 </button>
                 <button
                   type="button"
                   @click="setGodGift('pv')"
-                  class="px-2 py-0.5 text-xs rounded border transition font-mono"
-                  :class="fighter.godGiftStat === 'pv' ? 'bg-amber-500 text-grim-950 font-bold border-amber-400' : 'bg-grim-850 text-grim-300 border-grim-700 hover:border-amber-500'"
+                  class="px-2 py-0.5 text-xs rounded border transition font-mono bg-grim-850 text-grim-300 border-grim-700 hover:border-amber-500 hover:text-white"
                 >
                   2: +1 PV
                 </button>
                 <button
                   type="button"
                   @click="setGodGift('volonte')"
-                  class="px-2 py-0.5 text-xs rounded border transition font-mono"
-                  :class="fighter.godGiftStat === 'volonte' ? 'bg-amber-500 text-grim-950 font-bold border-amber-400' : 'bg-grim-850 text-grim-300 border-grim-700 hover:border-amber-500'"
+                  class="px-2 py-0.5 text-xs rounded border transition font-mono bg-grim-850 text-grim-300 border-grim-700 hover:border-amber-500 hover:text-white"
                 >
                   3: +1 Volonté
                 </button>
                 <button
                   type="button"
                   @click="setGodGift('esquive')"
-                  class="px-2 py-0.5 text-xs rounded border transition font-mono"
-                  :class="fighter.godGiftStat === 'esquive' ? 'bg-amber-500 text-grim-950 font-bold border-amber-400' : 'bg-grim-850 text-grim-300 border-grim-700 hover:border-amber-500'"
+                  class="px-2 py-0.5 text-xs rounded border transition font-mono bg-grim-850 text-grim-300 border-grim-700 hover:border-amber-500 hover:text-white"
                 >
                   4: +1 Esquive
                 </button>
                 <button
                   type="button"
                   @click="setGodGift('combat')"
-                  class="px-2 py-0.5 text-xs rounded border transition font-mono"
-                  :class="fighter.godGiftStat === 'combat' ? 'bg-amber-500 text-grim-950 font-bold border-amber-400' : 'bg-grim-850 text-grim-300 border-grim-700 hover:border-amber-500'"
+                  class="px-2 py-0.5 text-xs rounded border transition font-mono bg-grim-850 text-grim-300 border-grim-700 hover:border-amber-500 hover:text-white"
                 >
                   5: +1 Combat
-                </button>
-                <button
-                  v-if="fighter.godGiftStat"
-                  type="button"
-                  @click="setGodGift(null)"
-                  class="px-2 py-0.5 text-xs rounded bg-crimson-950/60 hover:bg-crimson-900 text-crimson-300 border border-crimson-800 transition"
-                  title="Retirer le Don des Dieux"
-                >
-                  Retirer
                 </button>
               </div>
             </div>
@@ -1108,15 +1092,15 @@ function godGiftLabel(stat?: string | null): string {
                 ? 'bg-grim-800 text-grim-500 border border-grim-700 cursor-not-allowed'
                 : 'bg-amber-600 hover:bg-amber-500 text-grim-950 cursor-pointer active:scale-95'
             "
-            :title="fighter.specializations.length >= 2 ? 'Maximum 2 spécialisations atteint' : fighterAvailableXp < 6 ? '6 XP requis pour choisir une voie' : 'Choisir une nouvelle voie'"
+            :title="fighter.specializations.length >= 2 ? 'Maximum 2 spécialisations atteint' : fighterAvailableXp < 6 ? 'XP disponible insuffisant pour choisir une voie' : 'Choisir une nouvelle voie'"
           >
             <Plus class="w-3.5 h-3.5" />
-            <span>+ Voie / Spécialisation (6 XP)</span>
+            <span>+ Voie / Spécialisation</span>
           </button>
         </div>
 
         <div v-if="fighter.specializations.length === 0" class="text-xs text-grim-400 italic bg-grim-850 p-4 rounded text-center border border-dashed border-grim-800">
-          Aucune spécialisation choisie. Cliquez sur "+ Voie / Spécialisation" pour adopter une discipline martiale ou magique (coût : 6 XP).
+          Aucune spécialisation choisie. Cliquez sur "+ Voie / Spécialisation" pour adopter une discipline martiale ou magique.
         </div>
 
         <div v-else class="space-y-4">
@@ -1132,7 +1116,14 @@ function godGiftLabel(stat?: string | null): string {
                     {{ rulesetStore.getSpecialization(fSpec.specializationId)?.name || fSpec.specializationId }}
                   </span>
                   <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-amber-950 text-amber-300 border border-amber-800">
-                    6 XP
+                    {{ getSpecializationXpCost(warband, fighter.id, fSpec.specializationId) }} XP
+                  </span>
+                  <span
+                    v-if="getSpecializationXpCost(warband, fighter.id, fSpec.specializationId) > 6"
+                    class="text-[10px] text-amber-400 font-mono"
+                    :title="`6 XP de base + ${getSpecializationXpCost(warband, fighter.id, fSpec.specializationId) - 6} XP car d'autres combattants vivants la possèdent déjà`"
+                  >
+                    (+{{ getSpecializationXpCost(warband, fighter.id, fSpec.specializationId) - 6 }} XP doublon)
                   </span>
                   <span class="text-[11px] text-grim-400">
                     • {{ fSpec.acquiredTalentIds.length }} talent(s) acquis
@@ -1146,7 +1137,7 @@ function godGiftLabel(stat?: string | null): string {
               <button
                 @click="onRemoveSpecialization(fSpec.specializationId)"
                 class="p-1 hover:bg-crimson-900/60 rounded text-grim-400 hover:text-crimson-300 transition shrink-0 ml-2"
-                title="Retirer cette spécialisation (rembourse 6 XP + talents)"
+                title="Retirer cette spécialisation (rembourse XP et talents)"
               >
                 <Trash2 class="w-3.5 h-3.5" />
               </button>
