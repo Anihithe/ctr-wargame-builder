@@ -27,18 +27,17 @@ const filteredSpecializations = computed(() => {
   const specs = rulesetStore.currentRuleset.specializations || [];
   if (!fighter.value) return [];
 
+  let list = specs;
   // Case 1: Monster outside Monstruosite faction -> only Voie de la Bête
   if (isMonster.value && !isMonstruositeFaction.value) {
-    return specs.filter((s) => s.id === SPEC_IDS.Bete);
+    list = specs.filter((s) => s.id === SPEC_IDS.Bete);
+  } else if (!isMonster.value) {
+    // Case 2: Non-Monster fighter -> all specializations EXCEPT Voie de la Bête (reserved for Monsters)
+    list = specs.filter((s) => s.id !== SPEC_IDS.Bete);
   }
 
-  // Case 2: Non-Monster fighter -> all specializations EXCEPT Voie de la Bête (reserved for Monsters)
-  if (!isMonster.value) {
-    return specs.filter((s) => s.id !== SPEC_IDS.Bete);
-  }
-
-  // Case 3: Monster in Monstruosite faction -> all specializations accessible (rule Peuple de Colosses)
-  return specs;
+  // Sort alphabetically by name
+  return [...list].sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }));
 });
 
 // Don des Dieux (Ordre du Temple)
