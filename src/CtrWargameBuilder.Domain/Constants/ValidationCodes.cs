@@ -18,6 +18,7 @@ public static class ValidationCodes
     public const string AnimalCannotHaveSpecialization = "ANIMAL_CANNOT_HAVE_SPECIALIZATION";
     public const string AnimalCannotEquipItems = "ANIMAL_CANNOT_EQUIP_ITEMS";
     public const string MonsterCannotBeOfficer = "MONSTER_CANNOT_BE_OFFICER";
+    public const string MonstruositeOfficerCannotBeRank1 = "MONSTRUOSITE_OFFICER_CANNOT_BE_RANK_1";
 
     // Quotas
     public const string MonstersLimitExceeded = "MONSTERS_LIMIT_EXCEEDED";

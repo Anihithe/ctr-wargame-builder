@@ -120,7 +120,7 @@ import {
   calculateTotalArmorBonus,
 } from '@/domain/rulesEngine';
 import { THEME } from '@/constants/theme';
-import { ALLEGIANCE_IDS, SPEC_IDS, TALENT_IDS, ORIGIN_IDS } from '@/constants/rules';
+import { ALLEGIANCE_IDS, SPEC_IDS, TALENT_IDS, ORIGIN_IDS, FACTION_IDS } from '@/constants/rules';
 
 // Calculate stats of selected fighter using rulesEngine
 const fighterStats = computed<StatProfile>(() => {
@@ -172,6 +172,10 @@ function setSpeciesBonus(bonusId: string | undefined) {
     warbandStore.setFighterAnimalSpeciesBonus(fighter.value.id, bonusId);
   }
 }
+
+const isR1InMonstruosite = computed(() => {
+  return fighter.value?.rank === 1 && warband.value?.factionId === FACTION_IDS.Monstruosite;
+});
 
 // Officer role change
 function onOfficerRoleChange(e: Event) {
@@ -595,7 +599,7 @@ function godGiftLabel(stat?: string | null): string {
           </div>
 
           <!-- Officer Role Selector -->
-          <div class="w-48">
+          <div v-if="fighter.type !== 'Animal'" class="w-48">
             <label class="text-[11px] font-semibold text-grim-400 uppercase tracking-wider block mb-1">
               Rôle de commandement
             </label>
@@ -605,8 +609,12 @@ function godGiftLabel(stat?: string | null): string {
               class="w-full bg-grim-850 border border-grim-700 rounded px-2.5 py-1.5 text-xs font-semibold text-grim-200 focus:border-gold-500 focus:outline-none"
             >
               <option value="None">Combattant standard (Troupier)</option>
-              <option value="Leader">Leader (12 XP)</option>
-              <option value="BrasDroit">Bras droit (6 XP)</option>
+              <option value="Leader" :disabled="isR1InMonstruosite">
+                Leader (12 XP){{ isR1InMonstruosite ? ' (Interdit R1)' : '' }}
+              </option>
+              <option value="BrasDroit" :disabled="isR1InMonstruosite">
+                Bras droit (6 XP){{ isR1InMonstruosite ? ' (Interdit R1)' : '' }}
+              </option>
             </select>
           </div>
 

@@ -3,6 +3,21 @@
 Toutes les modifications notables apportées à ce projet sont documentées dans ce fichier.
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet adhère à [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [0.5.4-beta] - 2026-10-19
+
+### 👑 Ajustements Officiers La Monstruosité & Ergonomie de Recrutement
+- **Ajustements de Faction (*La Monstruosité*)** :
+  - **Monstres Bras Droit** : possibilité de recruter ou d'assigner un Monstre en tant que Bras Droit dans *La Monstruosité* (en conformité avec la règle `canHaveMonstersAsOfficers`).
+  - **Interdiction des Officiers de Rang 1** : interdiction stricte de recruter ou d'assigner un combattant de Rang 1 comme Officier (Leader ou Bras droit) dans *La Monstruosité* (les Rang 1 étant des esclaves non-combattants débloqués uniquement via l'Origine Esclavagistes). Validation backend (`MONSTRUOSITE_OFFICER_CANNOT_BE_RANK_1`), frontend, et masquage/désactivation dans l'UI.
+  - **Suite de tests xUnit** : ajout de tests automatisés validant l'interdiction de Rang 1 pour les Officiers de la Monstruosité (suite portée à **40 tests 100% verts**).
+- **Ergonomie & Épuration de l'Interface Utilisateur** :
+  - **Recrutement des Unités** :
+    - Suppression de la mention `(Élite)` sur le Rang 3.
+    - Ordonnancement logique et uniforme du plus puissant au plus modeste (**du Rang 3 au Rang 1**) pour le Leader, le Bras droit, les Troupes et les Animaux (`[3, 2, 1]`).
+    - Épuration des libellés de rang : remplacement de `Guerrier Rang X` par `Rang X` (badge `RX`), suppression du mot trompeur "Guerrier" des sous-lignes et en-têtes (`Combattants de troupe`).
+    - Nettoyage des boutons de recrutement : suppression du double `+` textuel sur les boutons `Recruter le Leader`, `Recruter le Bras droit` et `Recruter`.
+  - **Sélecteur de Spécialisations (`SpecializationPickerModal.vue`)** : tri alphabétique strict des spécialisations disponibles pour une consultation plus fluide.
+
 ## [0.5.3-beta] - 2026-10-19
 
 ### 🐾 Règles Complètes des Animaux, Bonus d'Espèce & Armes Naturelles

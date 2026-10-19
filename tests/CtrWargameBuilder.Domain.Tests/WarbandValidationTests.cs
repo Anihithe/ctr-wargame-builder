@@ -1169,5 +1169,54 @@ public class WarbandValidationTests
         var resWith = _validator.Validate(wbWithDruid, _ruleset);
         Assert.True(resWith.IsValid, string.Join("; ", resWith.Messages.Select(m => m.Message)));
     }
+
+    [Fact]
+    public void Monstruosite_Officer_Cannot_Be_Rank_1()
+    {
+        // 1. Leader R1 dans Monstruosité
+        var wbLeaderR1 = new Warband
+        {
+            FactionId = "monstruosite",
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter { CustomName = "Leader R1", Rank = 1, Role = OfficerRole.Leader },
+                new Fighter { CustomName = "Bras droit", Rank = 2, Role = OfficerRole.BrasDroit }
+            ]
+        };
+        var resLeader = _validator.Validate(wbLeaderR1, _ruleset);
+        Assert.False(resLeader.IsValid);
+        Assert.Contains(resLeader.Messages, m => m.Code == ValidationCodes.MonstruositeOfficerCannotBeRank1);
+
+        // 2. Bras droit R1 dans Monstruosité
+        var wbBrasDroitR1 = new Warband
+        {
+            FactionId = "monstruosite",
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter { CustomName = "Leader R2", Rank = 2, Role = OfficerRole.Leader },
+                new Fighter { CustomName = "Bras droit R1", Rank = 1, Role = OfficerRole.BrasDroit }
+            ]
+        };
+        var resBrasDroit = _validator.Validate(wbBrasDroitR1, _ruleset);
+        Assert.False(resBrasDroit.IsValid);
+        Assert.Contains(resBrasDroit.Messages, m => m.Code == ValidationCodes.MonstruositeOfficerCannotBeRank1);
+
+        // 3. Leader R2 et Bras droit R2 dans Monstruosité -> Valide
+        var wbValid = new Warband
+        {
+            FactionId = "monstruosite",
+            StartingGold = 10,
+            Fighters =
+            [
+                new Fighter { CustomName = "Leader R2", Rank = 2, Role = OfficerRole.Leader },
+                new Fighter { CustomName = "Bras droit R2", Rank = 2, Role = OfficerRole.BrasDroit }
+            ]
+        };
+        var resValid = _validator.Validate(wbValid, _ruleset);
+        Assert.DoesNotContain(resValid.Messages, m => m.Code == ValidationCodes.MonstruositeOfficerCannotBeRank1);
+    }
 }
+
 

@@ -200,6 +200,10 @@ public class WarbandValidator : IWarbandValidator
             {
                 result.AddError(ValidationCodes.MonsterCannotBeOfficer, $"Le monstre '{name}' ne peut pas être Officier pour la faction {faction.Name}.", fighter.Id);
             }
+            if (string.Equals(faction.Id, RuleConstants.Factions.Monstruosite, StringComparison.OrdinalIgnoreCase) && fighter.Rank == 1)
+            {
+                result.AddError(ValidationCodes.MonstruositeOfficerCannotBeRank1, $"La faction Monstruosité ne peut pas désigner un Combattant de Rang 1 comme Officier ('{name}').", fighter.Id);
+            }
         }
 
         // Restrictions Animal

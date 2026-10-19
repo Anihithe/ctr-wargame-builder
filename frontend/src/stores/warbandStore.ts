@@ -196,6 +196,16 @@ export const useWarbandStore = defineStore('warband', () => {
         }
       }
 
+      if (f.officerRole !== 'None' && wb.factionId === FACTION_IDS.Monstruosite && f.rank === 1) {
+        errors.push({
+          fighterId: f.id,
+          fighterName: f.name,
+          code: VALIDATION_CODES.MonstruositeOfficerCannotBeRank1,
+          message: `La faction Monstruosité ne peut pas désigner un Combattant de Rang 1 comme Officier (${f.name}).`,
+          severity: 'Error',
+        });
+      }
+
       // Equipment slots limit check using rulesEngine
       const maxSlots = calculateMaxSlots(f, wb, slotsConfig);
 

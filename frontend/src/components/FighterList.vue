@@ -78,7 +78,7 @@ function recruitOfficer(role: OfficerRole, rank: number, type: FighterType = 'Gu
 
 function getFighterSubline(f: Fighter): string {
   if (f.type === 'Guerrier') {
-    return 'Guerrier';
+    return `Rang ${f.rank}`;
   }
   if (f.type === 'Monstre') {
     const m = rulesetStore.getMonster(f.subTypeId || '');
@@ -239,6 +239,11 @@ const canRecruitRank1 = computed(() => {
     return warband.value.selectedOriginIds?.includes(ORIGIN_IDS.Esclavagistes) ?? false;
   }
   return true;
+});
+
+const canOfficerBeRank1 = computed(() => {
+  if (!warband.value) return true;
+  return warband.value.factionId !== FACTION_IDS.Monstruosite;
 });
 
 const hasDruideOrMaitre = computed(() => {
@@ -512,7 +517,7 @@ const canRecruitAnimal = computed(() => {
               class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-amber-600 hover:bg-amber-500 text-grim-950 rounded-md shadow transition active:scale-95"
             >
               <Plus class="w-3.5 h-3.5" />
-              <span>+ Recruter le Leader</span>
+              <span>Recruter le Leader</span>
             </button>
 
             <!-- Leader Rank Popover -->
@@ -524,25 +529,26 @@ const canRecruitAnimal = computed(() => {
                 Choisir le rang du Leader
               </div>
               <button
-                @click="recruitOfficer('Leader', 1)"
+                @click="recruitOfficer('Leader', 3)"
                 class="w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded hover:bg-grim-800 text-grim-200"
               >
-                <span>Guerrier Rang 1</span>
-                <span class="font-mono text-gold-400 font-bold">1 PO</span>
+                <span>Rang 3</span>
+                <span class="font-mono text-gold-400 font-bold">3 PO</span>
               </button>
               <button
                 @click="recruitOfficer('Leader', 2)"
                 class="w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded hover:bg-grim-800 text-grim-200"
               >
-                <span>Guerrier Rang 2</span>
+                <span>Rang 2</span>
                 <span class="font-mono text-gold-400 font-bold">2 PO</span>
               </button>
               <button
-                @click="recruitOfficer('Leader', 3)"
+                v-if="canOfficerBeRank1"
+                @click="recruitOfficer('Leader', 1)"
                 class="w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded hover:bg-grim-800 text-grim-200"
               >
-                <span>Guerrier Rang 3 (Élite)</span>
-                <span class="font-mono text-gold-400 font-bold">3 PO</span>
+                <span>Rang 1</span>
+                <span class="font-mono text-gold-400 font-bold">1 PO</span>
               </button>
               <template v-if="faction?.canHaveMonstersAsOfficers">
                 <div class="border-t border-grim-800 pt-1 text-[10px] text-purple-400 font-bold px-2">Monstre Leader</div>
@@ -713,7 +719,7 @@ const canRecruitAnimal = computed(() => {
               class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-grim-800 hover:bg-grim-700 text-grim-200 border border-grim-700 rounded-md shadow transition active:scale-95"
             >
               <Plus class="w-3.5 h-3.5" />
-              <span>+ Recruter le Bras droit</span>
+              <span>Recruter le Bras droit</span>
             </button>
 
             <!-- Bras Droit Rank Popover -->
@@ -725,26 +731,39 @@ const canRecruitAnimal = computed(() => {
                 Choisir le rang du Bras droit
               </div>
               <button
-                @click="recruitOfficer('BrasDroit', 1)"
+                @click="recruitOfficer('BrasDroit', 3)"
                 class="w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded hover:bg-grim-800 text-grim-200"
               >
-                <span>Guerrier Rang 1</span>
-                <span class="font-mono text-gold-400 font-bold">1 PO</span>
+                <span>Rang 3</span>
+                <span class="font-mono text-gold-400 font-bold">3 PO</span>
               </button>
               <button
                 @click="recruitOfficer('BrasDroit', 2)"
                 class="w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded hover:bg-grim-800 text-grim-200"
               >
-                <span>Guerrier Rang 2</span>
+                <span>Rang 2</span>
                 <span class="font-mono text-gold-400 font-bold">2 PO</span>
               </button>
               <button
-                @click="recruitOfficer('BrasDroit', 3)"
+                v-if="canOfficerBeRank1"
+                @click="recruitOfficer('BrasDroit', 1)"
                 class="w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded hover:bg-grim-800 text-grim-200"
               >
-                <span>Guerrier Rang 3 (Élite)</span>
-                <span class="font-mono text-gold-400 font-bold">3 PO</span>
+                <span>Rang 1</span>
+                <span class="font-mono text-gold-400 font-bold">1 PO</span>
               </button>
+              <template v-if="faction?.canHaveMonstersAsOfficers">
+                <div class="border-t border-grim-800 pt-1 text-[10px] text-purple-400 font-bold px-2">Monstre Bras droit</div>
+                <button
+                  v-for="m in rulesetStore.currentRuleset.monsters"
+                  :key="m.id"
+                  @click="recruitOfficer('BrasDroit', 4, 'Monstre', m.id)"
+                  class="w-full flex items-center justify-between px-2.5 py-1 text-xs rounded hover:bg-grim-800 text-purple-300"
+                >
+                  <span>{{ m.name }}</span>
+                  <span class="font-mono text-gold-400 font-bold">4 PO</span>
+                </button>
+              </template>
             </div>
           </div>
         </div>
@@ -773,7 +792,7 @@ const canRecruitAnimal = computed(() => {
             class="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold bg-gold-600 hover:bg-gold-500 text-grim-950 rounded-md shadow transition active:scale-95"
           >
             <UserPlus class="w-3.5 h-3.5" />
-            <span>+ Recruter</span>
+            <span>Recruter</span>
           </button>
 
           <!-- Recruitment Dropdown Menu -->
@@ -782,8 +801,28 @@ const canRecruitAnimal = computed(() => {
             class="absolute right-0 mt-2 w-64 bg-grim-900 border border-grim-700 rounded-lg shadow-2xl z-40 p-2 space-y-1.5"
           >
             <div class="text-[11px] font-semibold text-grim-400 uppercase tracking-wider px-2 py-1">
-              Guerriers de troupe
+              Combattants de troupe
             </div>
+            <button
+              @click="recruitTroop('Guerrier', 3)"
+              class="w-full flex items-center justify-between px-3 py-1.5 text-xs rounded hover:bg-grim-800 text-grim-200 transition"
+            >
+              <div class="flex items-center gap-2">
+                <span class="px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 text-[10px] font-bold">R3</span>
+                <span>Rang 3</span>
+              </div>
+              <span class="font-mono text-gold-400 font-bold">3 PO</span>
+            </button>
+            <button
+              @click="recruitTroop('Guerrier', 2)"
+              class="w-full flex items-center justify-between px-3 py-1.5 text-xs rounded hover:bg-grim-800 text-grim-200 transition"
+            >
+              <div class="flex items-center gap-2">
+                <span class="px-1.5 py-0.5 rounded bg-blue-950 text-blue-300 text-[10px] font-bold">R2</span>
+                <span>Rang 2</span>
+              </div>
+              <span class="font-mono text-gold-400 font-bold">2 PO</span>
+            </button>
             <button
               v-if="canRecruitRank1"
               @click="recruitTroop('Guerrier', 1)"
@@ -791,7 +830,7 @@ const canRecruitAnimal = computed(() => {
             >
               <div class="flex items-center gap-2">
                 <span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-bold">R1</span>
-                <span>Guerrier Rang 1</span>
+                <span>Rang 1</span>
               </div>
               <span class="font-mono text-gold-400 font-bold">1 PO</span>
             </button>
@@ -806,26 +845,6 @@ const canRecruitAnimal = computed(() => {
               </div>
               <Lock class="w-3.5 h-3.5 text-grim-600 shrink-0" />
             </div>
-            <button
-              @click="recruitTroop('Guerrier', 2)"
-              class="w-full flex items-center justify-between px-3 py-1.5 text-xs rounded hover:bg-grim-800 text-grim-200 transition"
-            >
-              <div class="flex items-center gap-2">
-                <span class="px-1.5 py-0.5 rounded bg-blue-950 text-blue-300 text-[10px] font-bold">R2</span>
-                <span>Guerrier Rang 2</span>
-              </div>
-              <span class="font-mono text-gold-400 font-bold">2 PO</span>
-            </button>
-            <button
-              @click="recruitTroop('Guerrier', 3)"
-              class="w-full flex items-center justify-between px-3 py-1.5 text-xs rounded hover:bg-grim-800 text-grim-200 transition"
-            >
-              <div class="flex items-center gap-2">
-                <span class="px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 text-[10px] font-bold">R3</span>
-                <span>Guerrier Rang 3 (Élite)</span>
-              </div>
-              <span class="font-mono text-gold-400 font-bold">3 PO</span>
-            </button>
 
             <div class="border-t border-grim-800 pt-1.5 text-[11px] font-semibold text-grim-400 uppercase tracking-wider px-2 flex items-center justify-between">
               <span>Monstres (Max {{ maxMonstersInWarband === Infinity ? '∞' : maxMonstersInWarband }})</span>
@@ -852,7 +871,7 @@ const canRecruitAnimal = computed(() => {
               <span v-if="!canRecruitAnimal" class="text-[10px] text-crimson-400 font-normal">Max {{ maxAnimalsInWarband }} atteint</span>
             </div>
             <button
-              v-for="r in [1, 2, 3]"
+              v-for="r in [3, 2, 1]"
               :key="r"
               :disabled="!canRecruitAnimal"
               @click="recruitTroop('Animal', r, `animal-r${r}`)"
@@ -873,7 +892,7 @@ const canRecruitAnimal = computed(() => {
       <!-- Troop Fighters List Cards -->
       <div v-if="troopFighters.length === 0" class="bg-grim-900/60 border border-dashed border-grim-800 rounded-lg p-5 text-center space-y-1">
         <p class="text-xs font-semibold text-grim-300">Aucun combattant de troupe actif sur table</p>
-        <p class="text-[11px] text-grim-500">Recrutez des guerriers, monstres ou animaux via le bouton "+ Recruter Combattant".</p>
+        <p class="text-[11px] text-grim-500">Recrutez des guerriers, monstres ou animaux via le bouton "Recruter".</p>
       </div>
 
       <div v-else class="space-y-2">

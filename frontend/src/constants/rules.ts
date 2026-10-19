@@ -93,6 +93,7 @@ export const VALIDATION_CODES = {
   BrasDroitLimitExceeded: 'BRAS_DROIT_LIMIT_EXCEEDED',
   AnimalCannotBeOfficer: 'ANIMAL_CANNOT_BE_OFFICER',
   MonsterCannotBeOfficer: 'MONSTER_CANNOT_BE_OFFICER',
+  MonstruositeOfficerCannotBeRank1: 'MONSTRUOSITE_OFFICER_CANNOT_BE_RANK_1',
 
   // Quotas
   Rank3QuotaExceeded: 'RANK3_QUOTA_EXCEEDED',
