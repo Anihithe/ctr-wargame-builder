@@ -21,6 +21,10 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
   - Attribution correcte du Rang 4 (au lieu de 3) lors du recrutement de monstres comme troupes ou officiers.
 - **Nettoyage des Labels de Boutons** :
   - Suppression du caractère `+` redondant dans les libellés de boutons de la fiche combattant : "Ajouter potion/relique" et "Voie / Spécialisation" (qui possèdent déjà leur icône Plus dédiée).
+- **Différenciation Visuelle des Icônes (XP vs Don des Dieux vs Magie)** :
+  - Remplacement de l'icône `Sparkles` par `Award` (médaille de vétéran / expérience) pour l'expérience du combattant dans la carte XP et la modale XP.
+  - Remplacement de l'icône de la bannière *Don des Dieux* par `Sun` (soleil radieux / éclat divin du temple) pour lever toute confusion visuelle.
+  - L'icône `Sparkles` reste ainsi réservée aux objets magiques, consommables et reliques.
 - **Suppression du Quota Fictif de Combattants Rang 3** :
   - Suppression de la fausse règle de validation qui bloquait les bandes à 2 combattants de Rang 3 maximum (`Rank3QuotaExceeded`). Les règles officielles ne limitent pas le nombre de Rang 3 (uniquement contraint par le budget de 10 PO et le plafond d'effectif de 10 membres).
 - **Validation Monstruosité & Troupes Rang 1** :

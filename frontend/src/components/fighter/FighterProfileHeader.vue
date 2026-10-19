@@ -7,7 +7,7 @@ import type { StatProfile } from '@/types/ruleset';
 import {
   Shield,
   Sword,
-  Sparkles,
+  Sun,
   Dices,
   Lock,
 } from 'lucide-vue-next';
@@ -253,7 +253,7 @@ function godGiftLabel(stat?: string | null): string {
       >
         <div class="flex items-center justify-between text-xs">
           <div class="flex items-center gap-2">
-            <Sparkles class="w-4 h-4 text-amber-400 shrink-0" />
+            <Sun class="w-4 h-4 text-amber-400 shrink-0" />
             <span v-if="fighter.godGiftStat" class="text-amber-200">
               Don des Dieux : <strong class="text-amber-300 font-mono">{{ godGiftLabel(fighter.godGiftStat) }}</strong>
             </span>

@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue';
 import { useWarbandStore } from '@/stores/warbandStore';
 import type { Fighter } from '@/types/warband';
-import { Sparkles } from 'lucide-vue-next';
+import { Award } from 'lucide-vue-next';
 import FighterXpModal from './FighterXpModal.vue';
 import {
   calculateFighterSpentXp,
@@ -31,7 +31,7 @@ const fighterAvailableXp = computed(() => {
   <div class="trench-card p-4 space-y-3">
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-2">
-        <Sparkles class="w-4 h-4 text-amber-400" />
+        <Award class="w-4 h-4 text-amber-400" />
         <h3 class="text-xs font-bold text-white uppercase tracking-wider font-display">
           Expérience & Évolution (XP)
         </h3>
@@ -45,7 +45,7 @@ const fighterAvailableXp = computed(() => {
         title="Gérer l'expérience (XP)"
       >
         <div class="p-1 rounded bg-amber-950/90 border border-amber-600/60 text-amber-400 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-200">
-          <Sparkles class="w-3.5 h-3.5" />
+          <Award class="w-3.5 h-3.5" />
         </div>
         <div class="text-left leading-none font-mono">
           <span class="text-xs font-bold text-amber-300 group-hover:text-amber-200">

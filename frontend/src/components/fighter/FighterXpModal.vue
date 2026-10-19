@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue';
 import { useWarbandStore } from '@/stores/warbandStore';
 import type { Fighter } from '@/types/warband';
-import { Sparkles, X, Plus, Minus, Info, Award } from 'lucide-vue-next';
+import { Award, X, Plus, Minus, Info } from 'lucide-vue-next';
 import {
   calculateFighterSpentXp,
   calculateFighterAvailableXp,
@@ -60,7 +60,7 @@ function setManualXp() {
       <div class="p-4 border-b border-grim-800 flex items-center justify-between bg-grim-850">
         <div class="flex items-center gap-2.5">
           <div class="p-2 rounded-lg bg-amber-950/80 border border-amber-600/60 text-amber-400">
-            <Sparkles class="w-5 h-5" />
+            <Award class="w-5 h-5" />
           </div>
           <div>
             <h2 class="text-base font-bold text-white font-display tracking-wide flex items-center gap-2">
