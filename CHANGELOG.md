@@ -3,6 +3,20 @@
 Toutes les modifications notables apportées à ce projet sont documentées dans ce fichier.
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet adhère à [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [0.5.7-beta] - 2026-10-19
+
+### 🏗️ Refactoring Frontend & Outils d'Accélération IA
+- **Modularisation des Composants Vue Monolithiques** :
+  - Décomposition des deux composants frontend les plus massifs (> 1 200 - 1 400 lignes) en composants ciblés, clairs et hautement réutilisables :
+    - `FighterList.vue` (1 210 lignes ➔ 468 lignes) : extraction de `FighterCard.vue` (330 lignes) centralisant le rendu de carte combattant, variantes visuelles (Leader, Bras droit, Cimetière, Réserve, Standard), badges d'équipement, sorts, spécialisations, maîtrise et actions rapides.
+    - `InspectorPanel.vue` (1 419 lignes ➔ 34 lignes) : transformé en un routeur conteneur épuré commutant entre deux nouveaux composants spécialisés :
+      - `WarbandOverview.vue` (553 lignes) : vue d'ensemble de la bande, fiche de faction, table des profils, sélecteurs d'origines, allégeances et gestion de la faction alliée (*Union des peuples*).
+      - `FighterInspector.vue` (468 lignes) : fiche détaillée du combattant (stats de combat, évolution XP, gestion d'équipement/emplacements, maîtrise, spécialisations/talents, grimoire de sorts et gestion spécifique des animaux).
+- **Outillage d'Assurance Qualité & Accélération IA** :
+  - Création du script unifié `scripts/verify.sh` :
+    - Exécute en une seule commande la suite complète de vérifications : tests .NET 10 (45 tests xUnit), vérification stricte du typage TypeScript (`vue-tsc -b`), compilation de production frontend (`vite build`) et synchronisation automatique vers `src/CtrWargameBuilder.Api/wwwroot/`.
+    - Réduit drastiquement le nombre d'allers-retours de commandes en session IA et garantit l'absence de régressions ou d'erreurs de type à chaque modification.
+
 ## [0.5.6-beta] - 2026-10-19
 
 ### 🤝 Allégeance Union des peuples & Règle Collaboration

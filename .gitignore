@@ -34,6 +34,7 @@ rules_pdf/
 
 # Local run & environment scripts (machine-specific)
 *.sh
+!scripts/*.sh
 dev.sh
 start.sh
 frontend/dev-env.sh
