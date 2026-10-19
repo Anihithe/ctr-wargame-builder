@@ -111,6 +111,8 @@ import {
   calculateMaxSlots,
   calculateCurrentSlotsUsed,
   hasFighterMaitrise,
+  doesWeaponHaveMaitrise,
+  getFighterMaitriseWeapons,
   canFighterCastSpells,
   cleanEquipmentName,
   formatSpecialRuleName,
@@ -141,6 +143,11 @@ const currentSlotsUsed = computed(() => {
 const fighterHasMaitrise = computed(() => {
   if (!fighter.value) return false;
   return hasFighterMaitrise(fighter.value, warband.value, rulesetStore);
+});
+
+const maitriseWeapons = computed(() => {
+  if (!fighter.value) return [];
+  return getFighterMaitriseWeapons(fighter.value, warband.value, rulesetStore);
 });
 
 const canCastSpells = computed(() => {
@@ -756,7 +763,12 @@ function godGiftLabel(stat?: string | null): string {
               <div>
                 <span class="font-bold text-amber-300">Règle spéciale Maîtrise active</span>
                 <p class="text-[11px] text-grim-300">
-                  Le combattant peut relancer un jet d'attaque par tour (emplacement libre ou arme de niv ≤ 3 avec accès > 3).
+                  <template v-if="maxSlots - currentSlotsUsed > 0">
+                    Le combattant bénéficie de Maîtrise ({{ maxSlots - currentSlotsUsed }} emplacement libre). 1 relance de jet d'attaque par tour.
+                  </template>
+                  <template v-else>
+                    Maîtrise active sur : <span class="text-amber-200 font-semibold">{{ maitriseWeapons.map(w => cleanEquipmentName(w.name)).join(', ') }}</span> (arme de niv ≤ 3 avec accès &gt; 3). 1 relance par tour avec ces armes.
+                  </template>
                 </p>
               </div>
             </div>
@@ -893,7 +905,7 @@ function godGiftLabel(stat?: string | null): string {
                 <span v-if="rulesetStore.getEquipment(eq.equipmentId)?.puissance">Puissance: {{ rulesetStore.getEquipment(eq.equipmentId)?.puissance }} | </span>
                 <span v-if="rulesetStore.getEquipment(eq.equipmentId)?.precision">Précision: {{ rulesetStore.getEquipment(eq.equipmentId)?.precision }} | </span>
                 <span v-if="rulesetStore.getEquipment(eq.equipmentId)?.rangeInInches">Portée: {{ rulesetStore.getEquipment(eq.equipmentId)?.rangeInInches }}" | </span>
-                <div v-if="rulesetStore.getEquipment(eq.equipmentId)?.specialRuleIds?.length" class="flex flex-wrap items-center gap-1 mt-1">
+                <div v-if="rulesetStore.getEquipment(eq.equipmentId)?.specialRuleIds?.length || (!eq.isMagicItem && fighter && rulesetStore.getEquipment(eq.equipmentId) && doesWeaponHaveMaitrise(fighter, rulesetStore.getEquipment(eq.equipmentId)!, warband, rulesetStore))" class="flex flex-wrap items-center gap-1 mt-1">
                   <span class="text-[10px] text-grim-400">Règles :</span>
                   <span
                     v-for="rid in rulesetStore.getEquipment(eq.equipmentId)?.specialRuleIds"
@@ -902,6 +914,13 @@ function godGiftLabel(stat?: string | null): string {
                     :title="rulesetStore.getSpecialRule(rid)?.description || rid"
                   >
                     {{ formatSpecialRuleName(rid, rulesetStore.getSpecialRule(rid)?.name, rulesetStore.getEquipment(eq.equipmentId)) }}
+                  </span>
+                  <span
+                    v-if="!eq.isMagicItem && fighter && rulesetStore.getEquipment(eq.equipmentId) && doesWeaponHaveMaitrise(fighter, rulesetStore.getEquipment(eq.equipmentId)!, warband, rulesetStore)"
+                    class="inline-block px-1.5 py-0.2 text-[10px] rounded bg-amber-950/70 text-amber-300 border border-amber-500/60 font-medium cursor-help"
+                    title="Maîtrise : Le combattant peut relancer un jet d'attaque raté par tour avec cette arme."
+                  >
+                    ★ Maîtrise
                   </span>
                 </div>
               </p>

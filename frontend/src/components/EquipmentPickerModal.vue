@@ -11,6 +11,8 @@ import {
   calculateMaxSlots,
   calculateCurrentSlotsUsed,
   formatSpecialRuleName,
+  hasFighterMaitrise,
+  doesWeaponHaveMaitrise,
 } from '@/domain/rulesEngine';
 import { Sword, Shield, X, Check, Plus, Minus, AlertCircle, Lock } from 'lucide-vue-next';
 
@@ -70,6 +72,11 @@ const currentSlotsUsed = computed(() => {
 });
 
 const remainingSlots = computed(() => Math.max(0, maxSlots.value - currentSlotsUsed.value));
+
+const fighterHasMaitrise = computed(() => {
+  if (!fighter.value) return false;
+  return hasFighterMaitrise(fighter.value, warband.value, rulesetStore);
+});
 
 const equippedArmor = computed(() => {
   if (!fighter.value) return null;
@@ -306,8 +313,12 @@ function unequipOne(equipmentId: string) {
               <strong :class="remainingSlots > 0 ? 'text-amber-400' : 'text-crimson-400'">
                 {{ remainingSlots }} / {{ maxSlots }}
               </strong>
-              <span v-if="remainingSlots > 0" class="text-emerald-400 ml-1 text-[11px] font-medium">
-                (Maîtrise active)
+              <span
+                v-if="fighterHasMaitrise"
+                class="text-emerald-400 ml-1 text-[11px] font-medium"
+                :title="remainingSlots > 0 ? 'Maîtrise active : au moins 1 emplacement libre' : 'Maîtrise active via arme(s) de niveau ≤ 3 avec accès > 3'"
+              >
+                (Maîtrise active{{ remainingSlots === 0 ? ' via armes' : '' }})
               </span>
             </span>
             <span class="text-grim-600">|</span>
@@ -452,7 +463,7 @@ function unequipOne(equipmentId: string) {
               </div>
 
               <!-- Special Rules / Traits if any -->
-              <div v-if="getActiveEquipment(fam)?.specialRuleIds?.length" class="flex flex-wrap gap-1.5 pt-1">
+              <div v-if="getActiveEquipment(fam)?.specialRuleIds?.length || (fighter && getActiveEquipment(fam) && doesWeaponHaveMaitrise(fighter, getActiveEquipment(fam)!, warband, rulesetStore))" class="flex flex-wrap gap-1.5 pt-1">
                 <span
                   v-for="rule in getActiveEquipment(fam)?.specialRuleIds"
                   :key="rule"
@@ -460,6 +471,13 @@ function unequipOne(equipmentId: string) {
                   :title="rulesetStore.getSpecialRule(rule)?.description || rule"
                 >
                   {{ formatSpecialRuleName(rule, rulesetStore.getSpecialRule(rule)?.name, getActiveEquipment(fam)) }}
+                </span>
+                <span
+                  v-if="fighter && getActiveEquipment(fam) && doesWeaponHaveMaitrise(fighter, getActiveEquipment(fam)!, warband, rulesetStore)"
+                  class="text-[11px] px-2 py-0.5 rounded bg-amber-950/80 border border-amber-600/70 text-amber-200 font-semibold cursor-help flex items-center gap-1"
+                  title="Maîtrise : Le Combattant peut relancer un jet d'attaque par tour avec cette arme (emplacement libre ou arme de niv ≤ 3 avec accès > 3)."
+                >
+                  <span>★ Maîtrise</span>
                 </span>
               </div>
 

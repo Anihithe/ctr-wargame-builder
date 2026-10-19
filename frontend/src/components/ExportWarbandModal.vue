@@ -13,6 +13,10 @@ import {
   formatSpecialRuleName,
   cleanEquipmentName,
   calculateFighterGoldCost,
+  doesWeaponHaveMaitrise,
+  hasFighterMaitrise,
+  calculateMaxSlots,
+  calculateCurrentSlotsUsed,
 } from '@/domain/rulesEngine';
 import {
   X,
@@ -142,6 +146,10 @@ function getFighterWeaponsForCard(f: Fighter) {
       }
     }
 
+    if (warband.value && doesWeaponHaveMaitrise(f, item, warband.value, rulesetStore)) {
+      rulesFormatted.push('Maîtrise');
+    }
+
     let rangeStr = 'CàC';
     if (item.rangeInInches) rangeStr = `${item.rangeInInches}"`;
 
@@ -180,6 +188,17 @@ function getFighterAbilities(f: Fighter) {
     abilities.push({
       name: `Règle de Faction : ${faction.value.specialRule.name}`,
       description: faction.value.specialRule.description,
+    });
+  }
+
+  // Special rule Maîtrise
+  if (warband.value && hasFighterMaitrise(f, warband.value, rulesetStore)) {
+    const freeSlots = calculateMaxSlots(f, warband.value, rulesetStore.config?.slotsByRank) - calculateCurrentSlotsUsed(f, rulesetStore);
+    abilities.push({
+      name: 'Règle Spéciale : Maîtrise',
+      description: freeSlots > 0
+        ? "Bénéficie d'1 relance d'attaque par tour (emplacement libre)."
+        : "Bénéficie d'1 relance d'attaque par tour avec les armes éligibles (niv ≤ 3 avec accès > 3).",
     });
   }
 

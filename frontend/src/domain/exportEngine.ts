@@ -5,6 +5,7 @@ import {
   formatSpecialRuleName,
   cleanEquipmentName,
   calculateFighterGoldCost,
+  doesWeaponHaveMaitrise,
 } from '@/domain/rulesEngine';
 
 export interface ExportOptions {
@@ -84,7 +85,9 @@ export function generateTextExport(
         } else if (item.category === 'Shield') {
           shields.push(cleanedName);
         } else {
-          weapons.push(cleanedName);
+          const hasMaitrise = doesWeaponHaveMaitrise(f, item, warband, rulesetStore);
+          const wLabel = hasMaitrise ? `${cleanedName} (Maîtrise)` : cleanedName;
+          weapons.push(wLabel);
         }
       }
     }
