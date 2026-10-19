@@ -11,6 +11,7 @@ import MagicItemPickerModal from '@/components/MagicItemPickerModal.vue';
 import SpellPickerModal from '@/components/SpellPickerModal.vue';
 import SpecializationPickerModal from '@/components/SpecializationPickerModal.vue';
 import VersionMigrationModal from '@/components/VersionMigrationModal.vue';
+import ExportWarbandModal from '@/components/ExportWarbandModal.vue';
 import { Shield, Plus } from 'lucide-vue-next';
 
 const warbandStore = useWarbandStore();
@@ -18,6 +19,7 @@ const rulesetStore = useRulesetStore();
 
 const showCreateModal = ref(false);
 const showMigrationModal = ref(false);
+const showExportModal = ref(false);
 
 const activeEquipmentFighterId = ref<string | null>(null);
 const activeMagicItemFighterId = ref<string | null>(null);
@@ -57,6 +59,7 @@ function openSpecializationModal(fighterId: string) {
     <AppHeader
       @open-create="showCreateModal = true"
       @open-migration="showMigrationModal = true"
+      @open-export="showExportModal = true"
     />
 
     <!-- Main Content Area -->
@@ -140,6 +143,11 @@ function openSpecializationModal(fighterId: string) {
     <VersionMigrationModal
       v-if="showMigrationModal"
       @close="showMigrationModal = false"
+    />
+
+    <ExportWarbandModal
+      v-if="showExportModal"
+      @close="showExportModal = false"
     />
   </div>
 </template>
