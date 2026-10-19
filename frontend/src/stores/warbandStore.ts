@@ -186,7 +186,10 @@ export const useWarbandStore = defineStore('warband', () => {
         }
       }
 
-      const effectiveFactionId = (f.isAllied && wb.alliedFactionId) ? wb.alliedFactionId : (f.factionId || wb.factionId);
+      const isMercenaires = wb.factionId === FACTION_IDS.Mercenaires;
+      const effectiveFactionId = isMercenaires
+        ? (f.factionId || FACTION_IDS.Alliance)
+        : ((f.isAllied && wb.alliedFactionId) ? wb.alliedFactionId : (f.factionId || wb.factionId));
       const effectiveOrigins = f.isAllied ? (wb.alliedOriginId ? [wb.alliedOriginId] : []) : (wb.selectedOriginIds || []);
       const effectiveFaction = rulesetStore.getFaction(effectiveFactionId);
 
@@ -330,6 +333,27 @@ export const useWarbandStore = defineStore('warband', () => {
               message: `La Voie de la Bête est réservée aux Monstres (${f.name}).`,
               severity: 'Error',
             });
+          }
+        }
+      }
+
+      // Talent faction prerequisites validation
+      for (const sp of f.specializations) {
+        const specDef = rulesetStore.getSpecialization(sp.specializationId);
+        if (specDef) {
+          for (const tId of sp.acquiredTalentIds) {
+            const talentDef = specDef.talents.find((t) => t.id === tId);
+            if (talentDef?.allowedFactionIds && talentDef.allowedFactionIds.length > 0) {
+              if (!talentDef.allowedFactionIds.includes(effectiveFactionId)) {
+                errors.push({
+                  fighterId: f.id,
+                  fighterName: f.name,
+                  code: VALIDATION_CODES.TalentFactionRestricted,
+                  message: `Le talent "${talentDef.name}" n'est pas accessible à la faction ${effectiveFaction?.name || effectiveFactionId}.`,
+                  severity: 'Error',
+                });
+              }
+            }
           }
         }
       }
@@ -683,6 +707,20 @@ export const useWarbandStore = defineStore('warband', () => {
       });
     }
 
+    const isMercenaires = wb.factionId === FACTION_IDS.Mercenaires;
+    for (const originId of wb.selectedOriginIds || []) {
+      const originExists = isMercenaires
+        ? rulesetStore.currentRuleset.factions.some((f) => f.origins?.some((o) => o.id === originId))
+        : faction?.origins?.some((o) => o.id === originId);
+      if (!originExists) {
+        errors.push({
+          code: VALIDATION_CODES.OriginNotFound,
+          message: `L'Origine "${originId}" n'appartient pas à la Faction ${faction?.name || wb.factionId}.`,
+          severity: 'Error',
+        });
+      }
+    }
+
     const hasErrors = errors.some((e) => e.severity === 'Error');
 
     return {
@@ -881,6 +919,16 @@ export const useWarbandStore = defineStore('warband', () => {
     }
   }
 
+  function setFighterFaction(fighterId: string, factionId: string) {
+    if (!currentWarband.value) return;
+    const fighter = currentWarband.value.fighters.find((f) => f.id === fighterId);
+    if (fighter) {
+      fighter.factionId = factionId;
+      currentWarband.value.updatedAt = new Date().toISOString();
+      syncWarbandWithBackend(currentWarband.value);
+    }
+  }
+
   // Fighter CRUD
   function addFighter(
     type: FighterType,
@@ -920,6 +968,7 @@ export const useWarbandStore = defineStore('warband', () => {
       officerRole: role,
       status: 'Active',
       allocatedXp: role === 'Leader' ? 12 : role === 'BrasDroit' ? 6 : 0,
+      factionId: currentWarband.value.factionId === FACTION_IDS.Mercenaires ? FACTION_IDS.Alliance : currentWarband.value.factionId,
       equippedItems: type === 'Animal'
         ? [
             { id: generateId(), fighterId, equipmentId: pugilatId, slotIndex: 0, isMagicItem: false },
@@ -1211,6 +1260,7 @@ export const useWarbandStore = defineStore('warband', () => {
     setWarbandAlliedFaction,
     setWarbandAlliedOrigin,
     setFighterAllied,
+    setFighterFaction,
     addFighter,
     setFighterStatus,
     setFighterRole,

@@ -7,6 +7,7 @@ import { Flame, Plus, Trash2, Check } from 'lucide-vue-next';
 import {
   getSpecializationXpCost,
   calculateFighterAvailableXp,
+  getFighterEffectiveFactionId,
 } from '@/domain/rulesEngine';
 
 const props = defineProps<{
@@ -26,6 +27,23 @@ const fighterAvailableXp = computed(() => {
   return calculateFighterAvailableXp(props.fighter, warband.value);
 });
 
+const effectiveFactionId = computed(() => {
+  return getFighterEffectiveFactionId(props.fighter, warband.value);
+});
+
+function isTalentRestricted(talent: any): boolean {
+  if (!talent.allowedFactionIds || talent.allowedFactionIds.length === 0) return false;
+  if (!effectiveFactionId.value) return false;
+  return !talent.allowedFactionIds.includes(effectiveFactionId.value);
+}
+
+function getTalentFactionNames(talent: any): string {
+  if (!talent.allowedFactionIds || talent.allowedFactionIds.length === 0) return '';
+  return talent.allowedFactionIds
+    .map((fid: string) => rulesetStore.getFaction(fid)?.name || fid)
+    .join(', ');
+}
+
 function isConclaveFreeTalent(talentId: string): boolean {
   if (props.fighter.officerRole === 'None') return false;
   if (warband.value?.allegianceId !== 'conclave_des_mages') return false;
@@ -33,12 +51,17 @@ function isConclaveFreeTalent(talentId: string): boolean {
   return talentId === 'incantation_maitrisee';
 }
 
-function onToggleTalent(specId: string, talentId: string) {
+function onToggleTalent(specId: string, talent: any) {
+  const talentId = talent.id;
   if (isConclaveFreeTalent(talentId)) {
     return;
   }
   const fSpec = props.fighter.specializations.find((s) => s.specializationId === specId);
   const isAcquired = fSpec?.acquiredTalentIds.includes(talentId);
+  if (!isAcquired && isTalentRestricted(talent)) {
+    alert(`Ce talent n'est accessible qu'aux factions suivantes : ${getTalentFactionNames(talent)}.`);
+    return;
+  }
   if (!isAcquired && fighterAvailableXp.value < 6) {
     alert('XP insuffisant : 6 XP sont requis pour acquérir ce talent.');
     return;
@@ -135,17 +158,28 @@ function onRemoveSpecialization(specId: string) {
           <div
             v-for="t in rulesetStore.getSpecialization(fSpec.specializationId)?.talents || []"
             :key="t.id"
-            @click="onToggleTalent(fSpec.specializationId, t.id)"
-            class="flex items-start justify-between gap-3 p-2.5 rounded border cursor-pointer transition text-xs"
-            :class="fSpec.acquiredTalentIds.includes(t.id)
-              ? 'bg-amber-950/40 border-amber-600/70 text-amber-200 ring-1 ring-amber-500/30'
-              : 'bg-grim-900 border-grim-800 hover:border-grim-700 text-grim-300'"
+            @click="onToggleTalent(fSpec.specializationId, t)"
+            class="flex items-start justify-between gap-3 p-2.5 rounded border transition text-xs select-none"
+            :class="[
+              fSpec.acquiredTalentIds.includes(t.id)
+                ? 'bg-amber-950/40 border-amber-600/70 text-amber-200 ring-1 ring-amber-500/30 cursor-pointer'
+                : isTalentRestricted(t)
+                  ? 'bg-grim-900/50 border-crimson-900/40 text-grim-400 opacity-60 cursor-not-allowed'
+                  : 'bg-grim-900 border-grim-800 hover:border-grim-700 text-grim-300 cursor-pointer'
+            ]"
           >
             <div class="space-y-0.5">
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-2 flex-wrap">
                 <span class="font-bold text-xs">{{ t.name }}</span>
                 <span v-if="t.tier" class="text-[10px] font-mono px-1 rounded bg-grim-950 text-grim-400 border border-grim-800">
                   Tier {{ t.tier }}
+                </span>
+                <span
+                  v-if="isTalentRestricted(t)"
+                  class="text-[10px] font-semibold text-crimson-400 bg-crimson-950/80 px-1.5 py-0.2 rounded border border-crimson-800"
+                  :title="'Accessible uniquement pour : ' + getTalentFactionNames(t)"
+                >
+                  Réservé : {{ getTalentFactionNames(t) }}
                 </span>
               </div>
               <p class="text-[11px] text-grim-400 leading-relaxed">{{ t.description }}</p>

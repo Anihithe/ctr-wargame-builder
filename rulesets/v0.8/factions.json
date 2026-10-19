@@ -398,8 +398,8 @@
     "races": "Chasseurs de primes, Pirates, Renégats",
     "allowedOriginsCount": 2,
     "specialRule": {
-      "name": "Épées à louer",
-      "description": "Vous pouvez sélectionner des Combattants venant de toutes les autres factions du jeu. Ils ne bénéficient pas de la règle de leur faction d'origine mais gardent l'Allégeance. Utilisez la faction d'origine pour les Talents."
+      "name": "Épées à louer & Diversité",
+      "description": "Épées à louer : vous pouvez sélectionner des Combattants venant de toutes les autres factions du jeu (sans bénéficier de leur règle spéciale de faction, mais en conservant l'accès aux Talents de leur faction d'origine. Si vous recrutez un Monstre, indiquez sa faction de rattachement). Diversité : vous pouvez sélectionner 2 Origines parmi toutes les factions existantes du jeu."
     },
     "profiles": {
       "1": {
@@ -424,13 +424,7 @@
         "pv": 8
       }
     },
-    "origins": [
-      {
-        "id": "diversite",
-        "name": "Diversité",
-        "description": "Vous pouvez sélectionner 2 Origines parmi les autres factions (ne permet pas de profiter de la règle spéciale de faction)."
-      }
-    ]
+    "origins": []
   },
   {
     "id": "monstruosite",

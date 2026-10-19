@@ -33,6 +33,20 @@ const warband = computed(() => warbandStore.currentWarband);
 const faction = computed(() => (warband.value ? rulesetStore.getFaction(warband.value.factionId) : null));
 
 const isUnionDesPeuples = computed(() => warband.value?.allegianceId === 'union_des_peuples');
+const isMercenaires = computed(() => warband.value?.factionId === FACTION_IDS.Mercenaires);
+const availableMercenaireFactions = computed(() => {
+  return (rulesetStore.currentRuleset?.factions || []).filter((f) => f.id !== FACTION_IDS.Mercenaires);
+});
+const mercenaireOriginFaction = computed(() => {
+  const fId = props.fighter.factionId || FACTION_IDS.Alliance;
+  return rulesetStore.getFaction(fId);
+});
+
+function onFighterMercenaireFactionChange(event: Event) {
+  const target = event.target as HTMLSelectElement;
+  warbandStore.setFighterFaction(props.fighter.id, target.value);
+}
+
 const alliedFaction = computed(() => {
   if (!warband.value?.alliedFactionId) return null;
   return rulesetStore.getFaction(warband.value.alliedFactionId);
@@ -76,7 +90,8 @@ const totalArmorBonus = computed(() => {
 });
 
 const isR1InMonstruosite = computed(() => {
-  return props.fighter.rank === 1 && warband.value?.factionId === FACTION_IDS.Monstruosite;
+  const effFactionId = isMercenaires.value ? (props.fighter.factionId || FACTION_IDS.Alliance) : warband.value?.factionId;
+  return props.fighter.rank === 1 && effFactionId === FACTION_IDS.Monstruosite;
 });
 
 function onOfficerRoleChange(e: Event) {
@@ -193,6 +208,26 @@ function godGiftLabel(stat?: string | null): string {
           </option>
         </select>
       </div>
+
+      <!-- Fighter Provenance / Faction d'origine (Les Mercenaires) -->
+      <div v-if="isMercenaires" class="w-56">
+        <label class="text-[11px] font-semibold text-amber-400 uppercase tracking-wider block mb-1">
+          {{ fighter.type === 'Monstre' ? 'Rattachement Monstre' : 'Faction d\'origine' }}
+        </label>
+        <select
+          :value="fighter.factionId || 'alliance'"
+          @change="onFighterMercenaireFactionChange"
+          class="w-full bg-grim-850 border border-amber-600/70 text-amber-200 rounded px-2.5 py-1.5 text-xs font-semibold focus:border-amber-400 focus:outline-none transition"
+        >
+          <option
+            v-for="f in availableMercenaireFactions"
+            :key="f.id"
+            :value="f.id"
+          >
+            {{ f.name }}
+          </option>
+        </select>
+      </div>
     </div>
 
     <!-- Allied Fighter Banner (Union des peuples) -->
@@ -212,6 +247,25 @@ function godGiftLabel(stat?: string | null): string {
         </span>
       </div>
       <span class="text-[10px] text-grim-400 italic">Isolé des règles & origines de la faction principale</span>
+    </div>
+
+    <!-- Mercenaires Fighter Banner -->
+    <div
+      v-if="isMercenaires"
+      class="p-2.5 rounded-lg border bg-amber-950/20 border-amber-600/40 flex flex-wrap items-center justify-between gap-2"
+    >
+      <div class="flex items-center gap-2">
+        <span class="px-2 py-0.5 rounded bg-amber-900/60 border border-amber-600/60 text-amber-300 font-bold text-[10px] uppercase">
+          Épées à louer
+        </span>
+        <span class="text-xs text-grim-200">
+          Faction d'origine : <strong class="text-amber-300">{{ mercenaireOriginFaction?.name }}</strong>
+          <span class="text-grim-300 ml-1.5">
+            (Profil & Talents de {{ mercenaireOriginFaction?.name }}, sans règle spéciale)
+          </span>
+        </span>
+      </div>
+      <span class="text-[10px] text-amber-400/80 italic">Les Mercenaires</span>
     </div>
 
     <!-- Base Stats Bar -->

@@ -84,6 +84,7 @@ export const VALIDATION_CODES = {
   FactionRequired: 'FACTION_REQUIRED',
   FactionNotFound: 'FACTION_NOT_FOUND',
   OriginsLimitExceeded: 'ORIGINS_LIMIT_EXCEEDED',
+  OriginNotFound: 'ORIGIN_NOT_FOUND',
   WarbandSizeExceeded: 'MAX_FIGHTERS_EXCEEDED',
   BudgetExceeded: 'BUDGET_EXCEEDED',
   AlliedFactionRequired: 'ALLIED_FACTION_REQUIRED',
@@ -134,6 +135,7 @@ export const VALIDATION_CODES = {
 
   // Spells & XP
   XpLimitExceeded: 'XP_LIMIT_EXCEEDED',
+  TalentFactionRestricted: 'TALENT_FACTION_RESTRICTED',
   SpellsCannotBeCast: 'SPELLS_CANNOT_BE_CAST',
   SpellsLevelExceeded: 'SPELLS_LEVEL_EXCEEDED',
 } as const;

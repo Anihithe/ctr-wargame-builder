@@ -3,6 +3,29 @@
 Toutes les modifications notables apportées à ce projet sont documentées dans ce fichier.
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet adhère à [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [0.5.11-beta] - 2026-10-20
+
+### ⚔️ Faction "Les Mercenaires" (Épées à louer & Règle Diversité)
+- **Règle spéciale unifiée `Épées à louer & Diversité`** :
+  - *Épées à louer* : Les combattants d'une bande de Mercenaires peuvent être issus de n'importe quelle faction du jeu (L'Alliance, L'Excellence, La Brutalité, La Perfidie, L'Éternité, La Ténacité, La Monstruosité).
+  - Chaque combattant (Guerrier, Monstre, Animal) dispose sur sa fiche d'un sélecteur de faction d'origine / de rattachement.
+  - Les caractéristiques de base (Mouv, Combat, Esquive, Volonté, PV) et les accès aux talents de spécialisation sont régis par la faction d'origine du combattant.
+  - Les combattants ne bénéficient pas de la règle spéciale de leur faction d'origine.
+  - Les monstres recrutés dans une bande Mercenaires indiquent leur faction de rattachement.
+- **Règle d'Origines `Diversité` intégrée à l'UX** :
+  - L'origine fictive "Diversité" a été intégrée dans la règle spéciale de faction, permettant au joueur de sélectionner directement 2 origines parmi l'intégralité des origines existantes de toutes les autres factions.
+  - Dans la vue d'ensemble de la bande (`WarbandOverview.vue`), les origines proposées regroupent celles de toutes les autres factions avec un badge d'identification de leur faction source.
+- **Contrôles de Viabilité & Moteur de Règles** :
+  - Mise à jour du moteur de règles (`rulesEngine.ts`) pour calculer les profils et les origines effectives selon la faction choisie pour chaque combattant Mercenaire.
+  - Mise à jour du validateur backend (`WarbandValidator.cs`) et du validateur client (`warbandStore.ts`) :
+    - Vérification de l'éligibilité des talents selon la faction d'origine du combattant (`TALENT_FACTION_RESTRICTED`).
+    - Validation des 2 origines choisies parmi l'ensemble des factions du ruleset (`ORIGIN_NOT_FOUND`).
+  - Ajout de tests unitaires xUnit validant les scénarios de bandes Mercenaires (combattants multi-factions, prérequis de talents, origines croisées).
+- **Interface & Expérience Utilisateur** :
+  - `FighterProfileHeader.vue` : ajout du sélecteur de faction d'origine / de rattachement et d'une bannière informative dédiée aux Mercenaires.
+  - `FighterSpecializationsCard.vue` & `SpecializationPickerModal.vue` : affichage d'un badge d'avertissement et blocage d'acquisition pour les talents réservés à d'autres factions.
+  - `FighterCard.vue` : affichage de la faction d'origine dans le sous-titre de la carte combattant de la liste des troupes.
+
 ## [0.5.10-beta] - 2026-10-20
 
 ### 🎯 Recrutement des Troupes & Équilibrage des Rangs

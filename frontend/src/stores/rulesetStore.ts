@@ -138,6 +138,14 @@ export const useRulesetStore = defineStore('ruleset', () => {
     return currentRuleset.value.specialRules.find((r) => r.id === id);
   }
 
+  function getOrigin(id: string) {
+    for (const f of currentRuleset.value.factions) {
+      const o = f.origins?.find((orig) => orig.id === id);
+      if (o) return o;
+    }
+    return undefined;
+  }
+
   return {
     currentRuleset,
     availableManifests,
@@ -160,5 +168,6 @@ export const useRulesetStore = defineStore('ruleset', () => {
     getAnimalProfile,
     getAnimalSpeciesBonus,
     getSpecialRule,
+    getOrigin,
   };
 });

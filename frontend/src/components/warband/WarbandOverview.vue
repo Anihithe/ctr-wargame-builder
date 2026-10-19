@@ -28,15 +28,33 @@ const availableAllegiances = computed(() => rulesetStore.currentRuleset.allegian
 const showAllOrigins = ref(false);
 const showAllAllegianceRules = ref(false);
 
+const isMercenaires = computed(() => warband.value?.factionId === 'mercenaires');
+const allMercenaireOrigins = computed(() => {
+  if (!isMercenaires.value) return [];
+  return (rulesetStore.currentRuleset?.factions || [])
+    .filter((f) => f.id !== 'mercenaires')
+    .flatMap((f) => (f.origins || []).map((o) => ({ ...o, sourceFactionName: f.name })));
+});
+
 const selectedOrigins = computed(() => {
   if (!faction.value || !warband.value) return [];
   const ids = warband.value.selectedOriginIds || [];
-  return faction.value.origins.filter((o) => ids.includes(o.id));
+  if (isMercenaires.value) {
+    return allMercenaireOrigins.value.filter((o) => ids.includes(o.id));
+  }
+  return faction.value.origins?.filter((o) => ids.includes(o.id)) || [];
 });
 
 const originsToDisplay = computed(() => {
-  if (!faction.value?.origins) return [];
+  if (!faction.value) return [];
   const max = faction.value.allowedOriginsCount || 2;
+  if (isMercenaires.value) {
+    if (selectedOrigins.value.length >= max && !showAllOrigins.value) {
+      return selectedOrigins.value;
+    }
+    return allMercenaireOrigins.value;
+  }
+  if (!faction.value?.origins) return [];
   if (selectedOrigins.value.length >= max && !showAllOrigins.value) {
     return selectedOrigins.value;
   }
@@ -230,6 +248,9 @@ function formatOriginModifiers(mods: any): string {
             </tbody>
           </table>
         </div>
+        <p v-if="isMercenaires" class="text-xs text-amber-300/90 italic mt-2">
+          Note : En tant que Mercenaires, chaque combattant utilise les caractéristiques de base et les accès aux talents de sa faction d'origine (choisie sur sa fiche).
+        </p>
       </div>
     </div>
 
@@ -238,7 +259,9 @@ function formatOriginModifiers(mods: any): string {
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
           <BookOpen class="w-5 h-5 text-gold-400" />
-          <h3 class="text-base font-bold text-white font-display">Origines de la faction</h3>
+          <h3 class="text-base font-bold text-white font-display">
+            {{ isMercenaires ? 'Origines (Règle Diversité : 2 au choix parmi toutes les factions)' : 'Origines de la faction' }}
+          </h3>
         </div>
         <div class="flex items-center gap-2">
           <span
@@ -271,12 +294,20 @@ function formatOriginModifiers(mods: any): string {
           "
         >
           <div class="flex items-center justify-between">
-            <span
-              class="font-bold text-sm"
-              :class="warband.selectedOriginIds?.includes(orig.id) ? 'text-gold-300' : 'text-grim-200'"
-            >
-              {{ orig.name }}
-            </span>
+            <div class="flex items-center gap-2 flex-wrap">
+              <span
+                class="font-bold text-sm"
+                :class="warband.selectedOriginIds?.includes(orig.id) ? 'text-gold-300' : 'text-grim-200'"
+              >
+                {{ orig.name }}
+              </span>
+              <span
+                v-if="(orig as any).sourceFactionName"
+                class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-grim-800 text-amber-300 border border-amber-800/60"
+              >
+                {{ (orig as any).sourceFactionName }}
+              </span>
+            </div>
             <div class="flex items-center gap-1">
               <span
                 v-if="orig.modifiers"

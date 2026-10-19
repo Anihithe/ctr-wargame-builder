@@ -28,10 +28,23 @@ public class WarbandValidator : IWarbandValidator
         }
 
         // 2. Origines
+        var isMercenaires = string.Equals(faction.Id, RuleConstants.Factions.Mercenaires, StringComparison.OrdinalIgnoreCase);
         var maxOrigins = faction.AllowedOriginsCount;
         if (warband.SelectedOriginIds.Count > maxOrigins)
         {
             result.AddError(ValidationCodes.OriginsLimitExceeded, $"La Faction {faction.Name} autorise au maximum {maxOrigins} Origines (actuel : {warband.SelectedOriginIds.Count}).");
+        }
+
+        foreach (var originId in warband.SelectedOriginIds)
+        {
+            var originExists = isMercenaires
+                ? ruleset.Factions.Any(f => f.Origins.Any(o => string.Equals(o.Id, originId, StringComparison.OrdinalIgnoreCase)))
+                : faction.Origins.Any(o => string.Equals(o.Id, originId, StringComparison.OrdinalIgnoreCase));
+
+            if (!originExists)
+            {
+                result.AddError(ValidationCodes.OriginNotFound, $"L'Origine '{originId}' n'appartient pas à la Faction {faction.Name}.");
+            }
         }
 
         // 3. Effectif de la Bande active sur table
@@ -148,7 +161,29 @@ public class WarbandValidator : IWarbandValidator
                 }
             }
 
-            var effectiveFaction = (fighter.IsAllied && alliedFaction != null) ? alliedFaction : faction;
+            FactionDefinition effectiveFaction;
+            if (isMercenaires)
+            {
+                var fighterFactionId = !string.IsNullOrWhiteSpace(fighter.FactionId) ? fighter.FactionId : RuleConstants.Factions.Alliance;
+                var foundFaction = ruleset.Factions.FirstOrDefault(f => string.Equals(f.Id, fighterFactionId, StringComparison.OrdinalIgnoreCase));
+                if (foundFaction == null || string.Equals(foundFaction.Id, RuleConstants.Factions.Mercenaires, StringComparison.OrdinalIgnoreCase))
+                {
+                    result.AddError(ValidationCodes.FactionNotFound, $"La faction d'origine '{fighterFactionId}' du combattant '{fighterName}' est invalide.", fighter.Id);
+                    effectiveFaction = faction;
+                }
+                else
+                {
+                    effectiveFaction = foundFaction;
+                }
+            }
+            else if (fighter.IsAllied && alliedFaction != null)
+            {
+                effectiveFaction = alliedFaction;
+            }
+            else
+            {
+                effectiveFaction = faction;
+            }
             var effectiveOrigins = fighter.IsAllied
                 ? (!string.IsNullOrWhiteSpace(warband.AlliedOriginId) ? new List<string> { warband.AlliedOriginId } : new List<string>())
                 : warband.SelectedOriginIds;
@@ -447,12 +482,13 @@ public class WarbandValidator : IWarbandValidator
         }
 
         // Validation XP & Spécialisations
-        var maxBaseXp = fighter.Role switch
+        var baseXp = fighter.Role switch
         {
             OfficerRole.Leader => ruleset.Config.OfficerLeaderBaseXp,
             OfficerRole.BrasDroit => ruleset.Config.OfficerBrasDroitBaseXp,
-            _ => fighter.AllocatedXp // En campagne, XP achetés ou gagnés
+            _ => 0
         };
+        var maxBaseXp = Math.Max(baseXp, fighter.AllocatedXp);
 
         var spentXp = 0;
         foreach (var specChoice in fighter.Specializations)

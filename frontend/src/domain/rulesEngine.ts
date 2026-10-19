@@ -17,6 +17,9 @@ export function getFighterEffectiveFactionId(fighter: Fighter, warband?: Warband
   if (fighter.isAllied && warband?.alliedFactionId) {
     return warband.alliedFactionId;
   }
+  if (warband?.factionId === FACTION_IDS.Mercenaires) {
+    return fighter.factionId || FACTION_IDS.Alliance;
+  }
   return fighter.factionId || warband?.factionId;
 }
 
@@ -519,7 +522,10 @@ export function calculateFighterStats(
     const faction = effectiveFactionId ? rulesetStore.getFaction(effectiveFactionId) : null;
     const availableOrigins = faction?.origins || [];
     for (const oId of origins) {
-      const origDef = availableOrigins.find((o: any) => o.id === oId);
+      let origDef = availableOrigins.find((o: any) => o.id === oId);
+      if (!origDef && (rulesetStore as any).getOrigin) {
+        origDef = (rulesetStore as any).getOrigin(oId);
+      }
       if (origDef?.modifiers) {
         stats.mouvement += origDef.modifiers.mouvement || 0;
         stats.combat += origDef.modifiers.combat || 0;

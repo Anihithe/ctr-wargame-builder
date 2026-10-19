@@ -10,6 +10,7 @@ import {
   getSpecializationDuplicateCount,
   calculateFighterSpentXp,
   calculateFighterAvailableXp,
+  getFighterEffectiveFactionId,
 } from '@/domain/rulesEngine';
 
 const props = defineProps<{
@@ -25,6 +26,24 @@ const rulesetStore = useRulesetStore();
 
 const warband = computed(() => warbandStore.currentWarband);
 const fighter = computed(() => warband.value?.fighters.find((f) => f.id === props.fighterId));
+
+const effectiveFactionId = computed(() => {
+  if (!fighter.value) return undefined;
+  return getFighterEffectiveFactionId(fighter.value, warband.value);
+});
+
+function isTalentRestricted(talent: any): boolean {
+  if (!talent.allowedFactionIds || talent.allowedFactionIds.length === 0) return false;
+  if (!effectiveFactionId.value) return false;
+  return !talent.allowedFactionIds.includes(effectiveFactionId.value);
+}
+
+function getTalentFactionNames(talent: any): string {
+  if (!talent.allowedFactionIds || talent.allowedFactionIds.length === 0) return '';
+  return talent.allowedFactionIds
+    .map((fid: string) => rulesetStore.getFaction(fid)?.name || fid)
+    .join(', ');
+}
 
 const isMonster = computed(() => fighter.value?.type === 'Monstre');
 const isMonstruositeFaction = computed(() => warband.value?.factionId === FACTION_IDS.Monstruosite);
@@ -385,9 +404,12 @@ function unchooseSpecialization(specId: string) {
                 :key="t.id"
                 class="bg-grim-900/60 p-2 rounded border border-grim-800/60 text-xs space-y-0.5"
               >
-                <div class="font-bold text-grim-200 text-[11px] flex items-center justify-between">
+                <div class="font-bold text-grim-200 text-[11px] flex items-center justify-between flex-wrap gap-1">
                   <span>{{ t.name }}</span>
-                  <span v-if="isConclaveFreeTalent(t.id)" class="text-[10px] text-emerald-400 font-normal">
+                  <span v-if="isTalentRestricted(t)" class="text-[9px] text-crimson-400 font-semibold px-1 py-0.2 rounded bg-crimson-950/80 border border-crimson-800" :title="'Réservé à : ' + getTalentFactionNames(t)">
+                    Réservé : {{ getTalentFactionNames(t) }}
+                  </span>
+                  <span v-else-if="isConclaveFreeTalent(t.id)" class="text-[10px] text-emerald-400 font-normal">
                     Gratuit (Conclave)
                   </span>
                 </div>

@@ -4,6 +4,7 @@ import type { Fighter } from '@/types/warband';
 import { useRulesetStore } from '@/stores/rulesetStore';
 import { useWarbandStore } from '@/stores/warbandStore';
 import { THEME } from '@/constants/theme';
+import { FACTION_IDS } from '@/constants/rules';
 import { hasFighterMaitrise as checkMaitriseEngine, cleanEquipmentName } from '@/domain/rulesEngine';
 import {
   Crown,
@@ -61,6 +62,12 @@ const subline = computed(() => {
   if (f.isAllied) {
     const name = props.alliedFactionName || 'Allié';
     return `${baseLine} • Allié (${name})`;
+  }
+
+  if (warband.value?.factionId === FACTION_IDS.Mercenaires) {
+    const originFaction = rulesetStore.getFaction(f.factionId || FACTION_IDS.Alliance);
+    const originName = originFaction?.name || "L'Alliance";
+    return `${baseLine} • ${originName}`;
   }
 
   return baseLine;

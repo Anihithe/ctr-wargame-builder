@@ -6,6 +6,7 @@ public static class ValidationCodes
     public const string FactionRequired = "FACTION_REQUIRED";
     public const string FactionNotFound = "FACTION_NOT_FOUND";
     public const string OriginsLimitExceeded = "ORIGINS_LIMIT_EXCEEDED";
+    public const string OriginNotFound = "ORIGIN_NOT_FOUND";
     public const string WarbandSizeExceeded = "WARBAND_SIZE_EXCEEDED";
     public const string BudgetExceeded = "BUDGET_EXCEEDED";
     public const string AlliedFactionRequired = "ALLIED_FACTION_REQUIRED";

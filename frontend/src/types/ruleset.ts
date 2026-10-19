@@ -147,6 +147,7 @@ export interface Talent {
   xpCost: number;
   description: string;
   requires?: string[];
+  allowedFactionIds?: string[];
 }
 
 export interface Specialization {

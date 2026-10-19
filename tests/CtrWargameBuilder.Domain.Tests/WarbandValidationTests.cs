@@ -1486,6 +1486,129 @@ public class WarbandValidationTests
         // 3. Le Garde Allié Alliance bénéficie bien de Noblesse : son armure niv 2 est acceptée (pas d'erreur ItemLevelTooHigh)
         Assert.DoesNotContain(result.Messages, m => m.Code == ValidationCodes.ItemLevelTooHigh && m.FighterId == warband.Fighters[2].Id);
     }
+
+    [Fact]
+    public void Mercenaires_Warband_With_Multiple_Origin_Factions_And_Origins_Should_Pass_Validation()
+    {
+        // Arrange : Bande Mercenaires avec 2 origines de factions différentes (noblesse d'Alliance et destructeurs de Brutalité)
+        // Leader (Rang 2) issu de Brutalité avec voie Barbare (talent Berserker accessible à Brutalité)
+        // Bras droit (Rang 1) issu d'Excellence avec voie Guerrier (talent Fine lame accessible à Excellence)
+        var warband = new Warband
+        {
+            FactionId = RuleConstants.Factions.Mercenaires,
+            StartingGold = 10,
+            SelectedOriginIds = ["noblesse", "destructeurs"],
+            Fighters =
+            [
+                new Fighter
+                {
+                    CustomName = "Leader Brutalité",
+                    Rank = 2,
+                    Role = OfficerRole.Leader,
+                    FactionId = RuleConstants.Factions.Brutalite,
+                    Specializations =
+                    [
+                        new FighterSpecialization
+                        {
+                            SpecializationId = RuleConstants.Specializations.Barbare,
+                            SelectedTalentIds = ["berserker"]
+                        }
+                    ]
+                },
+                new Fighter
+                {
+                    CustomName = "Bras Droit Excellence",
+                    Rank = 1,
+                    Role = OfficerRole.BrasDroit,
+                    AllocatedXp = 12,
+                    FactionId = RuleConstants.Factions.Excellence,
+                    Specializations =
+                    [
+                        new FighterSpecialization
+                        {
+                            SpecializationId = RuleConstants.Specializations.Guerrier,
+                            SelectedTalentIds = ["fine_lame"]
+                        }
+                    ]
+                }
+            ]
+        };
+
+        // Act
+        var result = _validator.Validate(warband, _ruleset);
+
+        // Assert
+        Assert.DoesNotContain(result.Messages, m => m.Severity == ValidationSeverity.Error);
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public void Mercenaires_Fighter_Selecting_Restricted_Talent_Should_Fail_Validation()
+    {
+        // Arrange : Combattant d'origine Brutalité qui tente de prendre Fine lame (réservé à Alliance & Excellence)
+        var warband = new Warband
+        {
+            FactionId = RuleConstants.Factions.Mercenaires,
+            StartingGold = 10,
+            SelectedOriginIds = ["noblesse"],
+            Fighters =
+            [
+                new Fighter
+                {
+                    CustomName = "Leader Brutalité",
+                    Rank = 2,
+                    Role = OfficerRole.Leader,
+                    FactionId = RuleConstants.Factions.Brutalite,
+                    Specializations =
+                    [
+                        new FighterSpecialization
+                        {
+                            SpecializationId = RuleConstants.Specializations.Guerrier,
+                            SelectedTalentIds = ["fine_lame"] // Interdit pour Brutalité !
+                        }
+                    ]
+                },
+                new Fighter
+                {
+                    CustomName = "Bras Droit",
+                    Rank = 1,
+                    Role = OfficerRole.BrasDroit,
+                    FactionId = RuleConstants.Factions.Alliance
+                }
+            ]
+        };
+
+        // Act
+        var result = _validator.Validate(warband, _ruleset);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Messages, m => m.Code == ValidationCodes.TalentFactionRestricted && m.FighterId == warband.Fighters[0].Id);
+    }
+
+    [Fact]
+    public void Mercenaires_Invalid_Origin_Should_Fail_Validation()
+    {
+        // Arrange : Origine inexistante dans l'ensemble des factions
+        var warband = new Warband
+        {
+            FactionId = RuleConstants.Factions.Mercenaires,
+            StartingGold = 10,
+            SelectedOriginIds = ["origine_inexistante"],
+            Fighters =
+            [
+                new Fighter { CustomName = "Leader", Rank = 2, Role = OfficerRole.Leader, FactionId = RuleConstants.Factions.Alliance },
+                new Fighter { CustomName = "Bras Droit", Rank = 1, Role = OfficerRole.BrasDroit, FactionId = RuleConstants.Factions.Alliance }
+            ]
+        };
+
+        // Act
+        var result = _validator.Validate(warband, _ruleset);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Messages, m => m.Code == ValidationCodes.OriginNotFound);
+    }
 }
 
 
